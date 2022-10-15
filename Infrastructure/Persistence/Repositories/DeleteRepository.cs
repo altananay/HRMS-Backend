@@ -2,11 +2,6 @@
 using Application.Repositories;
 using Domain.Common;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Persistence.Repositories
 {
@@ -23,9 +18,9 @@ namespace Persistence.Repositories
 
         public IMongoCollection<T> collection => _mongoContext.database.GetCollection<T>(_collection);
 
-        public async Task<bool> Delete(T entity)
+        public async Task<bool> Delete(string id)
         {
-            await collection.DeleteOneAsync(t => t.Id == entity.Id);
+            await collection.DeleteOneAsync(t => t.Id == id);
             return true;
         }
     }

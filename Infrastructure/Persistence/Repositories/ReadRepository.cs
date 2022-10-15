@@ -2,12 +2,7 @@
 using Application.Repositories;
 using Domain.Common;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Persistence.Repositories
 {
@@ -26,7 +21,8 @@ namespace Persistence.Repositories
 
         public T Get(Expression<Func<T, bool>> filter)
         {
-            return collection.AsQueryable().SingleOrDefault(filter);
+            var result = collection.AsQueryable().SingleOrDefault(filter);
+            return result;
         }
 
         public IQueryable<T> GetAll()
