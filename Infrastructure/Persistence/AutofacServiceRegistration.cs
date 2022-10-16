@@ -1,9 +1,11 @@
-﻿using Application.Abstractions;
+﻿using Application.Abstractions.Common;
 using Application.Context;
 using Application.Repositories;
+using Application.Utilities.Interceptors;
 using Autofac;
+using Autofac.Extras.DynamicProxy;
 using Castle.DynamicProxy;
-using Persistence.Concretes;
+using Persistence.Concretes.Common;
 using Persistence.Context;
 using Persistence.Repositories;
 
@@ -30,14 +32,14 @@ namespace Persistence
             builder.RegisterType<JobSeekerDeleteRepository>().As<IJobSeekerDeleteRepository>().SingleInstance();
             builder.RegisterType<JobSeekerWriteRepository>().As<IJobSeekerWriteRepository>().SingleInstance();
             builder.RegisterType<JobSeekerReadRepository>().As<IJobSeekerReadRepository>().SingleInstance();
-            
-            //var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
-            //builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()
-            //    .EnableInterfaceInterceptors(new ProxyGenerationOptions()
-            //    {
-            //        Selector = new AspectInterceptorSelector()
-            //    }).SingleInstance();
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()
+                .EnableInterfaceInterceptors(new ProxyGenerationOptions()
+                {
+                    Selector = new AspectInterceptorSelector()
+                }).SingleInstance();
         }
     }
 }

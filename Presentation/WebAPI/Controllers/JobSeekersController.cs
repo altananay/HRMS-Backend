@@ -1,4 +1,5 @@
-﻿using Application.Abstractions;
+﻿using Application.Abstractions.Common;
+using Application.Dtos;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,17 +9,17 @@ namespace WebAPI.Controllers
     [ApiController]
     public class JobSeekersController : ControllerBase
     {
-        IJobSeekerService _userService;
+        IJobSeekerService _jobSeekerService;
 
         public JobSeekersController(IJobSeekerService userService)
         {
-            _userService = userService;
+            _jobSeekerService = userService;
         }
 
         [HttpGet("getall")]
         public IActionResult GetAll()
         {
-            var result = _userService.GetAll();
+            var result = _jobSeekerService.GetAll();
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -29,7 +30,7 @@ namespace WebAPI.Controllers
         [HttpGet("getbyemail")]
         public IActionResult GetByEmail(string email)
         {
-            var result = _userService.GetByMail(email);
+            var result = _jobSeekerService.GetByMail(email);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -37,21 +38,21 @@ namespace WebAPI.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("add")]
-        public IActionResult Add(JobSeeker user)
-        {
-            var result = _userService.Add(user);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
+        //[HttpPost("add")]
+        //public IActionResult Add(JobSeekerForAddDto user)
+        //{
+        //    var result = _jobSeekerService.Add(user);
+        //    if (result.IsSuccess)
+        //    {
+        //        return Ok(result);
+        //    }
+        //    return BadRequest(result);
+        //}
 
         [HttpPost("delete")]
         public IActionResult Delete(string id)
         {
-            var result = _userService.Delete(id);
+            var result = _jobSeekerService.Delete(id);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -62,7 +63,7 @@ namespace WebAPI.Controllers
         [HttpPost("update")]
         public IActionResult Update(JobSeeker user)
         {
-            var result = _userService.Update(user);
+            var result = _jobSeekerService.Update(user);
             if (result.IsSuccess)
             {
                 return Ok(result);

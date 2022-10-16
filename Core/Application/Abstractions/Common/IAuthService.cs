@@ -3,7 +3,7 @@ using Application.Results;
 using Application.Utilities.JWT;
 using Domain.Entities;
 
-namespace Application.Abstractions
+namespace Application.Abstractions.Common
 {
     public interface IAuthService
     {

@@ -1,10 +1,14 @@
-﻿using Application.Abstractions;
+﻿using Application.Abstractions.Common;
+using Application.Aspects;
 using Application.Constants;
+using Application.Dtos;
 using Application.Repositories;
 using Application.Results;
+using Application.Utilities.Security.Hashing;
+using Application.Validators;
 using Domain.Entities;
 
-namespace Persistence.Concretes
+namespace Persistence.Concretes.Common
 {
     public class JobSeekerManager : IJobSeekerService
     {
@@ -19,6 +23,7 @@ namespace Persistence.Concretes
             _jobSeekerReadRepository = jobSeekerReadRepository;
         }
 
+        //[ValidationAspect(typeof(JobSeekerValidator))]
         public IResult Add(JobSeeker user)
         {
             _jobSeekerWriteRepository.Add(user);
@@ -42,7 +47,7 @@ namespace Persistence.Concretes
         {
             return new SuccessDataResult<IQueryable<JobSeeker>>(_jobSeekerReadRepository.GetAll());
         }
-        
+
 
         public IDataResult<JobSeeker> GetByMail(string email)
         {

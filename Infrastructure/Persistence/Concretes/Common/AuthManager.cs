@@ -1,13 +1,15 @@
-﻿using Application.Abstractions;
+﻿using Application.Abstractions.Common;
+using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
 using Application.Results;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using Application.Validators;
 using Domain.Entities;
 
-namespace Persistence.Concretes
+namespace Persistence.Concretes.Common
 {
     public class AuthManager : IAuthService
     {
@@ -20,8 +22,10 @@ namespace Persistence.Concretes
             _tokenHelper = tokenHelper;
         }
 
+        [ValidationAspect(typeof(RegisterValidator))]
         public IDataResult<JobSeeker> Register(UserForRegisterDto userForRegisterDto, string password)
         {
+            string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
             var user = new JobSeeker
@@ -31,7 +35,9 @@ namespace Persistence.Concretes
                 LastName = userForRegisterDto.LastName,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
-                Status = true
+                Status = true,
+                Claims = claims,
+                CreatedAt = DateTime.UtcNow,
             };
             _jobSeekerService.Add(user);
             return new SuccessDataResult<JobSeeker>(user, Messages.UserRegistered);

@@ -1,7 +1,7 @@
 ﻿using Application.Results;
 using Domain.Entities;
 
-namespace Application.Abstractions
+namespace Application.Abstractions.Common
 {
     public interface IJobPositionService
     {

@@ -1,10 +1,10 @@
-﻿using Application.Abstractions;
+﻿using Application.Abstractions.Common;
 using Application.Constants;
 using Application.Repositories;
 using Application.Results;
 using Domain.Entities;
 
-namespace Persistence.Concretes
+namespace Persistence.Concretes.Common
 {
     public class JobPositionManager : IJobPositionService
     {
