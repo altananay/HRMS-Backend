@@ -23,7 +23,7 @@ namespace Persistence.Concretes.Common
         }
 
         [ValidationAspect(typeof(RegisterValidator))]
-        public IDataResult<JobSeeker> Register(UserForRegisterDto userForRegisterDto, string password)
+        public IDataResult<JobSeeker> Register(JobSeekerForRegisterDto userForRegisterDto, string password)
         {
             string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
@@ -43,7 +43,7 @@ namespace Persistence.Concretes.Common
             return new SuccessDataResult<JobSeeker>(user, Messages.UserRegistered);
         }
 
-        public IDataResult<JobSeeker> Login(UserForLoginDto userForLoginDto)
+        public IDataResult<JobSeeker> Login(JobSeekerForLoginDto userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);
             if (userToCheck == null)

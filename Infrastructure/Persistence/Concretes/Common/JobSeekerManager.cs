@@ -23,7 +23,7 @@ namespace Persistence.Concretes.Common
             _jobSeekerReadRepository = jobSeekerReadRepository;
         }
 
-        //[ValidationAspect(typeof(JobSeekerValidator))]
+        [ValidationAspect(typeof(JobSeekerValidator))]
         public IResult Add(JobSeeker user)
         {
             _jobSeekerWriteRepository.Add(user);
@@ -62,6 +62,7 @@ namespace Persistence.Concretes.Common
             }
             else
             {
+                _jobSeekerWriteRepository.Update(user);
                 return new SuccessResult(Messages.UserUpdated);
             }
         }

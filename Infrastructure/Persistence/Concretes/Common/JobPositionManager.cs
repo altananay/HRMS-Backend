@@ -1,7 +1,9 @@
 ﻿using Application.Abstractions.Common;
+using Application.Aspects;
 using Application.Constants;
 using Application.Repositories;
 using Application.Results;
+using Application.Validators;
 using Domain.Entities;
 
 namespace Persistence.Concretes.Common
@@ -19,6 +21,8 @@ namespace Persistence.Concretes.Common
             _jobPositionDeleteRepository = jobPositionDeleteRepository;
         }
 
+
+        [ValidationAspect(typeof(JobPositionValidator))]
         public IResult Add(JobPosition jobPosition)
         {
             _jobPositionWriteRepository.Add(jobPosition);
@@ -39,6 +43,15 @@ namespace Persistence.Concretes.Common
         public IDataResult<JobPosition> GetById(string id)
         {
             return new SuccessDataResult<JobPosition>(_jobPositionReadRepository.GetById(id));
+        }
+
+        public IResult JobPositionExists(string jobPosition)
+        {
+            if (_jobPositionReadRepository.Get(jp => jp.PositionName == jobPosition) != null)
+            {
+                return new ErrorResult(Messages.JobPositionExists);
+            }
+            return new SuccessResult();
         }
 
         public IResult Update(JobPosition jobPosition)

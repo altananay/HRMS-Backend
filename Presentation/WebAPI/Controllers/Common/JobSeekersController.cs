@@ -3,7 +3,7 @@ using Application.Dtos;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebAPI.Controllers
+namespace WebAPI.Controllers.Common
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -37,17 +37,6 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result);
         }
-
-        //[HttpPost("add")]
-        //public IActionResult Add(JobSeekerForAddDto user)
-        //{
-        //    var result = _jobSeekerService.Add(user);
-        //    if (result.IsSuccess)
-        //    {
-        //        return Ok(result);
-        //    }
-        //    return BadRequest(result);
-        //}
 
         [HttpPost("delete")]
         public IActionResult Delete(string id)

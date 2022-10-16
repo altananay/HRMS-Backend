@@ -7,8 +7,8 @@ namespace Application.Abstractions.Common
 {
     public interface IAuthService
     {
-        IDataResult<JobSeeker> Register(UserForRegisterDto userForRegisterDto, string password);
-        IDataResult<JobSeeker> Login(UserForLoginDto userForLoginDto);
+        IDataResult<JobSeeker> Register(JobSeekerForRegisterDto userForRegisterDto, string password);
+        IDataResult<JobSeeker> Login(JobSeekerForLoginDto userForLoginDto);
         IResult UserExists(string email);
         IDataResult<AccessToken> CreateAccessToken(JobSeeker user);
     }

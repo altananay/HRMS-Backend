@@ -10,6 +10,7 @@ namespace Application.Abstractions.Common
         IResult Update(JobPosition jobPosition);
         IDataResult<IQueryable<JobPosition>> GetAll();
         IDataResult<JobPosition> GetById(string id);
+        IResult JobPositionExists(string jobPosition);
 
     }
 }

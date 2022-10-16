@@ -1,26 +1,24 @@
 ﻿using Application.Abstractions.Common;
-using Domain.Entities;
+using Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebAPI.Controllers
+namespace WebAPI.Controllers.Common
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class JobPositionController : ControllerBase
+    public class EmployersController : ControllerBase
     {
-        private readonly IJobPositionService _jobPositionService;
+        private readonly IEmployerService _employerService;
 
-        public JobPositionController(IJobPositionService jobPositionService)
+        public EmployersController(IEmployerService employerService)
         {
-            _jobPositionService = jobPositionService;
+            _employerService = employerService;
         }
 
-        [HttpPost("addjobposition")]
-        public IActionResult Add(JobPosition jobPosition)
+        [HttpPost("addemployer")]
+        public IActionResult Add(EmployerForRegisterDto employer)
         {
-            jobPosition.CreatedAt = DateTime.UtcNow;
-            jobPosition.UpdatedAt = null;
-            var result = _jobPositionService.Add(jobPosition);
+            var result = _employerService.Add(employer);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -31,7 +29,7 @@ namespace WebAPI.Controllers
         [HttpGet("getall")]
         public IActionResult GetAll()
         {
-            var result = _jobPositionService.GetAll();
+            var result = _employerService.GetAll();
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -42,7 +40,7 @@ namespace WebAPI.Controllers
         [HttpPost("delete")]
         public IActionResult Delete(string id)
         {
-            var result = _jobPositionService.Delete(id);
+            var result = _employerService.Delete(id);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -51,13 +49,10 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("update")]
-        public IActionResult Update(JobPosition jobPosition)
+        public IActionResult Update(EmployerForUpdateDto employer)
         {
-            var result = _jobPositionService.GetById(jobPosition.Id);
-            jobPosition.CreatedAt = result.Data.CreatedAt;
-            jobPosition.UpdatedAt = DateTime.UtcNow;
-            var result2 = _jobPositionService.Update(jobPosition);
-            if (result2.IsSuccess)
+            var result = _employerService.Update(employer);
+            if (result.IsSuccess)
             {
                 return Ok(result);
             }
@@ -67,7 +62,18 @@ namespace WebAPI.Controllers
         [HttpPost("{id}")]
         public IActionResult GetById(string id)
         {
-            var result = _jobPositionService.GetById(id);
+            var result = _employerService.GetById(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPost("getbyemail")]
+        public IActionResult GetByEmail(string email)
+        {
+            var result = _employerService.GetByEmail(email);
             if (result.IsSuccess)
             {
                 return Ok(result);

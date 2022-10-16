@@ -16,5 +16,9 @@ namespace Application.Constants
         public static string SuccessfulLogin = "Giriş başarılı.";
         public static string UserAlreadyExists = "Kullanıcı daha önce kayıt olmuş.";
         public static string AuthorizationDenied = "Yetkiniz yok.";
+        public static string JobPositionExists = "İş pozisyonu daha önce eklenmiş";
+        public static string EmployerAdded = "İş veren eklendi.";
+        public static string EmployerDeleted = "İş veren silindi.";
+        public static string EmployerUpdated = "İş veren güncellendi.";
     }
 }
