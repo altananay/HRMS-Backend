@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using Domain.Entities;
+using System.Runtime.Serialization;
 
 namespace Application.Constants
 {
@@ -20,5 +21,6 @@ namespace Application.Constants
         public static string EmployerAdded = "İş veren eklendi.";
         public static string EmployerDeleted = "İş veren silindi.";
         public static string EmployerUpdated = "İş veren güncellendi.";
+        public static string EmployerExists = "İş veren daha önce eklenmiş.";
     }
 }

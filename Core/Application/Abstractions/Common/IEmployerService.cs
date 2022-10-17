@@ -11,6 +11,6 @@ namespace Application.Abstractions.Common
         IResult Delete(string id);
         IResult Update(EmployerForUpdateDto employer);
         IDataResult<Employer> GetById(string id);
-        IDataResult<Employer> GetByEmail(string email);
+        IDataResult<Employer> EmployerExists(string email);
     }
 }

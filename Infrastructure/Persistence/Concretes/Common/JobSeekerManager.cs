@@ -30,6 +30,7 @@ namespace Persistence.Concretes.Common
             return new SuccessResult(Messages.UserRegistered);
         }
 
+        [ValidationAspect(typeof(DeleteValidator))]
         public IResult Delete(string id)
         {
             try

@@ -29,6 +29,7 @@ namespace Persistence.Concretes.Common
             return new SuccessResult(Messages.JobPositionAdded);
         }
 
+        [ValidationAspect(typeof(DeleteValidator))]
         public IResult Delete(string id)
         {
             _jobPositionDeleteRepository.Delete(id);

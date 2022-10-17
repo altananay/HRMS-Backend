@@ -18,6 +18,12 @@ namespace WebAPI.Controllers.Common
         [HttpPost("addemployer")]
         public IActionResult Add(EmployerForRegisterDto employer)
         {
+            var exists = _employerService.EmployerExists(employer.Email);
+            if (!exists.IsSuccess)
+            {
+                return BadRequest(exists.Message);
+            }
+
             var result = _employerService.Add(employer);
             if (result.IsSuccess)
             {
@@ -70,10 +76,10 @@ namespace WebAPI.Controllers.Common
             return BadRequest(result);
         }
 
-        [HttpPost("getbyemail")]
+        [HttpGet("getbyemail")]
         public IActionResult GetByEmail(string email)
         {
-            var result = _employerService.GetByEmail(email);
+            var result = _employerService.EmployerExists(email);
             if (result.IsSuccess)
             {
                 return Ok(result);

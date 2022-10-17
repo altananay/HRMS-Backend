@@ -1,9 +1,11 @@
 ﻿using Application.Abstractions.Common;
+using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
 using Application.Repositories;
 using Application.Results;
 using Application.Utilities.Security.Hashing;
+using Application.Validators;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -26,6 +28,7 @@ namespace Persistence.Concretes.Common
             _employerWriteRepository = employerWriteRepository;
         }
 
+        [ValidationAspect(typeof(EmployerValidator))]
         public IResult Add(EmployerForRegisterDto employer)
         {
             string[] claims = { "employer" };
@@ -47,17 +50,13 @@ namespace Persistence.Concretes.Common
             return new SuccessResult(Messages.EmployerAdded);
         }
 
+        [ValidationAspect(typeof(DeleteValidator))]
         public IResult Delete(string id)
         {
-            try
-            {
-                var result = _employerDeleteRepository.Delete(id);
-                return new SuccessResult(Messages.EmployerDeleted);
-            }
-            catch
-            {
-                return new ErrorResult(Messages.UnknownError);
-            }
+
+            var result = _employerDeleteRepository.Delete(id);
+            return new SuccessResult(Messages.EmployerDeleted);
+
         }
 
         public IDataResult<IQueryable<Employer>> GetAll()
@@ -65,9 +64,18 @@ namespace Persistence.Concretes.Common
             return new SuccessDataResult<IQueryable<Employer>>(_employerReadRepository.GetAll());
         }
 
-        public IDataResult<Employer> GetByEmail(string email)
+        public IDataResult<Employer> EmployerExists(string email)
         {
-            return new SuccessDataResult<Employer>(_employerReadRepository.Get(e => e.Email == email)); 
+            var result = _employerReadRepository.Get(e => e.Email == email);
+            if (result == null)
+            {
+                return new SuccessDataResult<Employer>();
+            }
+            else
+            {
+                return new ErrorDataResult<Employer>(Messages.EmployerExists);
+            }
+
         }
 
         public IDataResult<Employer> GetById(string id)
