@@ -2,15 +2,15 @@
 using Application.Results;
 using Domain.Entities;
 
-namespace Application.Abstractions.Common
+namespace Application.Abstractions
 {
     public interface IEmployerService
     {
         IDataResult<IQueryable<Employer>> GetAll();
-        IResult Add(EmployerForRegisterDto employer);
+        IResult Add(Employer employer);
         IResult Delete(string id);
         IResult Update(EmployerForUpdateDto employer);
         IDataResult<Employer> GetById(string id);
-        IDataResult<Employer> EmployerExists(string email);
+        IDataResult<Employer> GetByEmail(string email);
     }
 }

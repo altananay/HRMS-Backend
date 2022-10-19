@@ -1,4 +1,4 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
@@ -7,13 +7,9 @@ using Application.Results;
 using Application.Utilities.Security.Hashing;
 using Application.Validators;
 using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Persistence.Repositories;
 
-namespace Persistence.Concretes.Common
+namespace Persistence.Concretes
 {
     public class EmployerManager : IEmployerService
     {
@@ -29,24 +25,9 @@ namespace Persistence.Concretes.Common
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
-        public IResult Add(EmployerForRegisterDto employer)
+        public IResult Add(Employer employer)
         {
-            string[] claims = { "employer" };
-            byte[] passwordHash, passwordSalt;
-            HashingHelper.CreatePasswordHash(employer.Password, out passwordHash, out passwordSalt);
-            var employerEntity = new Employer
-            {
-                CompanyName = employer.CompanyName,
-                CompanyPhone = employer.CompanyPhone,
-                Email = employer.Email,
-                WebSite = employer.WebSite,
-                Status = true,
-                Claims = claims,
-                CreatedAt = DateTime.UtcNow,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt
-            };
-            _employerWriteRepository.Add(employerEntity);
+            _employerWriteRepository.Add(employer);
             return new SuccessResult(Messages.EmployerAdded);
         }
 
@@ -54,7 +35,7 @@ namespace Persistence.Concretes.Common
         public IResult Delete(string id)
         {
 
-            var result = _employerDeleteRepository.Delete(id);
+            _employerDeleteRepository.Delete(id);
             return new SuccessResult(Messages.EmployerDeleted);
 
         }
@@ -64,17 +45,9 @@ namespace Persistence.Concretes.Common
             return new SuccessDataResult<IQueryable<Employer>>(_employerReadRepository.GetAll());
         }
 
-        public IDataResult<Employer> EmployerExists(string email)
+        public IDataResult<Employer> GetByEmail(string email)
         {
-            var result = _employerReadRepository.Get(e => e.Email == email);
-            if (result == null)
-            {
-                return new SuccessDataResult<Employer>();
-            }
-            else
-            {
-                return new ErrorDataResult<Employer>(Messages.EmployerExists);
-            }
+            return new SuccessDataResult<Employer>(_employerReadRepository.Get(u => u.Email == email));
 
         }
 

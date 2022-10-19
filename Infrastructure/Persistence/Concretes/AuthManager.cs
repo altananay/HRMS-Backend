@@ -1,4 +1,4 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
@@ -9,7 +9,7 @@ using Application.Utilities.Security.Hashing;
 using Application.Validators;
 using Domain.Entities;
 
-namespace Persistence.Concretes.Common
+namespace Persistence.Concretes
 {
     public class AuthManager : IAuthService
     {
@@ -43,7 +43,7 @@ namespace Persistence.Concretes.Common
             return new SuccessDataResult<JobSeeker>(user, Messages.UserRegistered);
         }
 
-        public IDataResult<JobSeeker> Login(JobSeekerForLoginDto userForLoginDto)
+        public IDataResult<JobSeeker> Login(UserForLoginDto userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);
             if (userToCheck == null)

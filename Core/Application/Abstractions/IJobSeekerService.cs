@@ -2,7 +2,7 @@
 using Application.Results;
 using Domain.Entities;
 
-namespace Application.Abstractions.Common
+namespace Application.Abstractions
 {
     public interface IJobSeekerService
     {

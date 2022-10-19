@@ -1,30 +1,32 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebAPI.Controllers.Common
+namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class EmployersController : ControllerBase
     {
         private readonly IEmployerService _employerService;
+        private readonly IEmployerAuthService _employerAuthService;
 
-        public EmployersController(IEmployerService employerService)
+        public EmployersController(IEmployerService employerService, IEmployerAuthService employerAuthService)
         {
             _employerService = employerService;
+            _employerAuthService = employerAuthService;
         }
 
         [HttpPost("addemployer")]
         public IActionResult Add(EmployerForRegisterDto employer)
         {
-            var exists = _employerService.EmployerExists(employer.Email);
+            var exists = _employerService.GetByEmail(employer.Email);
             if (!exists.IsSuccess)
             {
                 return BadRequest(exists.Message);
             }
 
-            var result = _employerService.Add(employer);
+            var result = _employerAuthService.Register(employer, employer.Password);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -79,7 +81,7 @@ namespace WebAPI.Controllers.Common
         [HttpGet("getbyemail")]
         public IActionResult GetByEmail(string email)
         {
-            var result = _employerService.EmployerExists(email);
+            var result = _employerService.GetByEmail(email);
             if (result.IsSuccess)
             {
                 return Ok(result);

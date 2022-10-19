@@ -1,9 +1,9 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Dtos;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebAPI.Controllers.Common
+namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

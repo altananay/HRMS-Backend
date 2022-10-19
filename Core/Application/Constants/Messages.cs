@@ -22,5 +22,12 @@ namespace Application.Constants
         public static string EmployerDeleted = "İş veren silindi.";
         public static string EmployerUpdated = "İş veren güncellendi.";
         public static string EmployerExists = "İş veren daha önce eklenmiş.";
+        public static string SystemStaffAdded = "Sistem çalışanı eklendi.";
+        public static string SystemStaffDeleted = "Sistem çalışanı silindi.";
+        public static string SystemStaffUpdated = "Sistem çalışanının bilgileri güncellendi.";
+        public static string JobAdvertisementAdded = "İş ilanı eklendi.";
+        public static string JobAdvertisementDeleted = "İş ilanı silindi.";
+        public static string JobAdvertisementExists = "İş ilanı daha önce eklenmiş";
+        public static string JobAdvertisementUpdated = "İş ilanı güncellendi.";
     }
 }

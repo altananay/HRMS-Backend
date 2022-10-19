@@ -1,4 +1,4 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
@@ -8,7 +8,7 @@ using Application.Utilities.Security.Hashing;
 using Application.Validators;
 using Domain.Entities;
 
-namespace Persistence.Concretes.Common
+namespace Persistence.Concretes
 {
     public class JobSeekerManager : IJobSeekerService
     {
@@ -44,6 +44,7 @@ namespace Persistence.Concretes.Common
             }
         }
 
+        [SecuredOperation("admin")]
         public IDataResult<IQueryable<JobSeeker>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobSeeker>>(_jobSeekerReadRepository.GetAll());

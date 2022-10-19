@@ -1,11 +1,12 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Context;
 using Application.Repositories;
 using Application.Utilities.Interceptors;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Castle.DynamicProxy;
-using Persistence.Concretes.Common;
+using Domain.Entities;
+using Persistence.Concretes;
 using Persistence.Context;
 using Persistence.Repositories;
 
@@ -27,11 +28,20 @@ namespace Persistence
             //Auth dependencies
             builder.RegisterType<AuthManager>().As<IAuthService>().SingleInstance();
 
+            //Employer Auth dependencies
+            builder.RegisterType<EmployerAuthManager>().As<IEmployerAuthService>().SingleInstance();
+
             //JobSeeker dependencies
             builder.RegisterType<JobSeekerManager>().As<IJobSeekerService>().SingleInstance();
             builder.RegisterType<JobSeekerDeleteRepository>().As<IJobSeekerDeleteRepository>().SingleInstance();
             builder.RegisterType<JobSeekerWriteRepository>().As<IJobSeekerWriteRepository>().SingleInstance();
             builder.RegisterType<JobSeekerReadRepository>().As<IJobSeekerReadRepository>().SingleInstance();
+
+            //system staff dependencies
+            builder.RegisterType<SystemStaffManager>().As<ISystemStaffService>().SingleInstance();
+            builder.RegisterType<SystemStaffDeleteRepository>().As<ISystemStaffDeleteRepository>().SingleInstance();
+            builder.RegisterType<SystemStaffReadRepository>().As<ISystemStaffReadRepository>().SingleInstance();
+            builder.RegisterType<SystemStaffWriteRepository>().As<ISystemStaffWriteRepository>().SingleInstance();
 
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 

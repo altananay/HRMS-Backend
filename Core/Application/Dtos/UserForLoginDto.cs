@@ -1,8 +1,6 @@
-﻿using Domain.Common;
-
-namespace Application.Dtos
+﻿namespace Application.Dtos
 {
-    public class JobSeekerForLoginDto : IDto
+    public class UserForLoginDto
     {
         public string Email { get; set; }
         public string Password { get; set; }

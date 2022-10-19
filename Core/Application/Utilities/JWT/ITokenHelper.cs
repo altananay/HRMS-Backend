@@ -5,6 +5,8 @@ namespace Application.Utilities.Helpers
 {
     public interface ITokenHelper
     {
-        AccessToken CreateToken(JobSeeker user/*, OperationClaim operationClaims*/);
+        AccessToken CreateToken(JobSeeker jobSeeker);
+        AccessToken CreateTokenForEmployer(Employer employer);
+        AccessToken CreateTokenForSystemStaff(SystemStaff systemStaff);
     }
 }

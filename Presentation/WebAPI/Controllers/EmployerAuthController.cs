@@ -1,22 +1,23 @@
-﻿using Application.Abstractions.Common;
+﻿using Application.Abstractions;
 using Application.Dtos;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebAPI.Controllers.Common
+namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class EmployerAuthController : ControllerBase
     {
-        private IAuthService _authService;
+        private IEmployerAuthService _authService;
 
-        public AuthController(IAuthService authService)
+        public EmployerAuthController(IEmployerAuthService authService)
         {
             _authService = authService;
         }
 
         [HttpPost("login")]
-        public ActionResult Login(JobSeekerForLoginDto userForLoginDto)
+        public ActionResult Login(UserForLoginDto userForLoginDto)
         {
             var userToLogin = _authService.Login(userForLoginDto);
             if (!userToLogin.IsSuccess)
@@ -34,7 +35,7 @@ namespace WebAPI.Controllers.Common
         }
 
         [HttpPost("register")]
-        public ActionResult Register(JobSeekerForRegisterDto userForRegisterDto)
+        public ActionResult Register(EmployerForRegisterDto userForRegisterDto)
         {
             var userExists = _authService.UserExists(userForRegisterDto.Email);
             if (!userExists.IsSuccess)

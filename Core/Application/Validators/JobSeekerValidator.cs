@@ -15,7 +15,6 @@ namespace Application.Validators
             RuleFor(j => j.FirstName).NotEmpty();
             RuleFor(j => j.LastName).NotEmpty();
             RuleFor(j => j.Email).NotEmpty().EmailAddress();
-            RuleFor(j => j.Information).NotEmpty().MinimumLength(100).MaximumLength(300);
             RuleFor(j => j.PasswordHash).NotEmpty();
         }
     }
