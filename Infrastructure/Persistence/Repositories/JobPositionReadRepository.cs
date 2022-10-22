@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class JobPositionReadRepository : ReadRepository<JobPosition>, IJobPositionReadRepository
     {
-        public JobPositionReadRepository(IMongoContext mongoContext) : base(mongoContext, "jobpositions")
+        public JobPositionReadRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

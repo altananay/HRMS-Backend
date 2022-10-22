@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class JobSeekerDeleteRepository : DeleteRepository<JobSeeker>, IJobSeekerDeleteRepository
     {
-        public JobSeekerDeleteRepository(IMongoContext mongoContext) : base(mongoContext, "jobseekers")
+        public JobSeekerDeleteRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

@@ -43,6 +43,12 @@ namespace Persistence
             builder.RegisterType<SystemStaffReadRepository>().As<ISystemStaffReadRepository>().SingleInstance();
             builder.RegisterType<SystemStaffWriteRepository>().As<ISystemStaffWriteRepository>().SingleInstance();
 
+            //cv dependencies
+            builder.RegisterType<CvManager>().As<ICVService>().SingleInstance();
+            builder.RegisterType<CvDeleteRepository>().As<ICvDeleteRepository>().SingleInstance();
+            builder.RegisterType<CvReadRepository>().As<ICvReadRepository>().SingleInstance();
+            builder.RegisterType<CvWriteRepository>().As<ICvWriteRepository>().SingleInstance();
+
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()

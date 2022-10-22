@@ -21,9 +21,10 @@ namespace Persistence.Concretes
             _jobAdvertisementWriteRepository = jobAdvertisementWriteRepository;
         }
 
-        [SecuredOperation("employer")]
+        //[SecuredOperation("employer")]
         public IResult Add(JobAdvertisement jobAdvertisement)
         {
+            jobAdvertisement.CreatedAt = DateTime.UtcNow;
             _jobAdvertisementWriteRepository.Add(jobAdvertisement);
             return new SuccessResult(Messages.JobAdvertisementAdded);
         }

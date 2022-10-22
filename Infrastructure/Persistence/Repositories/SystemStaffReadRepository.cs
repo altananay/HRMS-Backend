@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class SystemStaffReadRepository : ReadRepository<SystemStaff>, ISystemStaffReadRepository
     {
-        public SystemStaffReadRepository(IMongoContext mongoContext) : base(mongoContext, "systemstaffs")
+        public SystemStaffReadRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

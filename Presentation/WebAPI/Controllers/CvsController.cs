@@ -1,27 +1,25 @@
 ﻿using Application.Abstractions;
-using Application.Dtos;
 using Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class JobSeekersController : ControllerBase
+    public class CvsController : ControllerBase
     {
-        IJobSeekerService _jobSeekerService;
-        IAuthService _authService;
+        private readonly ICVService _cvService;
 
-        public JobSeekersController(IJobSeekerService userService, IAuthService authService)
+        public CvsController(ICVService cvService)
         {
-            _jobSeekerService = userService;
-            _authService = authService;
+            _cvService = cvService;
         }
 
         [HttpGet("getall")]
         public IActionResult GetAll()
         {
-            var result = _jobSeekerService.GetAll();
+            var result = _cvService.GetAll();
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -30,31 +28,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("add")]
-        public IActionResult Add(JobSeekerForRegisterDto jobSeeker)
+        public IActionResult Add(Cv cv)
         {
-            var result = _authService.Register(jobSeeker, jobSeeker.Password);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        [HttpGet("getbyemail")]
-        public IActionResult GetByEmail(string email)
-        {
-            var result = _jobSeekerService.GetByMail(email);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
-        {
-            var result = _jobSeekerService.Delete(id);
+            var result = _cvService.Add(cv);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -63,9 +39,31 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("update")]
-        public IActionResult Update(JobSeeker user)
+        public IActionResult Update(Cv cv)
         {
-            var result = _jobSeekerService.Update(user);
+            var result = _cvService.Update(cv);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult Delete(string id)
+        {
+            var result = _cvService.Delete(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpGet("getbyjobseekerid/{id}")]
+        public IActionResult GetById(string id)
+        {
+            var result = _cvService.GetByJobSeekerId(id);
             if (result.IsSuccess)
             {
                 return Ok(result);

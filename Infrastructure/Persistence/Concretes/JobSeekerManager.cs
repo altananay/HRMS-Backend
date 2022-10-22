@@ -44,7 +44,7 @@ namespace Persistence.Concretes
             }
         }
 
-        [SecuredOperation("admin")]
+        //[SecuredOperation("admin")]
         public IDataResult<IQueryable<JobSeeker>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobSeeker>>(_jobSeekerReadRepository.GetAll());

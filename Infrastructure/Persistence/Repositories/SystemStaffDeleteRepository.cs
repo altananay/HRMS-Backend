@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class SystemStaffDeleteRepository : DeleteRepository<SystemStaff>, ISystemStaffDeleteRepository
     {
-        public SystemStaffDeleteRepository(IMongoContext mongoContext) : base(mongoContext, "systemstaffs")
+        public SystemStaffDeleteRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

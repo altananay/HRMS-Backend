@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class SystemStaffWriteRepository : WriteRepository<SystemStaff>, ISystemStaffWriteRepository
     {
-        public SystemStaffWriteRepository(IMongoContext mongoContext) : base(mongoContext, "systemstaffs")
+        public SystemStaffWriteRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

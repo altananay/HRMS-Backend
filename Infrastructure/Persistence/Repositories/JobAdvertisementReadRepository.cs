@@ -6,7 +6,7 @@ namespace Persistence.Repositories
 {
     public class JobAdvertisementReadRepository : ReadRepository<JobAdvertisement>, IJobAdvertisementReadRepository
     {
-        public JobAdvertisementReadRepository(IMongoContext mongoContext) : base(mongoContext, "jobadvertisements")
+        public JobAdvertisementReadRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }

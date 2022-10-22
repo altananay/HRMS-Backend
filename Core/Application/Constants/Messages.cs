@@ -29,5 +29,8 @@ namespace Application.Constants
         public static string JobAdvertisementDeleted = "İş ilanı silindi.";
         public static string JobAdvertisementExists = "İş ilanı daha önce eklenmiş";
         public static string JobAdvertisementUpdated = "İş ilanı güncellendi.";
+        public static string CvUpdated = "Cv güncellendi";
+        public static string CvDeleted = "Cv silindi";
+        public static string CvAdded = "Cv eklendi";
     }
 }

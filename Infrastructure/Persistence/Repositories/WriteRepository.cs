@@ -10,10 +10,10 @@ namespace Persistence.Repositories
         private readonly IMongoContext _mongoContext;
         private readonly string _collection;
 
-        public WriteRepository(IMongoContext mongoContext, string collection)
+        public WriteRepository(IMongoContext mongoContext)
         {
             _mongoContext = mongoContext;
-            _collection = collection;
+            _collection = typeof(T).Name.ToLowerInvariant() + "s";
         }
 
         public IMongoCollection<T> collection => _mongoContext.database.GetCollection<T>(_collection);

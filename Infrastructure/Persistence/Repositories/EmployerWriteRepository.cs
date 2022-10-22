@@ -11,7 +11,7 @@ namespace Persistence.Repositories
 {
     public class EmployerWriteRepository : WriteRepository<Employer>, IEmployerWriteRepository
     {
-        public EmployerWriteRepository(IMongoContext mongoContext) : base(mongoContext, "employers")
+        public EmployerWriteRepository(IMongoContext mongoContext) : base(mongoContext)
         {
         }
     }
