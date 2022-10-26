@@ -1,0 +1,56 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "https://tckimlik.nvi.gov.tr/Service/KPSPublic.asmx"
+    ],
+    "collectionTypes": [
+      "System.Collections.Generic.Dictionary`2",
+      "System.Collections.Generic.List`1"
+    ],
+    "messageContract": true,
+    "namespaceMappings": [
+      "*, MernisServiceReference"
+    ],
+    "references": [
+      "C:\\Users\\altan\\source\\repos\\HRMS\\Infrastructure\\Infrastructure\\bin\\Debug\\net6.0\\Application.dll",
+      "C:\\Users\\altan\\source\\repos\\HRMS\\Infrastructure\\Infrastructure\\bin\\Debug\\net6.0\\Domain.dll",
+      "Castle.Core, {Castle.Core, 5.1.0}",
+      "DnsClient, {DnsClient, 1.6.1}",
+      "FluentValidation, {FluentValidation, 11.2.2}",
+      "Microsoft.AspNetCore.Http, {Microsoft.AspNetCore.Http, 2.2.2}",
+      "Microsoft.AspNetCore.Http.Abstractions, {Microsoft.AspNetCore.Http.Abstractions, 2.2.0}",
+      "Microsoft.AspNetCore.Http.Features, {Microsoft.AspNetCore.Http.Features, 2.2.0}",
+      "Microsoft.AspNetCore.WebUtilities, {Microsoft.AspNetCore.WebUtilities, 2.2.0}",
+      "Microsoft.Extensions.Configuration.Abstractions, {Microsoft.Extensions.Configuration.Abstractions, 6.0.0}",
+      "Microsoft.Extensions.Configuration.Binder, {Microsoft.Extensions.Configuration.Binder, 6.0.0}",
+      "Microsoft.Extensions.DependencyInjection, {Microsoft.Extensions.DependencyInjection, 6.0.1}",
+      "Microsoft.Extensions.DependencyInjection.Abstractions, {Microsoft.Extensions.DependencyInjection.Abstractions, 6.0.0}",
+      "Microsoft.Extensions.ObjectPool, {Microsoft.Extensions.ObjectPool, 2.2.0}",
+      "Microsoft.Extensions.Options, {Microsoft.Extensions.Options, 2.2.0}",
+      "Microsoft.Extensions.Primitives, {Microsoft.Extensions.Primitives, 6.0.0}",
+      "Microsoft.IdentityModel.Abstractions, {Microsoft.IdentityModel.Abstractions, 6.24.0}",
+      "Microsoft.IdentityModel.JsonWebTokens, {Microsoft.IdentityModel.JsonWebTokens, 6.24.0}",
+      "Microsoft.IdentityModel.Logging, {Microsoft.IdentityModel.Logging, 6.24.0}",
+      "Microsoft.IdentityModel.Tokens, {Microsoft.IdentityModel.Tokens, 6.24.0}",
+      "Microsoft.Net.Http.Headers, {Microsoft.Net.Http.Headers, 2.2.0}",
+      "Microsoft.Win32.Registry, {Microsoft.Win32.Registry, 5.0.0}",
+      "MongoDB.Bson, {MongoDB.Bson, 2.17.1}",
+      "MongoDB.Driver, {MongoDB.Driver, 2.17.1}",
+      "MongoDB.Driver.Core, {MongoDB.Driver.Core, 2.17.1}",
+      "MongoDB.Libmongocrypt, {MongoDB.Libmongocrypt, 1.5.5}",
+      "SharpCompress, {SharpCompress, 0.30.1}",
+      "System.Diagnostics.EventLog, {System.Diagnostics.EventLog, 6.0.0}",
+      "System.IdentityModel.Tokens.Jwt, {System.IdentityModel.Tokens.Jwt, 6.24.0}",
+      "System.Runtime, {System.Runtime, 4.3.0}",
+      "System.Runtime.CompilerServices.Unsafe, {System.Runtime.CompilerServices.Unsafe, 6.0.0}",
+      "System.Security.AccessControl, {System.Security.AccessControl, 5.0.0}",
+      "System.Security.Cryptography.Cng, {System.Security.Cryptography.Cng, 4.5.0}",
+      "System.Security.Principal.Windows, {System.Security.Principal.Windows, 5.0.0}",
+      "System.Text.Encoding, {System.Text.Encoding, 4.3.0}",
+      "System.Text.Encodings.Web, {System.Text.Encodings.Web, 4.5.0}",
+      "System.Text.Json, {System.Text.Json, 4.7.2}"
+    ],
+    "targetFramework": "net6.0",
+    "typeReuseMode": "All"
+  }
+}

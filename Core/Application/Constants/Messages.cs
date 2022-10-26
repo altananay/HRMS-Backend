@@ -1,7 +1,4 @@
-﻿using Domain.Entities;
-using System.Runtime.Serialization;
-
-namespace Application.Constants
+﻿namespace Application.Constants
 {
     public static class Messages
     {
@@ -32,5 +29,8 @@ namespace Application.Constants
         public static string CvUpdated = "Cv güncellendi";
         public static string CvDeleted = "Cv silindi";
         public static string CvAdded = "Cv eklendi";
+        public static string CitizenError = "Hatalı vatandaş bilgisi.";
+        public static string CitizenSuccessfull = "Vatandaş bilgisi doğru.";
+        public static string NationalityIdExists = "Bu TC kimlik numarasıyla daha önce kullanıcı kayıt edilmiş";
     }
 }

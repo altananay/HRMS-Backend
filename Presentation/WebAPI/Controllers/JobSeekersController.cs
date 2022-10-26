@@ -32,12 +32,18 @@ namespace WebAPI.Controllers
         [HttpPost("add")]
         public IActionResult Add(JobSeekerForRegisterDto jobSeeker)
         {
-            var result = _authService.Register(jobSeeker, jobSeeker.Password);
-            if (result.IsSuccess)
+            var result = _jobSeekerService.NationalityIdExists(jobSeeker.IdentityNumber);
+            if (!result.IsSuccess)
             {
-                return Ok(result);
+                return BadRequest(result.Message);
             }
-            return BadRequest(result);
+
+            var result2 = _authService.Register(jobSeeker, jobSeeker.Password);
+            if (result2.IsSuccess)
+            {
+                return Ok(result2);
+            }
+            return BadRequest(result2);
         }
 
         [HttpGet("getbyemail")]

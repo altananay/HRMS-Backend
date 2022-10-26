@@ -23,7 +23,7 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(RegisterValidator))]
-        public IDataResult<JobSeeker> Register(JobSeekerForRegisterDto userForRegisterDto, string password)
+        public IResult Register(JobSeekerForRegisterDto userForRegisterDto, string password)
         {
             string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
@@ -38,9 +38,15 @@ namespace Persistence.Concretes
                 Status = true,
                 Claims = claims,
                 CreatedAt = DateTime.UtcNow,
+                DateOfBirth = userForRegisterDto.DateOfBirth,
+                NationalityId = userForRegisterDto.IdentityNumber
             };
-            _jobSeekerService.Add(user);
-            return new SuccessDataResult<JobSeeker>(user, Messages.UserRegistered);
+            var result = _jobSeekerService.Add(user);
+            if (result.IsSuccess)
+            {
+                return new SuccessResult(Messages.UserRegistered);
+            }
+            return new ErrorResult(Messages.CitizenError);
         }
 
         public IDataResult<JobSeeker> Login(UserForLoginDto userForLoginDto)

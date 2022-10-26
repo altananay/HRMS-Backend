@@ -12,5 +12,6 @@ namespace Application.Abstractions
         IResult Update(JobSeeker user);
         //IDataResult<IQueryable<JobSeeker>> GetClaims(JobSeeker user);
         IDataResult<JobSeeker> GetByMail(string email);
+        public IResult NationalityIdExists(string nationalityId);
     }
 }

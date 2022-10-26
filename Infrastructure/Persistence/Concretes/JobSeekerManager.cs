@@ -4,7 +4,6 @@ using Application.Constants;
 using Application.Dtos;
 using Application.Repositories;
 using Application.Results;
-using Application.Utilities.Security.Hashing;
 using Application.Validators;
 using Domain.Entities;
 
@@ -15,19 +14,41 @@ namespace Persistence.Concretes
         private readonly IJobSeekerWriteRepository _jobSeekerWriteRepository;
         private readonly IJobSeekerDeleteRepository _jobSeekerDeleteRepository;
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
+        private readonly ICheckPersonService _checkPersonService;
 
-        public JobSeekerManager(IJobSeekerWriteRepository jobSeekerWriteRepository, IJobSeekerDeleteRepository jobSeekerDeleteRepository, IJobSeekerReadRepository jobSeekerReadRepository)
+        public JobSeekerManager(IJobSeekerWriteRepository jobSeekerWriteRepository, IJobSeekerDeleteRepository jobSeekerDeleteRepository, IJobSeekerReadRepository jobSeekerReadRepository, ICheckPersonService checkRealPersonService)
         {
             _jobSeekerWriteRepository = jobSeekerWriteRepository;
             _jobSeekerDeleteRepository = jobSeekerDeleteRepository;
             _jobSeekerReadRepository = jobSeekerReadRepository;
+            _checkPersonService = checkRealPersonService;
         }
 
         [ValidationAspect(typeof(JobSeekerValidator))]
-        public IResult Add(JobSeeker user)
+        public IResult Add(JobSeeker jobSeeker)
         {
-            _jobSeekerWriteRepository.Add(user);
-            return new SuccessResult(Messages.UserRegistered);
+            if (_checkPersonService.CheckIfRealPerson(new MernisCheckDto()
+            {
+               DateOfBirth = jobSeeker.DateOfBirth,
+               NationalityId = jobSeeker.NationalityId,
+               FirstName = jobSeeker.FirstName,
+               LastName = jobSeeker.LastName,
+            }))
+            {
+                _jobSeekerWriteRepository.Add(jobSeeker);
+                return new SuccessResult(Messages.UserRegistered);
+            }
+            return new ErrorResult(Messages.CitizenError);
+        }
+
+        public IResult NationalityIdExists(string nationalityId)
+        {
+            var result = _jobSeekerReadRepository.Get(js => js.NationalityId == nationalityId);
+            if (result == null)
+            {
+                return new SuccessResult();
+            }
+            return new ErrorResult(Messages.NationalityIdExists);
         }
 
         [ValidationAspect(typeof(DeleteValidator))]

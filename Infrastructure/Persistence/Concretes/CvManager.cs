@@ -21,6 +21,7 @@ namespace Persistence.Concretes
             _cvReadRepository = cvReadRepository;
         }
 
+        [ValidationAspect(typeof(CvValidator))]
         public IResult Add(Cv cv)
         {
             cv.CreatedAt = DateTime.UtcNow;

@@ -1,6 +1,6 @@
 ﻿namespace Domain.Entities
 {
-    public class Language
+    public class ProgrammingLanguage
     {
         public string Languages { get; set; }
         public string LanguageLevel { get; set; }
