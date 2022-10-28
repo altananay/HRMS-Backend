@@ -44,4 +44,4 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [dotnet]:https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white
 [mongodb]:https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white
 [jwt]:https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens
-[vs]:(https://img.shields.io/badge/Visual%20Studio-5C2D91.svg?style=for-the-badge&logo=visual-studio&logoColor=white)
+[vs]:https://img.shields.io/badge/Visual%20Studio-5C2D91.svg?style=for-the-badge&logo=visual-studio&logoColor=white
