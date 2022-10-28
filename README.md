@@ -2,6 +2,7 @@
 
 ![C#][csharp]
 ![.NET][dotnet]
+![MongoDB][mongodb]
 
 <!-- CONTACT -->
 
@@ -23,3 +24,4 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 <!-- MARKDOWN LINKS & IMAGES -->
 [csharp]:https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white
 [dotnet]:https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white
+[mongodb]:https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white
