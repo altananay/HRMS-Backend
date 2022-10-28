@@ -26,7 +26,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Aspect Oriented Programming (AOP) </li>
   <li> Validation </li>
   <li> Fluent Validation </li>
-  <li> JSON Web Token (JWT) </li> ![JWT][jwt]
+  <li> JSON Web Token (JWT) </li>
   <li> Generic Repository Design Pattern </li>
   <li> Cross Cutting Concerns </li>
   <li> Extensions </li>
@@ -36,6 +36,8 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Hashing Password </li>
   <li> Encryption </li>
 </ul>
+
+![JWT][jwt]
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [csharp]:https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white
