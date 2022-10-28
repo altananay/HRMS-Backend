@@ -1,5 +1,5 @@
 ### Kullanılan Programlama Dilleri/Frameworkler
-- [![C#][csharp]][react-url]
+- [![C#][csharp]]
 
 <!-- CONTACT -->
 
