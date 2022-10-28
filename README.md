@@ -1,4 +1,6 @@
-### Kullanılan Programlama Dilleri/Frameworkler![C#][csharp]
+### Kullanılan Programlama Dilleri/Frameworkler
+
+![C#][csharp]
 
 <!-- CONTACT -->
 
