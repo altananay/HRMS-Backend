@@ -52,3 +52,5 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [mongodb]:https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white
 [jwt]:https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens
 [vs]:https://img.shields.io/badge/Visual%20Studio-5C2D91.svg?style=for-the-badge&logo=visual-studio&logoColor=white
+[swagger]:https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white
+[postman]:https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white
