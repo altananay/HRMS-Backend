@@ -51,7 +51,7 @@ namespace Persistence.Concretes
             {
                 CompanyName = userForRegisterDto.CompanyName,
                 CompanyPhone = userForRegisterDto.CompanyPhone,
-                WebSite = userForRegisterDto.Email,
+                WebSite = userForRegisterDto.WebSite,
                 Email = userForRegisterDto.Email,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,

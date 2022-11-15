@@ -2,7 +2,7 @@
 
 namespace Application.Repositories
 {
-    public interface IEmployerDeleteRepository : IDeleteRepository<Employer>
+    public interface IUserDeleteRepository : IDeleteRepository<User>
     {
     }
 }

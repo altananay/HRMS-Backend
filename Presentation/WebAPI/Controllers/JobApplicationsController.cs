@@ -1,26 +1,47 @@
 ﻿using Application.Abstractions;
-using Application.Dtos;
+using Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployersController : ControllerBase
+    public class JobApplicationsController : ControllerBase
     {
-        private readonly IEmployerService _employerService;
-        private readonly IEmployerAuthService _employerAuthService;
+        IJobApplicationService _jobApplicationService;
 
-        public EmployersController(IEmployerService employerService, IEmployerAuthService employerAuthService)
+        public JobApplicationsController(IJobApplicationService jobApplicationService)
         {
-            _employerService = employerService;
-            _employerAuthService = employerAuthService;
+            _jobApplicationService = jobApplicationService;
         }
 
         [HttpGet("getall")]
         public IActionResult GetAll()
         {
-            var result = _employerService.GetAll();
+            var result = _jobApplicationService.GetAll();
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpGet("getbyid")]
+        public IActionResult GetById(string id)
+        {
+            var result = _jobApplicationService.GetById(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPost("add")]
+        public IActionResult Add(JobApplication jobApplication)
+        {
+            var result = _jobApplicationService.Add(jobApplication);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -31,7 +52,7 @@ namespace WebAPI.Controllers
         [HttpPost("delete")]
         public IActionResult Delete(string id)
         {
-            var result = _employerService.Delete(id);
+            var result = _jobApplicationService.Delete(id);
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -40,31 +61,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("update")]
-        public IActionResult Update(EmployerForUpdateDto employer)
+        public IActionResult Update(JobApplication jobApplication)
         {
-            var result = _employerService.Update(employer);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        [HttpPost("{id}")]
-        public IActionResult GetById(string id)
-        {
-            var result = _employerService.GetById(id);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
-        }
-
-        [HttpGet("getbyemail")]
-        public IActionResult GetByEmail(string email)
-        {
-            var result = _employerService.GetByEmail(email);
+            var result = _jobApplicationService.Update(jobApplication);
             if (result.IsSuccess)
             {
                 return Ok(result);

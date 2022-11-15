@@ -15,13 +15,15 @@ namespace Persistence.Concretes
         private readonly IJobSeekerDeleteRepository _jobSeekerDeleteRepository;
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
         private readonly ICheckPersonService _checkPersonService;
+        private readonly IUserService _userService;
 
-        public JobSeekerManager(IJobSeekerWriteRepository jobSeekerWriteRepository, IJobSeekerDeleteRepository jobSeekerDeleteRepository, IJobSeekerReadRepository jobSeekerReadRepository, ICheckPersonService checkRealPersonService)
+        public JobSeekerManager(IJobSeekerWriteRepository jobSeekerWriteRepository, IJobSeekerDeleteRepository jobSeekerDeleteRepository, IJobSeekerReadRepository jobSeekerReadRepository, ICheckPersonService checkRealPersonService, IUserService userService)
         {
             _jobSeekerWriteRepository = jobSeekerWriteRepository;
             _jobSeekerDeleteRepository = jobSeekerDeleteRepository;
             _jobSeekerReadRepository = jobSeekerReadRepository;
             _checkPersonService = checkRealPersonService;
+            _userService = userService;
         }
 
         [ValidationAspect(typeof(JobSeekerValidator))]
@@ -35,6 +37,9 @@ namespace Persistence.Concretes
                LastName = jobSeeker.LastName,
             }))
             {
+                var user = new User();
+                _userService.Add(user);
+                jobSeeker.Id = user.Id;
                 _jobSeekerWriteRepository.Add(jobSeeker);
                 return new SuccessResult(Messages.UserRegistered);
             }
@@ -56,6 +61,7 @@ namespace Persistence.Concretes
         {
             try
             {
+                _userService.Delete(id);
                 _jobSeekerDeleteRepository.Delete(id);
                 return new SuccessResult(Messages.UserDeleted);
             }

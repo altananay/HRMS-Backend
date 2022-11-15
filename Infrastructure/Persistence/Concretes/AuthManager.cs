@@ -15,21 +15,25 @@ namespace Persistence.Concretes
     {
         private IJobSeekerService _jobSeekerService;
         private ITokenHelper _tokenHelper;
-
-        public AuthManager(IJobSeekerService userService, ITokenHelper tokenHelper)
+        private IUserService _userService;
+        public AuthManager(IJobSeekerService jobSeekerService, ITokenHelper tokenHelper, IUserService userService)
         {
-            _jobSeekerService = userService;
+            _jobSeekerService = jobSeekerService;
             _tokenHelper = tokenHelper;
+            _userService = userService;
         }
 
         [ValidationAspect(typeof(RegisterValidator))]
         public IResult Register(JobSeekerForRegisterDto userForRegisterDto, string password)
         {
+            var user = new User();
+            _userService.Add(user);
             string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
-            var user = new JobSeeker
+            var jobSeeker = new JobSeeker
             {
+                Id = user.Id,
                 Email = userForRegisterDto.Email,
                 FirstName = userForRegisterDto.FirstName,
                 LastName = userForRegisterDto.LastName,
@@ -41,7 +45,7 @@ namespace Persistence.Concretes
                 DateOfBirth = userForRegisterDto.DateOfBirth,
                 NationalityId = userForRegisterDto.IdentityNumber
             };
-            var result = _jobSeekerService.Add(user);
+            var result = _jobSeekerService.Add(jobSeeker);
             if (result.IsSuccess)
             {
                 return new SuccessResult(Messages.UserRegistered);

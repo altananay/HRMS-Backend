@@ -16,17 +16,22 @@ namespace Persistence.Concretes
         private readonly IEmployerReadRepository _employerReadRepository;
         private readonly IEmployerDeleteRepository _employerDeleteRepository;
         private readonly IEmployerWriteRepository _employerWriteRepository;
+        private readonly IUserService _userService;
 
-        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository)
+        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService)
         {
             _employerReadRepository = employerReadRepository;
             _employerDeleteRepository = employerDeleteRepository;
             _employerWriteRepository = employerWriteRepository;
+            _userService = userService;
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
         public IResult Add(Employer employer)
         {
+            var user = new User();
+            _userService.Add(user);
+            employer.Id = user.Id;
             _employerWriteRepository.Add(employer);
             return new SuccessResult(Messages.EmployerAdded);
         }
@@ -34,7 +39,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(DeleteValidator))]
         public IResult Delete(string id)
         {
-
+            _userService.Delete(id);
             _employerDeleteRepository.Delete(id);
             return new SuccessResult(Messages.EmployerDeleted);
 

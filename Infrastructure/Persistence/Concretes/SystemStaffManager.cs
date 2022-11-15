@@ -15,17 +15,22 @@ namespace Persistence.Concretes
         private readonly ISystemStaffDeleteRepository _systemStaffDeleteRepository;
         private readonly ISystemStaffReadRepository _systemStaffReadRepository;
         private readonly ISystemStaffWriteRepository _systemStaffWriteRepository;
+        private readonly IUserService _userService;
 
-        public SystemStaffManager(ISystemStaffDeleteRepository systemStaffDeleteRepository, ISystemStaffReadRepository systemStaffReadRepository, ISystemStaffWriteRepository systemStaffWriteRepository)
+        public SystemStaffManager(ISystemStaffDeleteRepository systemStaffDeleteRepository, ISystemStaffReadRepository systemStaffReadRepository, ISystemStaffWriteRepository systemStaffWriteRepository, IUserService userService)
         {
             _systemStaffDeleteRepository = systemStaffDeleteRepository;
             _systemStaffReadRepository = systemStaffReadRepository;
             _systemStaffWriteRepository = systemStaffWriteRepository;
+            _userService = userService;
         }
 
         [SecuredOperation("admin")]
         public IResult Add(SystemStaff systemStaff)
         {
+            var user = new User();
+            _userService.Add(user);
+            systemStaff.Id = user.Id;
             _systemStaffWriteRepository.Add(systemStaff);
             return new SuccessResult(Messages.SystemStaffAdded);
         }
@@ -34,6 +39,7 @@ namespace Persistence.Concretes
         [SecuredOperation("admin")]
         public IResult Delete(string id)
         {
+            _userService.Delete(id);
             _systemStaffDeleteRepository.Delete(id);
             return new SuccessResult(Messages.SystemStaffDeleted);
         }
