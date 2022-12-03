@@ -9,7 +9,7 @@ namespace Application.Abstractions
         IDataResult<IQueryable<JobSeeker>> GetAll();
         IResult Add(JobSeeker jobSeeker);
         IResult Delete(string id);
-        IResult Update(JobSeeker user);
+        IResult Update(JobSeekerForUpdateDto jobSeeker);
         //IDataResult<IQueryable<JobSeeker>> GetClaims(JobSeeker user);
         IDataResult<JobSeeker> GetByMail(string email);
         public IResult NationalityIdExists(string nationalityId);

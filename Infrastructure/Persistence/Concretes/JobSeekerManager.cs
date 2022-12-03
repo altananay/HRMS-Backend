@@ -31,10 +31,10 @@ namespace Persistence.Concretes
         {
             if (_checkPersonService.CheckIfRealPerson(new MernisCheckDto()
             {
-               DateOfBirth = jobSeeker.DateOfBirth,
-               NationalityId = jobSeeker.NationalityId,
-               FirstName = jobSeeker.FirstName,
-               LastName = jobSeeker.LastName,
+                DateOfBirth = jobSeeker.DateOfBirth,
+                NationalityId = jobSeeker.NationalityId,
+                FirstName = jobSeeker.FirstName,
+                LastName = jobSeeker.LastName,
             }))
             {
                 var user = new User();
@@ -83,16 +83,23 @@ namespace Persistence.Concretes
             return new SuccessDataResult<JobSeeker>(_jobSeekerReadRepository.Get(u => u.Email == email));
         }
 
-        public IResult Update(JobSeeker user)
+        public IResult Update(JobSeekerForUpdateDto jobSeeker)
         {
-            if (user.Id == null)
+            var getJobSeeker = _jobSeekerReadRepository.Get(ni => ni.Id == jobSeeker.Id);
+            try
+            {
+                getJobSeeker.FirstName = jobSeeker.FirstName;
+                getJobSeeker.LastName = jobSeeker.LastName;
+                getJobSeeker.UpdatedAt = DateTime.UtcNow;
+                getJobSeeker.Email = jobSeeker.Email;
+                getJobSeeker.DateOfBirth = jobSeeker.DateOfBirth;
+
+                _jobSeekerWriteRepository.Update(getJobSeeker);
+                return new SuccessResult(Messages.UserUpdated);
+            }
+            catch
             {
                 return new ErrorResult(Messages.UnknownError);
-            }
-            else
-            {
-                _jobSeekerWriteRepository.Update(user);
-                return new SuccessResult(Messages.UserUpdated);
             }
         }
     }

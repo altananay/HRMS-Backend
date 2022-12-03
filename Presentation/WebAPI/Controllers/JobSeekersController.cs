@@ -70,9 +70,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("update")]
-        public IActionResult Update(JobSeeker user)
+        public IActionResult Update(JobSeekerForUpdateDto jobSeeker)
         {
-            var result = _jobSeekerService.Update(user);
+            var result = _jobSeekerService.Update(jobSeeker);
             if (result.IsSuccess)
             {
                 return Ok(result);
