@@ -21,7 +21,7 @@ namespace Persistence.Concretes
         public IResult Add(User user)
         {
             user.CreatedAt = DateTime.UtcNow;
-            _userWriteRepository.Add(user);
+            _userWriteRepository.AddAsync(user);
             return new SuccessResult();
         }
 
@@ -44,7 +44,7 @@ namespace Persistence.Concretes
         public IResult Update(User user)
         {
             user.UpdatedAt = DateTime.UtcNow;
-            _userWriteRepository.Update(user);
+            _userWriteRepository.UpdateAsync(user);
             return new SuccessResult();
         }
     }

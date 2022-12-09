@@ -25,7 +25,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(JobPositionValidator))]
         public IResult Add(JobPosition jobPosition)
         {
-            _jobPositionWriteRepository.Add(jobPosition);
+            _jobPositionWriteRepository.AddAsync(jobPosition);
             return new SuccessResult(Messages.JobPositionAdded);
         }
 
@@ -57,7 +57,7 @@ namespace Persistence.Concretes
 
         public IResult Update(JobPosition jobPosition)
         {
-            _jobPositionWriteRepository.Update(jobPosition);
+            _jobPositionWriteRepository.UpdateAsync(jobPosition);
             return new SuccessResult(Messages.JobPositionUpdated);
         }
     }

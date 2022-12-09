@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions;
 using Application.Context;
 using Application.Repositories;
+using Application.Repositories.CvFiles;
 using Application.Utilities.Interceptors;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
@@ -9,6 +10,7 @@ using Domain.Entities;
 using Persistence.Concretes;
 using Persistence.Context;
 using Persistence.Repositories;
+using Persistence.Repositories.File;
 
 namespace Persistence
 {
@@ -54,6 +56,11 @@ namespace Persistence
             builder.RegisterType<UserDeleteRepository>().As<IUserDeleteRepository>().SingleInstance();
             builder.RegisterType<UserReadRepository>().As<IUserReadRepository>().SingleInstance();
             builder.RegisterType<UserWriteRepository>().As<IUserWriteRepository>().SingleInstance();
+
+            //file dependencies
+            builder.RegisterType<CvFileReadRepository>().As<ICvFileReadRepository>().SingleInstance();
+            builder.RegisterType<CvFileWriteRepository>().As<ICvFileWriteRepository>().SingleInstance();
+            builder.RegisterType<CvFileDeleteRepository>().As<ICvFileDeleteRepository>().SingleInstance();
 
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 

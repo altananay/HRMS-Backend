@@ -25,7 +25,7 @@ namespace Persistence.Concretes
         public IResult Add(Cv cv)
         {
             cv.CreatedAt = DateTime.UtcNow;
-            _cvWriteRepository.Add(cv);
+            _cvWriteRepository.AddAsync(cv);
             return new SuccessResult(Messages.CvAdded);
         }
 
@@ -48,7 +48,7 @@ namespace Persistence.Concretes
 
         public IResult Update(Cv cv)
         {
-            _cvWriteRepository.Update(cv);
+            _cvWriteRepository.UpdateAsync(cv);
             return new SuccessResult(Messages.CvUpdated);
         }
     }

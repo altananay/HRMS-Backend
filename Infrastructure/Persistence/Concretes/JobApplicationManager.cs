@@ -23,7 +23,7 @@ namespace Persistence.Concretes
 
         public IResult Add(JobApplication jobApplication)
         {
-            _jobApplicationWriteRepository.Add(jobApplication);
+            _jobApplicationWriteRepository.AddAsync(jobApplication);
             return new SuccessResult(Messages.JobApplicationMade);
         }
 
@@ -47,7 +47,7 @@ namespace Persistence.Concretes
 
         public IResult Update(JobApplication jobApplication)
         {
-            _jobApplicationWriteRepository.Update(jobApplication);
+            _jobApplicationWriteRepository.UpdateAsync(jobApplication);
             return new SuccessResult(Messages.JobApplicationUpdated);
         }
     }

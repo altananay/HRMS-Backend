@@ -25,7 +25,7 @@ namespace Persistence.Concretes
         public IResult Add(JobAdvertisement jobAdvertisement)
         {
             jobAdvertisement.CreatedAt = DateTime.UtcNow;
-            _jobAdvertisementWriteRepository.Add(jobAdvertisement);
+            _jobAdvertisementWriteRepository.AddAsync(jobAdvertisement);
             return new SuccessResult(Messages.JobAdvertisementAdded);
         }
 
@@ -62,7 +62,7 @@ namespace Persistence.Concretes
 
         public IResult Update(JobAdvertisement jobAdvertisement)
         {
-            _jobAdvertisementWriteRepository.Update(jobAdvertisement);
+            _jobAdvertisementWriteRepository.UpdateAsync(jobAdvertisement);
             return new SuccessResult(Messages.JobAdvertisementUpdated);
         }
     }

@@ -32,7 +32,7 @@ namespace Persistence.Concretes
             var user = new User();
             _userService.Add(user);
             employer.Id = user.Id;
-            _employerWriteRepository.Add(employer);
+            _employerWriteRepository.AddAsync(employer);
             return new SuccessResult(Messages.EmployerAdded);
         }
 
@@ -78,7 +78,7 @@ namespace Persistence.Concretes
                 Status = result.Status,
                 Id = result.Id
             };
-            var result2 = _employerWriteRepository.Update(employerEntity);
+            var result2 = _employerWriteRepository.UpdateAsync(employerEntity);
             return new SuccessResult(Messages.EmployerUpdated);
         }
     }

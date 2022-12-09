@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Domain.Common
 {
-    public class BaseEntity
+    public abstract class BaseEntity
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]

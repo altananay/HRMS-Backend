@@ -31,7 +31,7 @@ namespace Persistence.Concretes
             var user = new User();
             _userService.Add(user);
             systemStaff.Id = user.Id;
-            _systemStaffWriteRepository.Add(systemStaff);
+            _systemStaffWriteRepository.AddAsync(systemStaff);
             return new SuccessResult(Messages.SystemStaffAdded);
         }
 
@@ -77,7 +77,7 @@ namespace Persistence.Concretes
                 PasswordHash = result.PasswordHash,
                 PasswordSalt = result.PasswordSalt,
             };
-            _systemStaffWriteRepository.Update(entity);
+            _systemStaffWriteRepository.UpdateAsync(entity);
             return new SuccessResult(Messages.SystemStaffUpdated);
         }
     }

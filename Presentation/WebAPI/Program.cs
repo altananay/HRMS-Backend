@@ -5,6 +5,7 @@ using Application.Utilities.Security.Encryption;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Infrastructure;
+using Infrastructure.Services.Storage.Azure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
@@ -17,6 +18,9 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory()).Conf
 
 builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+));
 
 IConfiguration configuration = builder.Configuration;
 
@@ -51,6 +55,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles();
+
+app.UseCors();
 
 app.UseHttpsRedirection();
 

@@ -40,7 +40,7 @@ namespace Persistence.Concretes
                 var user = new User();
                 _userService.Add(user);
                 jobSeeker.Id = user.Id;
-                _jobSeekerWriteRepository.Add(jobSeeker);
+                _jobSeekerWriteRepository.AddAsync(jobSeeker);
                 return new SuccessResult(Messages.UserRegistered);
             }
             return new ErrorResult(Messages.CitizenError);
@@ -94,7 +94,7 @@ namespace Persistence.Concretes
                 getJobSeeker.Email = jobSeeker.Email;
                 getJobSeeker.DateOfBirth = jobSeeker.DateOfBirth;
 
-                _jobSeekerWriteRepository.Update(getJobSeeker);
+                _jobSeekerWriteRepository.UpdateAsync(getJobSeeker);
                 return new SuccessResult(Messages.UserUpdated);
             }
             catch

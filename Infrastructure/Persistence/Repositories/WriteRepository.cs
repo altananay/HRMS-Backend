@@ -18,13 +18,19 @@ namespace Persistence.Repositories
 
         public IMongoCollection<T> collection => _mongoContext.database.GetCollection<T>(_collection);
 
-        public async Task<bool> Add(T entity)
+        public async Task<bool> AddAsync(T entity)
         {
             await collection.InsertOneAsync(entity);
             return true;
         }
 
-        public async Task<bool> Update(T entity)
+        public async Task<bool> AddRangeAsync(List<T> entities)
+        {
+            await collection.InsertManyAsync(entities);
+            return true;
+        }
+
+        public async Task<bool> UpdateAsync(T entity)
         {
             var filter = Builders<T>.Filter.Eq(t => t.Id, entity.Id);
             await collection.ReplaceOneAsync(filter, entity);
