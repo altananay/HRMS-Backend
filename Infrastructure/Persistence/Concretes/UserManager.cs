@@ -18,16 +18,16 @@ namespace Persistence.Concretes
             _userReadRepository = userReadRepository;
         }
 
-        public IResult Add(User user)
+        public async Task<IResult> Add(User user)
         {
             user.CreatedAt = DateTime.UtcNow;
-            _userWriteRepository.AddAsync(user);
+            await _userWriteRepository.AddAsync(user);
             return new SuccessResult();
         }
 
-        public IResult Delete(string id)
+        public async Task<IResult> Delete(string id)
         {
-            _userDeleteRepository.Delete(id);
+            await _userDeleteRepository.Delete(id);
             return new SuccessResult();
         }
 
@@ -41,10 +41,10 @@ namespace Persistence.Concretes
             return new SuccessDataResult<User>(_userReadRepository.GetById(id));
         }
 
-        public IResult Update(User user)
+        public async Task<IResult> Update(User user)
         {
             user.UpdatedAt = DateTime.UtcNow;
-            _userWriteRepository.UpdateAsync(user);
+            await _userWriteRepository.UpdateAsync(user);
             return new SuccessResult();
         }
     }

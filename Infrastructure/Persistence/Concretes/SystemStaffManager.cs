@@ -1,11 +1,11 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
-using Application.Dtos;
+using Application.Features.SystemStaffs.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Utilities.Security.Hashing;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.SystemStaffs;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -25,26 +25,27 @@ namespace Persistence.Concretes
             _userService = userService;
         }
 
-        [SecuredOperation("admin")]
-        public IResult Add(SystemStaff systemStaff)
+        //[SecuredOperation("admin")]
+        [ValidationAspect(typeof(SystemStaffValidator))]
+        public async Task<IResult> Add(SystemStaff systemStaff)
         {
             var user = new User();
-            _userService.Add(user);
+            await _userService.Add(user);
             systemStaff.Id = user.Id;
-            _systemStaffWriteRepository.AddAsync(systemStaff);
+            await _systemStaffWriteRepository.AddAsync(systemStaff);
             return new SuccessResult(Messages.SystemStaffAdded);
         }
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        [SecuredOperation("admin")]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        //[SecuredOperation("admin")]
+        public async Task<IResult> Delete(string id)
         {
-            _userService.Delete(id);
-            _systemStaffDeleteRepository.Delete(id);
+            await _userService.Delete(id);
+            await _systemStaffDeleteRepository.Delete(id);
             return new SuccessResult(Messages.SystemStaffDeleted);
         }
 
-        [SecuredOperation("admin")]
+        //[SecuredOperation("admin")]
         public IDataResult<IQueryable<SystemStaff>> GetAll()
         {
             return new SuccessDataResult<IQueryable<SystemStaff>>(_systemStaffReadRepository.GetAll());
@@ -55,29 +56,32 @@ namespace Persistence.Concretes
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(ss => ss.Email == email));
         }
 
-        [SecuredOperation("admin")]
+        //[SecuredOperation("admin")]
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<SystemStaff> GetById(string id)
         {
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(e => e.Id == id));
         }
 
-        [SecuredOperation("admin")]
-        public IResult Update(SystemStaffForRegisterDto systemStaff)
+        //[SecuredOperation("admin")]
+        [ValidationAspect(typeof(UpdateSystemStaffValidator))]
+        public async Task<IResult> UpdateAsync(UpdateSystemStaffCommand systemStaff)
         {
-            var result = _systemStaffReadRepository.Get(e => e.Email == systemStaff.Email);
+            var result = _systemStaffReadRepository.GetById(systemStaff.Id);
             var entity = new SystemStaff
             {
                 Email = systemStaff.Email,
-                Claims = result.Claims,
+                Claims = systemStaff.Claims,
                 FirstName = systemStaff.FirstName,
                 LastName = systemStaff.LastName,
-                Status = result.Status,
+                Status = systemStaff.Status,
                 CreatedAt = result.CreatedAt,
                 UpdatedAt = DateTime.UtcNow,
                 PasswordHash = result.PasswordHash,
                 PasswordSalt = result.PasswordSalt,
+                Id = result.Id,
             };
-            _systemStaffWriteRepository.UpdateAsync(entity);
+            await _systemStaffWriteRepository.UpdateAsync(entity);
             return new SuccessResult(Messages.SystemStaffUpdated);
         }
     }

@@ -1,10 +1,13 @@
 ﻿using Application.Abstractions;
+using Application.Aspects;
 using Application.Constants;
-using Application.Dtos;
+using Application.Features.SystemStaffAuth.Queries;
+using Application.Features.SystemStaffs.Commands;
 using Application.Results;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using Application.Validators.SystemStaffs.Auth;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -26,7 +29,8 @@ namespace Persistence.Concretes
             return new SuccessDataResult<AccessToken>(accessToken, Messages.SuccessfulLogin);
         }
 
-        public IDataResult<SystemStaff> Login(UserForLoginDto userForLoginDto)
+        [ValidationAspect(typeof(SystemStaffLoginAuthValidator))]
+        public IDataResult<SystemStaff> Login(SystemStaffLoginQuery userForLoginDto)
         {
             var userToCheck = _systemStaffService.GetByEmail(userForLoginDto.Email);
             if (userToCheck == null)
@@ -42,23 +46,24 @@ namespace Persistence.Concretes
             return new SuccessDataResult<SystemStaff>(userToCheck.Data, Messages.SuccessfulLogin);
         }
 
-        public IDataResult<SystemStaff> Register(SystemStaffForRegisterDto systemStaffForRegisterDto, string password)
+        [ValidationAspect(typeof(CreateSystemStaffCommand))]
+        public async Task<IResult> Register(CreateSystemStaffCommand createSystemStaffCommand, string password)
         {
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
             var user = new SystemStaff
             {
-                Email = systemStaffForRegisterDto.Email,
-                FirstName = systemStaffForRegisterDto.FirstName,
-                LastName = systemStaffForRegisterDto.LastName,
+                Email = createSystemStaffCommand.Email,
+                FirstName = createSystemStaffCommand.FirstName,
+                LastName = createSystemStaffCommand.LastName,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
                 Status = true,
-                Claims = systemStaffForRegisterDto.Claims,
+                Claims = createSystemStaffCommand.Claims,
                 CreatedAt = DateTime.UtcNow,
             };
-            _systemStaffService.Add(user);
-            return new SuccessDataResult<SystemStaff>(user, Messages.SystemStaffAdded);
+            await _systemStaffService.Add(user);
+            return new SuccessResult(Messages.SystemStaffAdded);
         }
 
         public IResult UserExists(string email)

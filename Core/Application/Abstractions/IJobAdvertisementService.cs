@@ -1,4 +1,5 @@
-﻿using Application.Results;
+﻿using Application.Features.JobAdvertisements.Commands;
+using Application.Results;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ namespace Application.Abstractions
 {
     public interface IJobAdvertisementService
     {
-        IResult Add(JobAdvertisement jobAdvertisement);
-        IResult Delete(string id);
-        IResult Update(JobAdvertisement jobAdvertisement);
+        Task<IResult> Add(CreateJobAdvertisementCommand jobAdvertisement);
+        Task<IResult> Delete(string id);
+        Task<IResult> Update(UpdateJobAdvertisementCommand jobAdvertisement);
         IDataResult<IQueryable<JobAdvertisement>> GetAll();
         IDataResult<JobAdvertisement> GetById(string id);
         IResult JobAdvertisementExists(string jobPosition);

@@ -1,9 +1,11 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
+using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.JobAdvertisements;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -22,17 +24,30 @@ namespace Persistence.Concretes
         }
 
         //[SecuredOperation("employer")]
-        public IResult Add(JobAdvertisement jobAdvertisement)
+        [ValidationAspect(typeof(CreateJobAdvertisementValidator))]
+        public async Task<IResult> Add(CreateJobAdvertisementCommand jobAdvertisement)
         {
-            jobAdvertisement.CreatedAt = DateTime.UtcNow;
-            _jobAdvertisementWriteRepository.AddAsync(jobAdvertisement);
+            JobAdvertisement jobAdv = new();
+            jobAdv.CreatedAt = DateTime.UtcNow;
+            jobAdv.City = jobAdvertisement.City;
+            jobAdv.Deadline = jobAdvertisement.Deadline;
+            jobAdv.Description = jobAdvertisement.Description;
+            jobAdv.JobPositionId = jobAdvertisement.JobPositionId;
+            jobAdv.OpenPosition = jobAdvertisement.OpenPosition;
+            jobAdv.EmployerId = jobAdvertisement.EmployerId;
+            jobAdv.MaxSalary = jobAdvertisement.MaxSalary;
+            jobAdv.MinSalary = jobAdvertisement.MinSalary;
+            jobAdv.JobType = jobAdvertisement.JobType;
+            jobAdv.Status = true;
+            
+            await _jobAdvertisementWriteRepository.AddAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementAdded);
         }
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        public async Task<IResult> Delete(string id)
         {
-            _jobAdvertisementDeleteRepository.Delete(id);
+            await _jobAdvertisementDeleteRepository.Delete(id);
             return new SuccessResult(Messages.JobAdvertisementDeleted);
         }
 
@@ -42,6 +57,7 @@ namespace Persistence.Concretes
 
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobAdvertisement> GetById(string id)
         {
             return new SuccessDataResult<JobAdvertisement>(_jobAdvertisementReadRepository.GetById(id));
@@ -60,9 +76,27 @@ namespace Persistence.Concretes
             }
         }
 
-        public IResult Update(JobAdvertisement jobAdvertisement)
+        [ValidationAspect(typeof(UpdateJobAdvertisementValidator))]
+        public async Task<IResult> Update(UpdateJobAdvertisementCommand jobAdvertisement)
         {
-            _jobAdvertisementWriteRepository.UpdateAsync(jobAdvertisement);
+            var oldJobAdv = GetById(jobAdvertisement.Id);
+
+            JobAdvertisement jobAdv = new();
+            jobAdv.Id = jobAdvertisement.Id;
+            jobAdv.CreatedAt = oldJobAdv.Data.CreatedAt;
+            jobAdv.City = jobAdvertisement.City;
+            jobAdv.Status = jobAdvertisement.Status;
+            jobAdv.Deadline = jobAdvertisement.Deadline;
+            jobAdv.Description = jobAdvertisement.Description;
+            jobAdv.JobPositionId = jobAdvertisement.JobPositionId;
+            jobAdv.OpenPosition = jobAdvertisement.OpenPosition;
+            jobAdv.EmployerId = oldJobAdv.Data.EmployerId;
+            jobAdv.MaxSalary = jobAdvertisement.MaxSalary;
+            jobAdv.MinSalary = jobAdvertisement.MinSalary;
+            jobAdv.JobType = jobAdvertisement.JobType;
+            jobAdv.UpdatedAt = DateTime.UtcNow;
+
+            await _jobAdvertisementWriteRepository.UpdateAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementUpdated);
         }
     }

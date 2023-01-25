@@ -1,7 +1,9 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
-using Microsoft.AspNetCore.Http;
+﻿using Application.Features.EmployerAuth.Commands;
+using Application.Features.EmployerAuth.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.EmployerAuth.Commands.EmployerRegisterCommand;
+using static Application.Features.EmployerAuth.Queries.LoginQuery;
 
 namespace WebAPI.Controllers
 {
@@ -9,47 +11,39 @@ namespace WebAPI.Controllers
     [ApiController]
     public class EmployerAuthController : ControllerBase
     {
-        private IEmployerAuthService _authService;
+        private IMediator _mediator;
 
-        public EmployerAuthController(IEmployerAuthService authService)
+        public EmployerAuthController(IMediator mediator)
         {
-            _authService = authService;
+            _mediator = mediator;
         }
 
         [HttpPost("login")]
-        public ActionResult Login(UserForLoginDto userForLoginDto)
+        public async Task<IActionResult> Login(LoginQuery loginRequest)
         {
-            var userToLogin = _authService.Login(userForLoginDto);
-            if (!userToLogin.IsSuccess)
+            LoginQueryResponse response = await _mediator.Send(loginRequest);
+            if (!response.Employer.IsSuccess)
             {
-                return BadRequest(userToLogin.Message);
+                return BadRequest(response.Employer);
             }
-
-            var result = _authService.CreateAccessToken(userToLogin.Data);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-
-            return BadRequest(result.Message);
+            return Ok(response.Token);
         }
 
         [HttpPost("register")]
-        public ActionResult Register(EmployerForRegisterDto userForRegisterDto)
+        public async Task<IActionResult> Register(EmployerRegisterCommand employerRegisterRequest)
         {
-            var userExists = _authService.UserExists(userForRegisterDto.Email);
-            if (!userExists.IsSuccess)
+            EmployerRegisterCommandResponse response = await _mediator.Send(employerRegisterRequest);
+            if (response.Employer == null)
             {
-                return BadRequest(userExists.Message);
+                return BadRequest(response.Employer);
             }
 
-            var registerResult = _authService.Register(userForRegisterDto, userForRegisterDto.Password);
-            if (registerResult.IsSuccess)
+            if (response.Employer.IsSuccess)
             {
-                return Ok(registerResult);
+                return Ok(response.Employer);
             }
 
-            return BadRequest(registerResult.Message);
+            return BadRequest(response.Employer);
         }
     }
 }

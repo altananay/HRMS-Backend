@@ -19,7 +19,7 @@ namespace Persistence
         protected override void Load(ContainerBuilder builder)
         {
             //db context
-            builder.RegisterType<MongoContext>().As<IMongoContext>().SingleInstance();
+            builder.RegisterType<MongoContext>().As<IMongoContext>().InstancePerLifetimeScope();
 
             //JobPosition dependencies
             builder.RegisterType<JobPositionManager>().As<IJobPositionService>().SingleInstance();

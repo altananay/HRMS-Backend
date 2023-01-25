@@ -1,7 +1,10 @@
 ﻿using Application.Abstractions;
 using Application.Dtos;
+using Application.Features.SystemStaffAuth.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.SystemStaffAuth.Queries.SystemStaffLoginQuery;
 
 namespace WebAPI.Controllers
 {
@@ -9,47 +12,22 @@ namespace WebAPI.Controllers
     [ApiController]
     public class SystemStaffAuthController : ControllerBase
     {
-        private ISystemStaffAuthService _systemStaffAuthService;
+        private IMediator _mediator;
 
-        public SystemStaffAuthController(ISystemStaffAuthService systemStaffAuthService)
+        public SystemStaffAuthController(IMediator mediator)
         {
-            _systemStaffAuthService = systemStaffAuthService;
+            _mediator = mediator;
         }
 
         [HttpPost("login")]
-        public ActionResult Login(UserForLoginDto userForLoginDto)
+        public async Task<ActionResult> Login(SystemStaffLoginQuery request)
         {
-            var userToLogin = _systemStaffAuthService.Login(userForLoginDto);
-            if (!userToLogin.IsSuccess)
+            SystemStaffLoginQueryResponse response = await _mediator.Send(request);
+            if (!response.SystemStaff.IsSuccess)
             {
-                return BadRequest(userToLogin.Message);
+                return BadRequest(response.SystemStaff);
             }
-
-            var result = _systemStaffAuthService.CreateAccessToken(userToLogin.Data);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-
-            return BadRequest(result.Message);
-        }
-
-        [HttpPost("register")]
-        public ActionResult Register(SystemStaffForRegisterDto userForRegisterDto)
-        {
-            var userExists = _systemStaffAuthService.UserExists(userForRegisterDto.Email);
-            if (!userExists.IsSuccess)
-            {
-                return BadRequest(userExists.Message);
-            }
-
-            var registerResult = _systemStaffAuthService.Register(userForRegisterDto, userForRegisterDto.Password);
-            if (registerResult.IsSuccess)
-            {
-                return Ok(registerResult);
-            }
-
-            return BadRequest(registerResult.Message);
+            return Ok(response.Token);
         }
     }
 }

@@ -1,9 +1,12 @@
-﻿using Application.Abstractions;
-using Application.Abstractions.Storage;
-using Application.Repositories.CvFiles;
-using Domain.Entities;
-using Microsoft.AspNetCore.Http;
+﻿using Application.Features.Cvs.Commands;
+using Application.Features.Cvs.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.Cvs.Commands.CreateCvCommand;
+using static Application.Features.Cvs.Commands.DeleteCvCommand;
+using static Application.Features.Cvs.Commands.UpdateCvCommand;
+using static Application.Features.Cvs.Queries.GetAllCvQuery;
+using static Application.Features.Cvs.Queries.GetByJobSeekerIdCvQuery;
 
 namespace WebAPI.Controllers
 {
@@ -11,82 +14,72 @@ namespace WebAPI.Controllers
     [ApiController]
     public class CvsController : ControllerBase
     {
-        private readonly ICVService _cvService;
-        private readonly IStorageService _storageService;
-        private readonly ICvFileWriteRepository _cvFileWriteRepository;
+        private readonly IMediator _mediator;
 
-        public CvsController(ICVService cvService, IStorageService storageService, ICvFileWriteRepository cvFileWriteRepository)
+        public CvsController(IMediator mediator)
         {
-            _cvService = cvService;
-            _storageService = storageService;
-            _cvFileWriteRepository = cvFileWriteRepository;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _cvService.GetAll();
-            if (result.IsSuccess)
+            GetAllCvQueryResponse response = await _mediator.Send(new GetAllCvQuery { });
+            if (response.Cvs.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Cvs);
             }
-            return BadRequest(result);
+            return BadRequest(response.Cvs);
         }
 
         [HttpPost("add")]
-        public IActionResult Add(Cv cv)
+        public async Task<IActionResult> Add(CreateCvCommand cv)
         {
-            var result = _cvService.Add(cv);
-            if (result.IsSuccess)
+            CreateCvCommandResponse response = await _mediator.Send(cv);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("update")]
-        public IActionResult Update(Cv cv)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateCvCommand cv)
         {
-            var result = _cvService.Update(cv);
-            if (result.IsSuccess)
+            UpdateCvCommandResponse response = await _mediator.Send(cv);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpGet("{id}")]
-        public IActionResult Delete(string id)
+        [HttpDelete("deletecv/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _cvService.Delete(id);
-            if (result.IsSuccess)
+            DeleteCvCommandResponse response = await _mediator.Send(new DeleteCvCommand { Id = id});
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpGet("getbyjobseekerid/{id}")]
-        public IActionResult GetById(string id)
+        [HttpGet("getbyjobseekerid/{JobSeekerId}")]
+        public async Task<IActionResult> GetById([FromRoute] GetByJobSeekerIdCvQuery id)
         {
-            var result = _cvService.GetByJobSeekerId(id);
-            if (result.IsSuccess)
+            GetByJobSeekerIdCvQueryResponse response = await _mediator.Send(id);
+            if (response.Cv.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Cv);
             }
-            return BadRequest(result);
+            return BadRequest(response.Cv);
         }
 
         [HttpPost("uploadfile")]
-        public async Task<IActionResult> UploadFile()
+        public async Task<IActionResult> UploadFile([FromQuery] UploadCvFileCommand cvFile)
         {
-            var datas = await _storageService.UploadAsync("files", Request.Form.Files);
-            await _cvFileWriteRepository.AddRangeAsync(datas.Select(d => new CvFile()
-            {
-                FileName = d.fileName,
-                Path = d.pathOrContainerName,
-                Storage = _storageService.StorageName
-            }).ToList());
+            await _mediator.Send(cvFile);
             return Ok();
         }
     }

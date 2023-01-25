@@ -1,4 +1,5 @@
-﻿using Application.Results;
+﻿using Application.Features.Cvs.Commands;
+using Application.Results;
 using Domain.Entities;
 
 namespace Application.Abstractions
@@ -6,9 +7,9 @@ namespace Application.Abstractions
     public interface ICVService
     {
         IDataResult<IQueryable<Cv>> GetAll();
-        IResult Add(Cv cv);
-        IResult Delete(string id);
-        IResult Update(Cv user);
+        Task<IResult> Add(CreateCvCommand cv);
+        Task<IResult> Delete(string id);
+        Task<IResult> Update(UpdateCvCommand user);
         IDataResult<Cv> GetByJobSeekerId(string id);
     }
 }

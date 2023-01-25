@@ -1,4 +1,5 @@
-﻿using Application.Dtos;
+﻿using Application.Features.SystemStaffAuth.Queries;
+using Application.Features.SystemStaffs.Commands;
 using Application.Results;
 using Application.Utilities.JWT;
 using Domain.Entities;
@@ -7,8 +8,8 @@ namespace Application.Abstractions
 {
     public interface ISystemStaffAuthService
     {
-        IDataResult<SystemStaff> Register(SystemStaffForRegisterDto systemStaffForRegisterDto, string password);
-        IDataResult<SystemStaff> Login(UserForLoginDto userForLoginDto);
+        Task<IResult> Register(CreateSystemStaffCommand createSystemStaffCommand, string password);
+        IDataResult<SystemStaff> Login(SystemStaffLoginQuery userForLoginDto);
         IResult UserExists(string email);
         IDataResult<AccessToken> CreateAccessToken(SystemStaff user);
     }

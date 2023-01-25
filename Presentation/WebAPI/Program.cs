@@ -1,3 +1,4 @@
+using Application;
 using Application.Extensions;
 using Application.Utilities.IoC;
 using Application.Utilities.JWT;
@@ -5,9 +6,10 @@ using Application.Utilities.Security.Encryption;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Infrastructure;
-using Infrastructure.Services.Storage.Azure;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +18,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory()).ConfigureContainer<ContainerBuilder>(builder => builder.RegisterModule(new AutofacServiceRegistration()));
 
+
+builder.Services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
-builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-));
+builder.Services.AddApplicationServices();
+builder.Services.AddCors();
 
 IConfiguration configuration = builder.Configuration;
 
@@ -45,7 +49,10 @@ builder.Services.AddDependencyResolvers(new ICoreModule[] { new CoreModule() });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "The API", Version = "v1" });
+});
 
 var app = builder.Build();
 
@@ -58,7 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
-app.UseCors();
+app.UseCors(builder => builder.WithOrigins("http://localhost:3000", "https://localhost:3000").AllowAnyHeader().AllowAnyMethod());
 
 app.UseHttpsRedirection();
 

@@ -1,13 +1,12 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
-using Application.Dtos;
+using Application.Features.Employers.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Utilities.Security.Hashing;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.Employers.Auth;
 using Domain.Entities;
-using Persistence.Repositories;
 
 namespace Persistence.Concretes
 {
@@ -27,20 +26,20 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
-        public IResult Add(Employer employer)
+        public async Task<IResult> Add(Employer employer)
         {
             var user = new User();
-            _userService.Add(user);
+            await _userService.Add(user);
             employer.Id = user.Id;
-            _employerWriteRepository.AddAsync(employer);
+            await _employerWriteRepository.AddAsync(employer);
             return new SuccessResult(Messages.EmployerAdded);
         }
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        public async Task<IResult> Delete(string id)
         {
-            _userService.Delete(id);
-            _employerDeleteRepository.Delete(id);
+            await _userService.Delete(id);
+            await _employerDeleteRepository.Delete(id);
             return new SuccessResult(Messages.EmployerDeleted);
 
         }
@@ -56,12 +55,14 @@ namespace Persistence.Concretes
 
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Employer> GetById(string id)
         {
             return new SuccessDataResult<Employer>(_employerReadRepository.Get(e => e.Id == id));
         }
 
-        public IResult Update(EmployerForUpdateDto employer)
+        [ValidationAspect(typeof(UpdateEmployerCommand))]
+        public async Task<IResult> Update(UpdateEmployerCommand employer)
         {
             var result = _employerReadRepository.Get(e => e.Email == employer.Email);
             var employerEntity = new Employer
@@ -78,7 +79,7 @@ namespace Persistence.Concretes
                 Status = result.Status,
                 Id = result.Id
             };
-            var result2 = _employerWriteRepository.UpdateAsync(employerEntity);
+            var result2 = await _employerWriteRepository.UpdateAsync(employerEntity);
             return new SuccessResult(Messages.EmployerUpdated);
         }
     }

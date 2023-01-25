@@ -2,9 +2,11 @@
 using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
+using Application.Features.JobSeekers.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.JobSeekers;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -27,7 +29,7 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(JobSeekerValidator))]
-        public IResult Add(JobSeeker jobSeeker)
+        public async Task<IResult> Add(JobSeeker jobSeeker)
         {
             if (_checkPersonService.CheckIfRealPerson(new MernisCheckDto()
             {
@@ -38,9 +40,9 @@ namespace Persistence.Concretes
             }))
             {
                 var user = new User();
-                _userService.Add(user);
+                await _userService.Add(user);
                 jobSeeker.Id = user.Id;
-                _jobSeekerWriteRepository.AddAsync(jobSeeker);
+                await _jobSeekerWriteRepository.AddAsync(jobSeeker);
                 return new SuccessResult(Messages.UserRegistered);
             }
             return new ErrorResult(Messages.CitizenError);
@@ -56,13 +58,13 @@ namespace Persistence.Concretes
             return new ErrorResult(Messages.NationalityIdExists);
         }
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        public async Task<IResult> Delete(string id)
         {
             try
             {
-                _userService.Delete(id);
-                _jobSeekerDeleteRepository.Delete(id);
+                await _userService.Delete(id);
+                await _jobSeekerDeleteRepository.Delete(id);
                 return new SuccessResult(Messages.UserDeleted);
             }
             catch (Exception)
@@ -83,18 +85,16 @@ namespace Persistence.Concretes
             return new SuccessDataResult<JobSeeker>(_jobSeekerReadRepository.Get(u => u.Email == email));
         }
 
-        public IResult Update(JobSeekerForUpdateDto jobSeeker)
+        [ValidationAspect(typeof(UpdateJobSeekerValidator))]
+        public async Task<IResult> Update(UpdateJobSeekerCommand jobSeeker)
         {
             var getJobSeeker = _jobSeekerReadRepository.Get(ni => ni.Id == jobSeeker.Id);
             try
             {
-                getJobSeeker.FirstName = jobSeeker.FirstName;
-                getJobSeeker.LastName = jobSeeker.LastName;
                 getJobSeeker.UpdatedAt = DateTime.UtcNow;
                 getJobSeeker.Email = jobSeeker.Email;
-                getJobSeeker.DateOfBirth = jobSeeker.DateOfBirth;
 
-                _jobSeekerWriteRepository.UpdateAsync(getJobSeeker);
+                await _jobSeekerWriteRepository.UpdateAsync(getJobSeeker);
                 return new SuccessResult(Messages.UserUpdated);
             }
             catch

@@ -1,12 +1,13 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
-using Application.Dtos;
+using Application.Features.Auth.Queries;
+using Application.Features.JobSeekers.Commands;
 using Application.Results;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
-using Application.Validators;
+using Application.Validators.JobSeekers.Auth;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -24,10 +25,10 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(RegisterValidator))]
-        public IResult Register(JobSeekerForRegisterDto userForRegisterDto, string password)
+        public async Task<IResult> Register(CreateJobSeekerCommand userForRegisterDto, string password)
         {
             var user = new User();
-            _userService.Add(user);
+            await _userService.Add(user);
             string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
@@ -45,7 +46,7 @@ namespace Persistence.Concretes
                 DateOfBirth = userForRegisterDto.DateOfBirth,
                 NationalityId = userForRegisterDto.IdentityNumber
             };
-            var result = _jobSeekerService.Add(jobSeeker);
+            var result = await _jobSeekerService.Add(jobSeeker);
             if (result.IsSuccess)
             {
                 return new SuccessResult(Messages.UserRegistered);
@@ -53,10 +54,11 @@ namespace Persistence.Concretes
             return new ErrorResult(Messages.CitizenError);
         }
 
-        public IDataResult<JobSeeker> Login(UserForLoginDto userForLoginDto)
+        [ValidationAspect(typeof(JobSeekerLoginAuthValidator))]
+        public IDataResult<JobSeeker> Login(AuthQuery userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);
-            if (userToCheck == null)
+            if (userToCheck.Data == null)
             {
                 return new ErrorDataResult<JobSeeker>(Messages.UserNotFound);
             }

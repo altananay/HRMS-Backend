@@ -1,4 +1,4 @@
-﻿using Application.Dtos;
+﻿using Application.Features.SystemStaffs.Commands;
 using Application.Results;
 using Domain.Entities;
 
@@ -7,9 +7,9 @@ namespace Application.Abstractions
     public interface ISystemStaffService
     {
         IDataResult<IQueryable<SystemStaff>> GetAll();
-        IResult Add(SystemStaff employer);
-        IResult Delete(string id);
-        IResult Update(SystemStaffForRegisterDto employer);
+        Task<IResult> Add(SystemStaff employer);
+        Task<IResult> Delete(string id);
+        Task<IResult> UpdateAsync(UpdateSystemStaffCommand employer);
         IDataResult<SystemStaff> GetById(string id);
         IDataResult<SystemStaff> GetByEmail(string email);
     }

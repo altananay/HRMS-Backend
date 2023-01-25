@@ -1,7 +1,13 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
-using Microsoft.AspNetCore.Http;
+﻿using Application.Features.JobSeekers.Queries;
+using Application.Features.SystemStaffs.Commands;
+using Application.Features.SystemStaffs.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.SystemStaffs.Commands.CreateSystemStaffCommand;
+using static Application.Features.SystemStaffs.Commands.DeleteSystemStaffCommand;
+using static Application.Features.SystemStaffs.Commands.UpdateSystemStaffCommand;
+using static Application.Features.SystemStaffs.Queries.GetAllSystemStaffQuery;
+using static Application.Features.SystemStaffs.Queries.GetByIdSystemStaffQuery;
 
 namespace WebAPI.Controllers
 {
@@ -9,68 +15,66 @@ namespace WebAPI.Controllers
     [ApiController]
     public class SystemStaffsController : ControllerBase
     {
-        private readonly ISystemStaffService _systemStaffService;
-        private readonly ISystemStaffAuthService _systemStaffAuthService;
+        private readonly IMediator _mediator;
 
-        public SystemStaffsController(ISystemStaffService systemStaffService, ISystemStaffAuthService systemStaffAuthService)
+        public SystemStaffsController(IMediator mediator)
         {
-            _systemStaffService = systemStaffService;
-            _systemStaffAuthService = systemStaffAuthService;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _systemStaffService.GetAll();
-            if (result.IsSuccess)
+            GetAllSystemStaffQueryResponse response = await _mediator.Send(new GetAllSystemStaffQuery { });
+            if (response.SystemStaffs.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.SystemStaffs);
             }
-            return BadRequest(result);
+            return BadRequest(response.SystemStaffs);
         }
 
         [HttpPost("add")]
-        public IActionResult Add(SystemStaffForRegisterDto systemStaff)
+        public async Task<IActionResult> Add(CreateSystemStaffCommand systemStaff)
         {
-            var result = _systemStaffAuthService.Register(systemStaff, systemStaff.Password);
-            if (result.IsSuccess)
+            CreateSystemStaffCommandResponse response = await _mediator.Send(systemStaff);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
+        [HttpDelete("deletebyid/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _systemStaffService.Delete(id);
-            if (result.IsSuccess)
+            DeleteSystemStaffCommandResponse response = await _mediator.Send(new DeleteSystemStaffCommand { Id = id});
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("update")]
-        public IActionResult Update(SystemStaffForRegisterDto systemStaff)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateSystemStaffCommand systemStaff)
         {
-            var result = _systemStaffService.Update(systemStaff);
-            if (result.IsSuccess)
+            UpdateSystemStaffCommandResponse response = await _mediator.Send(systemStaff);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("{id}")]
-        public IActionResult GetById(string id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
         {
-            var result = _systemStaffService.GetById(id);
-            if (result.IsSuccess)
+            GetByIdSystemStaffQueryResponse response = await _mediator.Send(new GetByIdSystemStaffQuery { Id = id});
+            if (response.SystemStaff.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.SystemStaff);
             }
-            return BadRequest(result);
+            return BadRequest(response.SystemStaff);
         }
     }
 }

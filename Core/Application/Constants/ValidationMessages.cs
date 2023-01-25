@@ -26,10 +26,41 @@
         public static string GithubCantEmpty = "Github adresinizi paylaşmalısınız";
         public static string LinkedinCantEmpty = "Linkedin adresinizi paylaşmalısınız";
 
-        //common
-        public static string LevelCantEmpty = "Seviye boş bırakılamaz";
-
         //Hobby validation message
         public static string HobbiesCantEmpty = "Hobiler boş bırakılamaz";
+
+        //Employer
+        public static string CompanyNameCantEmpty = "Şirket adı boş bırakılamaz.";
+        public static string WebSiteCantEmpty = "Web site ismi boş bırakılamaz.";
+        public static string PhoneNumberCantEmpty = "Telefon numarası boş bırakılamaz.";
+
+        //common
+        public static string LevelCantEmpty = "Seviye boş bırakılamaz";
+        public static string ObjectIdValidationError = "Bilgiyi doğru formatta gönderin.";
+        public static string EmailCantEmpty = "Email boş bırakılamaz.";
+
+        //auth
+        public static string EmailFormat = "Email bilgisini doğru formatta girin.";
+        public static string PasswordCantEmpty = "Şifre boş olamaz";
+
+        //JobAdvertisement
+        public static string DeadlineCantEmpty = "Son başvuru tarihi boş olamaz.";
+        public static string JobTypeCantEmpty = "İş türü boş olamaz.";
+        public static string MinSalaryCantEmpty = "Minimim maaş bilgisi boş olamaz.";
+        public static string MaxSalaryCantEmpty = "Maximum maaş bilgisi boş olamaz.";
+        public static string OpenPositionCantEmpty = "Açık pozisyon sayısı boş olamaz.";
+        public static string MinSalaryCantBeGreaterThanMaxSalary = "Minimum maaş maksimum maaştan büyük olamaz.";
+        public static string MaxSalaryCantBeLessThanMinSalary = "Maximum maaş minimum maaştan küçük olamaz.";
+
+        //JobApplication
+        public static string JobApplicationResultCantEmpty = "İş başvurusu sonucu boş olamaz.";
+
+        //Register
+        public static string FirstNameCantBeEmpty = "İsim boş olamaz.";
+        public static string LastNameCantBeEmpty = "Soyadı boş olamaz.";
+
+        //SystemStaff
+        public static string ClaimCantBeEmpty = "Lütfen yetki verin.";
+        public static string ClaimFormat = "Yetkiyi doğru formatta verin.";
     }
 }

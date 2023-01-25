@@ -1,6 +1,9 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
+﻿using Application.Features.Auth.Queries;
+using Application.Features.JobSeekers.Commands;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.Auth.Queries.AuthQuery;
+using static Application.Features.JobSeekers.Commands.CreateJobSeekerCommand;
 
 namespace WebAPI.Controllers
 {
@@ -8,47 +11,29 @@ namespace WebAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private IAuthService _authService;
+        private readonly IMediator _mediator;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IMediator mediator)
         {
-            _authService = authService;
+            _mediator = mediator;
         }
 
         [HttpPost("login")]
-        public ActionResult Login(UserForLoginDto userForLoginDto)
+        public async Task<IActionResult> Login(AuthQuery authQuery)
         {
-            var userToLogin = _authService.Login(userForLoginDto);
-            if (!userToLogin.IsSuccess)
+            AuthQueryResponse response = await _mediator.Send(authQuery);
+            if (response.Result == null)
             {
-                return BadRequest(userToLogin.Message);
+                return Ok(response.DataResult);
             }
-
-            var result = _authService.CreateAccessToken(userToLogin.Data);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-
-            return BadRequest(result.Message);
+            return BadRequest(response.Result);
         }
 
         [HttpPost("register")]
-        public ActionResult Register(JobSeekerForRegisterDto userForRegisterDto)
+        public async Task<IActionResult> Register(CreateJobSeekerCommand userForRegisterDto)
         {
-            var userExists = _authService.UserExists(userForRegisterDto.Email);
-            if (!userExists.IsSuccess)
-            {
-                return BadRequest(userExists.Message);
-            }
-
-            var registerResult = _authService.Register(userForRegisterDto, userForRegisterDto.Password);
-            if (registerResult.IsSuccess)
-            {
-                return Ok(registerResult);
-            }
-
-            return BadRequest(registerResult.Message);
+            CreateJobSeekerCommandResponse response = await _mediator.Send(userForRegisterDto);
+            return Ok(response.Result);
         }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using Application.Abstractions;
+using Application.Features.Users.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.Users.Queries.GetAllUserQuery;
 
 namespace WebAPI.Controllers
 {
@@ -8,22 +11,22 @@ namespace WebAPI.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        IUserService _userService;
+        private readonly IMediator _mediator;
 
-        public UsersController(IUserService userService)
+        public UsersController(IMediator mediator)
         {
-            _userService = userService;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _userService.GetAll();
-            if (result.IsSuccess)
+            GetAllUserQueryResponse response = await _mediator.Send(new GetAllUserQuery { });
+            if (response.Users.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Users);
             }
-            return BadRequest(result);
+            return BadRequest(response.Users);
         }
     }
 }

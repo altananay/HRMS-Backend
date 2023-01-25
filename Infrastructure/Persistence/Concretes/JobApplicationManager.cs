@@ -1,9 +1,12 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
+using Application.Features.JobApplications.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.JobAdvertisements;
+using Application.Validators.JobApplications;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -21,17 +24,24 @@ namespace Persistence.Concretes
             _jobApplicationWriteRepository = jobApplicationWriteRepository;
         }
 
-        public IResult Add(JobApplication jobApplication)
+        [ValidationAspect(typeof(CreateJobApplicationValidator))]
+        public async Task<IResult> Add(CreateJobApplicationCommand jobApplication)
         {
-            _jobApplicationWriteRepository.AddAsync(jobApplication);
+            JobApplication jobApp = new JobApplication();
+            jobApp.CreatedAt = DateTime.UtcNow;
+            jobApp.JobAdvertisementId = jobApplication.JobAdvertisementId;
+            jobApp.Description = jobApplication.Description;
+            jobApp.JobSeekerId = jobApplication.JobSeekerId;
+            jobApp.Result = jobApplication.Result;
+            await _jobApplicationWriteRepository.AddAsync(jobApp);
             return new SuccessResult(Messages.JobApplicationMade);
         }
 
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        public async Task<IResult> Delete(string id)
         {
-            _jobApplicationDeleteRepository.Delete(id);
+            await _jobApplicationDeleteRepository.Delete(id);
             return new SuccessResult(Messages.JobApplicationDeleted);
         }
 
@@ -40,14 +50,27 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll());
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobApplication> GetById(string id)
         {
             return new SuccessDataResult<JobApplication>(_jobApplicationReadRepository.GetById(id));
         }
 
-        public IResult Update(JobApplication jobApplication)
+        [ValidationAspect(typeof(UpdateJobApplicationValidator))]
+        public async Task<IResult> Update(UpdateJobApplicationCommand jobApplication)
         {
-            _jobApplicationWriteRepository.UpdateAsync(jobApplication);
+            var oldJobApp = GetById(jobApplication.JobApplicationId);
+
+
+            JobApplication jobApp = new JobApplication();
+            jobApp.Id = oldJobApp.Data.Id;
+            jobApp.CreatedAt = oldJobApp.Data.CreatedAt;
+            jobApp.JobAdvertisementId = oldJobApp.Data.JobAdvertisementId;
+            jobApp.Description = jobApplication.Description;
+            jobApp.JobSeekerId = oldJobApp.Data.JobSeekerId;
+            jobApp.Result = jobApplication.Result;
+            jobApp.UpdatedAt = DateTime.UtcNow;
+            await _jobApplicationWriteRepository.UpdateAsync(jobApp);
             return new SuccessResult(Messages.JobApplicationUpdated);
         }
     }

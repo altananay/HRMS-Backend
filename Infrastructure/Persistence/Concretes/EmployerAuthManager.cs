@@ -1,10 +1,14 @@
 ﻿using Application.Abstractions;
+using Application.Aspects;
 using Application.Constants;
 using Application.Dtos;
+using Application.Features.EmployerAuth.Commands;
+using Application.Features.EmployerAuth.Queries;
 using Application.Results;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using Application.Validators.Employers.Auth;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -26,15 +30,16 @@ namespace Persistence.Concretes
             return new SuccessDataResult<AccessToken>(accessToken, Messages.SuccessfulLogin);
         }
 
-        public IDataResult<Employer> Login(UserForLoginDto userForLoginDto)
+        [ValidationAspect(typeof(EmployerLoginAuthValidator))]
+        public IDataResult<Employer> Login(LoginQuery loginRequest)
         {
-            var userToCheck = _employerService.GetByEmail(userForLoginDto.Email);
+            var userToCheck = _employerService.GetByEmail(loginRequest.Email);
             if (userToCheck == null)
             {
                 return new ErrorDataResult<Employer>(Messages.UserNotFound);
             }
 
-            if (!HashingHelper.VerifyPasswordHash(userForLoginDto.Password, userToCheck.Data.PasswordHash, userToCheck.Data.PasswordSalt))
+            if (!HashingHelper.VerifyPasswordHash(loginRequest.Password, userToCheck.Data.PasswordHash, userToCheck.Data.PasswordSalt))
             {
                 return new ErrorDataResult<Employer>(Messages.PasswordError);
             }
@@ -42,7 +47,8 @@ namespace Persistence.Concretes
             return new SuccessDataResult<Employer>(userToCheck.Data, Messages.SuccessfulLogin);
         }
 
-        public IDataResult<Employer> Register(EmployerForRegisterDto userForRegisterDto, string password)
+        [ValidationAspect(typeof(EmployerValidator))]
+        public async Task<IResult> Register(EmployerRegisterCommand userForRegisterDto, string password)
         {
             string[] claims = { "employer" };
             byte[] passwordHash, passwordSalt;
@@ -59,7 +65,7 @@ namespace Persistence.Concretes
                 Claims = claims,
                 CreatedAt = DateTime.UtcNow,
             };
-            _employerService.Add(user);
+            await _employerService.Add(user);
             return new SuccessDataResult<Employer>(user, Messages.UserRegistered);
         }
 

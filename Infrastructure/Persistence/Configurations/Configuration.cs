@@ -9,10 +9,17 @@ namespace Persistence.Configurations
             get
             {
                 ConfigurationManager configurationManager = new();
-                configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../Presentation/WebAPI"));
-                configurationManager.AddJsonFile("appsettings.json");
+                try
+                {
+                    configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../Presentation/WebAPI"));
+                    configurationManager.AddJsonFile("appsettings.json");
+                }
+                catch (Exception)
+                {
 
-                return configurationManager.GetConnectionString("MongoDB");
+                    configurationManager.AddJsonFile("appsettings.Production.json");
+                }
+                return configurationManager.GetConnectionString("MongoDb");
             }
         }
     }

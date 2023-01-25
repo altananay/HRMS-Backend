@@ -12,7 +12,6 @@ namespace Domain.Entities
         public double? MaxSalary { get; set; }
         public int OpenPosition { get; set; }
         public string JobType { get; set; }
-        public string JobTime { get; set; }
         public DateTime Deadline { get; set; }
         public bool Status { get; set; }
     }

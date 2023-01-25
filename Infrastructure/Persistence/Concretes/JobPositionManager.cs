@@ -3,7 +3,8 @@ using Application.Aspects;
 using Application.Constants;
 using Application.Repositories;
 using Application.Results;
-using Application.Validators;
+using Application.Validators.Common;
+using Application.Validators.JobPositions;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -23,16 +24,16 @@ namespace Persistence.Concretes
 
 
         [ValidationAspect(typeof(JobPositionValidator))]
-        public IResult Add(JobPosition jobPosition)
+        public async Task<IResult> Add(JobPosition jobPosition)
         {
-            _jobPositionWriteRepository.AddAsync(jobPosition);
+            await _jobPositionWriteRepository.AddAsync(jobPosition);
             return new SuccessResult(Messages.JobPositionAdded);
         }
 
-        [ValidationAspect(typeof(DeleteValidator))]
-        public IResult Delete(string id)
+        [ValidationAspect(typeof(ObjectIdValidator))]
+        public async Task<IResult> Delete(string id)
         {
-            _jobPositionDeleteRepository.Delete(id);
+            await _jobPositionDeleteRepository.Delete(id);
             return new SuccessResult(Messages.JobPositionDeleted);
         }
 
@@ -41,6 +42,7 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobPosition>>(_jobPositionReadRepository.GetAll());
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobPosition> GetById(string id)
         {
             return new SuccessDataResult<JobPosition>(_jobPositionReadRepository.GetById(id));
@@ -55,9 +57,10 @@ namespace Persistence.Concretes
             return new SuccessResult();
         }
 
-        public IResult Update(JobPosition jobPosition)
+        [ValidationAspect(typeof(JobPositionValidator))]
+        public async Task<IResult> Update(JobPosition jobPosition)
         {
-            _jobPositionWriteRepository.UpdateAsync(jobPosition);
+            await _jobPositionWriteRepository.UpdateAsync(jobPosition);
             return new SuccessResult(Messages.JobPositionUpdated);
         }
     }

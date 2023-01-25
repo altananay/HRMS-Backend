@@ -1,6 +1,12 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
+﻿using Application.Features.Employers.Commands;
+using Application.Features.Employers.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.Employers.Commands.DeleteEmployerCommand;
+using static Application.Features.Employers.Commands.UpdateEmployerCommand;
+using static Application.Features.Employers.Queries.GetAllEmployerQuery;
+using static Application.Features.Employers.Queries.GetByEmailEmployerQuery;
+using static Application.Features.Employers.Queries.GetByIdEmployerQuery;
 
 namespace WebAPI.Controllers
 {
@@ -8,68 +14,67 @@ namespace WebAPI.Controllers
     [ApiController]
     public class EmployersController : ControllerBase
     {
-        private readonly IEmployerService _employerService;
-        private readonly IEmployerAuthService _employerAuthService;
 
-        public EmployersController(IEmployerService employerService, IEmployerAuthService employerAuthService)
+        private readonly IMediator _mediator;
+
+        public EmployersController(IMediator mediator)
         {
-            _employerService = employerService;
-            _employerAuthService = employerAuthService;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _employerService.GetAll();
-            if (result.IsSuccess)
+            GetAllEmployerQueryResponse response = await _mediator.Send(new GetAllEmployerQuery { });
+            if (response.Employers.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Employers);
             }
-            return BadRequest(result);
+            return BadRequest(response.Employers);
         }
 
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
+        [HttpDelete("deletebyid/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _employerService.Delete(id);
-            if (result.IsSuccess)
+            DeleteEmployerCommandResponse response = await _mediator.Send(new DeleteEmployerCommand { Id = id});
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("update")]
-        public IActionResult Update(EmployerForUpdateDto employer)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateEmployerCommand employer)
         {
-            var result = _employerService.Update(employer);
-            if (result.IsSuccess)
+            UpdateEmployerCommandResponse response = await _mediator.Send(employer);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("{id}")]
-        public IActionResult GetById(string id)
+        [HttpGet("getbyemployerid/{id}")]
+        public async Task<IActionResult> GetById(string id)
         {
-            var result = _employerService.GetById(id);
-            if (result.IsSuccess)
+            GetByIdEmployerQueryResponse response = await _mediator.Send(new GetByIdEmployerQuery { Id = id});
+            if (response.Employer.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Employer);
             }
-            return BadRequest(result);
+            return BadRequest(response.Employer);
         }
 
-        [HttpGet("getbyemail")]
-        public IActionResult GetByEmail(string email)
+        [HttpPost("getbyemail")]
+        public async Task<IActionResult> GetByEmail(GetByEmailEmployerQuery email)
         {
-            var result = _employerService.GetByEmail(email);
-            if (result.IsSuccess)
+            GetByEmailEmployerQueryResponse response = await _mediator.Send(email);
+            if (response.Employer.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Employer);
             }
-            return BadRequest(result);
+            return BadRequest(response.Employer);
         }
     }
 }

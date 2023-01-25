@@ -5,9 +5,9 @@ namespace Application.Abstractions
 {
     public interface IJobPositionService
     {
-        IResult Add(JobPosition jobPosition);
-        IResult Delete(string id);
-        IResult Update(JobPosition jobPosition);
+        Task<IResult> Add(JobPosition jobPosition);
+        Task<IResult> Delete(string id);
+        Task<IResult> Update(JobPosition jobPosition);
         IDataResult<IQueryable<JobPosition>> GetAll();
         IDataResult<JobPosition> GetById(string id);
         IResult JobPositionExists(string jobPosition);

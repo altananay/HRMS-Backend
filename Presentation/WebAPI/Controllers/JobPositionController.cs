@@ -1,7 +1,12 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
-using Domain.Entities;
+﻿using Application.Features.JobPositions.Commands;
+using Application.Features.JobPositions.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.JobPositions.Commands.CreateJobPositionCommand;
+using static Application.Features.JobPositions.Commands.DeleteJobPositionCommand;
+using static Application.Features.JobPositions.Commands.UpdateJobPositionCommand;
+using static Application.Features.JobPositions.Queries.GetJobPositionByIdQuery;
+using static Application.Features.JobPositions.Queries.GetJobPositionQuery;
 
 namespace WebAPI.Controllers
 {
@@ -9,81 +14,46 @@ namespace WebAPI.Controllers
     [ApiController]
     public class JobPositionController : ControllerBase
     {
-        private readonly IJobPositionService _jobPositionService;
+        private readonly IMediator _mediator;
 
-        public JobPositionController(IJobPositionService jobPositionService)
+        public JobPositionController(IMediator mediator)
         {
-            _jobPositionService = jobPositionService;
+            _mediator = mediator;
         }
 
         [HttpPost("addjobposition")]
-        public IActionResult Add(JobPositionDto jobPosition)
+        public async Task<IActionResult> Add(CreateJobPositionCommand jobPosition)
         {
-            var jobPositionExists = _jobPositionService.JobPositionExists(jobPosition.PositionName);
-            if (!jobPositionExists.IsSuccess)
-            {
-                return BadRequest(jobPositionExists.Message);
-            }
-
-            var position = new JobPosition
-            {
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = null,
-                PositionName = jobPosition.PositionName
-            };
-            var result = _jobPositionService.Add(position);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            CreateJobPositionCommandResponse response = await _mediator.Send(jobPosition);
+            return Ok(response.Result);
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _jobPositionService.GetAll();
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            GetJobPositionQueryResponse response = await _mediator.Send(new GetJobPositionQuery { });
+            return Ok(response.jobPositions.Data);
         }
 
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
+        [HttpDelete("deletebyid/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _jobPositionService.Delete(id);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            DeleteJobPositionCommandResponse response = await _mediator.Send(new DeleteJobPositionCommand { Id = id});
+            return Ok(response.Result);
         }
 
-        [HttpPost("update")]
-        public IActionResult Update(JobPosition jobPosition)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateJobPositionCommand jobPosition)
         {
-            var result = _jobPositionService.GetById(jobPosition.Id);
-            jobPosition.CreatedAt = result.Data.CreatedAt;
-            jobPosition.UpdatedAt = DateTime.UtcNow;
-            var result2 = _jobPositionService.Update(jobPosition);
-            if (result2.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            UpdateJobPositionCommandResponse response = await _mediator.Send(jobPosition);
+            return Ok(response.Result);
         }
 
-        [HttpPost("{id}")]
-        public IActionResult GetById(string id)
+        [HttpGet("getbyid/{id}")]
+        public async Task<IActionResult> GetById(string id)
         {
-            var result = _jobPositionService.GetById(id);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            GetJobPositionByIdQueryResponse response = await _mediator.Send(new GetJobPositionByIdQuery { Id = id});
+            return Ok(response.JobPosition);
         }
     }
 }

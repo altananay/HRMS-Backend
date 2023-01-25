@@ -1,8 +1,12 @@
-﻿using Application.Abstractions;
-using Application.Dtos;
-using Domain.Entities;
+﻿using Application.Features.JobSeekers.Commands;
+using Application.Features.JobSeekers.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System.Runtime.InteropServices;
+using static Application.Features.JobSeekers.Commands.CreateJobSeekerCommand;
+using static Application.Features.JobSeekers.Commands.DeleteJobSeekerCommand;
+using static Application.Features.JobSeekers.Commands.UpdateJobSeekerCommand;
+using static Application.Features.JobSeekers.Queries.GetAllJobSeekerQuery;
+using static Application.Features.JobSeekers.Queries.GetByEmailJobSeekerQuery;
 
 namespace WebAPI.Controllers
 {
@@ -10,74 +14,56 @@ namespace WebAPI.Controllers
     [ApiController]
     public class JobSeekersController : ControllerBase
     {
-        IJobSeekerService _jobSeekerService;
-        IAuthService _authService;
+        
+        IMediator _mediator;
 
-        public JobSeekersController(IJobSeekerService userService, IAuthService authService)
+        public JobSeekersController(IMediator mediator)
         {
-            _jobSeekerService = userService;
-            _authService = authService;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _jobSeekerService.GetAll();
-            if (result.IsSuccess)
+            GetAllJobSeekerCommandResponse response = await _mediator.Send(new GetAllJobSeekerQuery { });
+            if (response.JobSeekers.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.JobSeekers);
             }
-            return BadRequest(result);
+            return BadRequest(response.JobSeekers);
         }
 
-        [HttpPost("add")]
-        public IActionResult Add(JobSeekerForRegisterDto jobSeeker)
+        [HttpPost("getbyemail")]
+        public async Task<IActionResult> GetByEmail(GetByEmailJobSeekerQuery request)
         {
-            var result = _jobSeekerService.NationalityIdExists(jobSeeker.IdentityNumber);
-            if (!result.IsSuccess)
+            GetByEmailJobSeekerResponse response = await _mediator.Send(request);
+            if (response.JobSeeker.IsSuccess)
             {
-                return BadRequest(result.Message);
+                return Ok(response.JobSeeker);
             }
-
-            var result2 = _authService.Register(jobSeeker, jobSeeker.Password);
-            if (result2.IsSuccess)
-            {
-                return Ok(result2);
-            }
-            return BadRequest(result2);
+            return BadRequest(response.JobSeeker);
         }
 
-        [HttpGet("getbyemail")]
-        public IActionResult GetByEmail(string email)
+        [HttpDelete("deletebyid/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _jobSeekerService.GetByMail(email);
-            if (result.IsSuccess)
+            DeleteJobSeekerCommandResponse response = await _mediator.Send(new DeleteJobSeekerCommand { Id = id});
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateJobSeekerCommand jobSeeker)
         {
-            var result = _jobSeekerService.Delete(id);
-            if (result.IsSuccess)
+            UpdateJobSeekerCommandResponse result = await _mediator.Send(jobSeeker);
+            if (result.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(result.Result);
             }
-            return BadRequest(result);
-        }
-
-        [HttpPost("update")]
-        public IActionResult Update(JobSeekerForUpdateDto jobSeeker)
-        {
-            var result = _jobSeekerService.Update(jobSeeker);
-            if (result.IsSuccess)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result);
+            return BadRequest(result.Result);
         }
     }
 }

@@ -1,7 +1,15 @@
 ﻿using Application.Abstractions;
+using Application.Features.JobApplications.Commands;
+using Application.Features.JobApplications.Queries;
 using Domain.Entities;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static Application.Features.JobApplications.Commands.CreateJobApplicationCommand;
+using static Application.Features.JobApplications.Commands.DeleteJobApplicationCommand;
+using static Application.Features.JobApplications.Commands.UpdateJobApplicationCommand;
+using static Application.Features.JobApplications.Queries.GetAllJobApplicationQuery;
+using static Application.Features.JobApplications.Queries.GetByIdJobApplicationQuery;
 
 namespace WebAPI.Controllers
 {
@@ -9,66 +17,67 @@ namespace WebAPI.Controllers
     [ApiController]
     public class JobApplicationsController : ControllerBase
     {
-        IJobApplicationService _jobApplicationService;
+        IMediator _mediator;
 
-        public JobApplicationsController(IJobApplicationService jobApplicationService)
+        public JobApplicationsController(IMediator mediator)
         {
-            _jobApplicationService = jobApplicationService;
+            _mediator = mediator;
         }
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _jobApplicationService.GetAll();
-            if (result.IsSuccess)
+            GetAllJobApplicationQueryResponse response = await _mediator.Send(new GetAllJobApplicationQuery { });
+            if (response.JobApplications.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.JobApplications);
             }
-            return BadRequest(result);
+            return BadRequest(response.JobApplications);
         }
 
-        [HttpGet("getbyid")]
-        public IActionResult GetById(string id)
+        [HttpGet("getbyid/{id}")]
+        public async Task<IActionResult> GetById(string id)
         {
-            var result = _jobApplicationService.GetById(id);
-            if (result.IsSuccess)
+            GetByIdJobApplicationQueryResponse response = await _mediator.Send(new GetByIdJobApplicationQuery { Id = id });
+            if (response.JobApplication.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.JobApplication);
             }
-            return BadRequest(result);
+            return BadRequest(response.JobApplication);
         }
 
         [HttpPost("add")]
-        public IActionResult Add(JobApplication jobApplication)
+        public async Task<IActionResult> Add(CreateJobApplicationCommand jobApplication)
         {
-            var result = _jobApplicationService.Add(jobApplication);
-            if (result.IsSuccess)
+            CreateJobApplicationCommandResponse response = await _mediator.Send(jobApplication);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("delete")]
-        public IActionResult Delete(string id)
+        [HttpDelete("deletebyid/{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var result = _jobApplicationService.Delete(id);
-            if (result.IsSuccess)
+            DeleteJobApplicationCommandResponse response = await _mediator.Send(new DeleteJobApplicationCommand { Id = id });
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
 
-        [HttpPost("update")]
-        public IActionResult Update(JobApplication jobApplication)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateJobApplicationCommand jobApplication)
         {
-            var result = _jobApplicationService.Update(jobApplication);
-            if (result.IsSuccess)
+            
+            UpdateJobApplicationCommandResponse response = await _mediator.Send(jobApplication);
+            if (response.Result.IsSuccess)
             {
-                return Ok(result);
+                return Ok(response.Result);
             }
-            return BadRequest(result);
+            return BadRequest(response.Result);
         }
     }
 }
