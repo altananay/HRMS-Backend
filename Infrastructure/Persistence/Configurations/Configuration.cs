@@ -14,7 +14,7 @@ namespace Persistence.Configurations
                     configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../Presentation/WebAPI"));
                     configurationManager.AddJsonFile("appsettings.json");
                 }
-                catch (Exception)
+                catch
                 {
 
                     configurationManager.AddJsonFile("appsettings.Production.json");

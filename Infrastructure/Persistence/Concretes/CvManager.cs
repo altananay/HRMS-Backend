@@ -7,6 +7,7 @@ using Application.Results;
 using Application.Validators.Common;
 using Application.Validators.Cvs;
 using Domain.Entities;
+using MongoDB.Bson;
 
 namespace Persistence.Concretes
 {
@@ -30,22 +31,39 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(CvValidator))]
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
-            
-
             Cv cv = new();
+            Project[] projects = new Project[requestCv.Projects.Length];
+            JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
+            projects = requestCv.Projects;
+            jobExperiences = requestCv.JobExperiences;
+            foreach (var project in projects)
+            {
+                ObjectId id = ObjectId.GenerateNewId();
+                project.Id = id.ToString();
+                project.CreatedAt = DateTime.UtcNow;
+                project.UpdatedAt = null;
+            }
+            foreach (var jobExperience in jobExperiences)
+            {
+                ObjectId id = ObjectId.GenerateNewId();
+                jobExperience.Id = id.ToString();
+                jobExperience.CreatedAt = DateTime.UtcNow;
+                jobExperience.UpdatedAt = null;
+            }
             cv.Educations = requestCv.Educations;
             cv.SocialMedias = requestCv.SocialMedias;
             cv.Skills = requestCv.Skills;
-            cv.Projects = requestCv.Projects;
+            cv.Projects = projects;
             cv.Educations = requestCv.Educations;
             cv.Hobbies = requestCv.Hobbies;
             cv.ImageUrl = requestCv.ImageUrl;
             cv.ProgrammingLanguages = requestCv.ProgrammingLanguages;
-            cv.JobExperiences = requestCv.JobExperiences;
+            cv.JobExperiences = jobExperiences;
             cv.JobSeekerId = requestCv.JobSeekerId;
             cv.Information = requestCv.Information;
             cv.Languages = requestCv.Languages;
             cv.CreatedAt = DateTime.UtcNow;
+            
             await _cvWriteRepository.AddAsync(cv);
 
             var result = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
