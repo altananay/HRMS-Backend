@@ -28,6 +28,8 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Fluent Validation </li>
   <li> JSON Web Token (JWT) </li>
   <li> Generic Repository Design Pattern </li>
+  <li> CQRS Design Pattern </li>
+  <li> Mediator Design Pattern </li>
   <li> Cross Cutting Concerns </li>
   <li> Extensions </li>
   <li> Claims </li>
@@ -46,7 +48,6 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 ## IDE
 ![Visual Studio][vs]
 
-<!-- MARKDOWN LINKS & IMAGES -->
 [csharp]:https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white
 [dotnet]:https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white
 [mongodb]:https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white

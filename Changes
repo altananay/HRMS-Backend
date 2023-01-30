@@ -1,18 +1,25 @@
 Projede yapılan bütün eklemeler, değişiklikler burada.
 
-14 Ekim 2022 -> Proje Onion Architecture yazılım mimarisiyle oluşturuldu. MongoDb veri tabanı için SOLID'e uygun Generic Repository Design Pattern yapıldı. Temel veri tabanı nesneleri (entities) oluşturuldu. API'dan response edilen işlem için Result mekanizması kodlandı. Proje github'a yüklendi.
+14 Ekim 2022 -> Proje Onion Architecture yazılım mimarisiyle oluşturuldu. MongoDb veri tabanı için SOLID'e uygun Generic Repository Design Pattern yapıldı.
+Temel veri tabanı nesneleri (entities) oluşturuldu. API'dan response edilen işlem için Result mekanizması kodlandı. Proje github'a yüklendi.
 
-15 Ekim 2022 -> Json Web Token ve Auth işlemleri eklendi. Autofac IoC Container, veri tabanı işlemleri için, .Net Core Build-in IoC Container Infrastructure katmanındaki servisler için oluşturuldu.
+15 Ekim 2022 -> Json Web Token ve Auth işlemleri eklendi. Autofac IoC Container, veri tabanı işlemleri için
+.Net Core Build-in IoC Container Infrastructure katmanındaki servisler için oluşturuldu.
 
 16 Ekim 2022 -> Fluent Validation kütüphanesiyle Validation işlemi eklendi. Aspect Oriented Programming mekanizması eklendi ve Validation Aspect yapıldı.
 
 16 Ekim 2022 (2. Değişiklikler) -> İş veren için repository eklendi ve API'dan response olarak dönecek mesajlar için constant messages oluşturuldu.
 
-17 Ekim 2022 -> MongoDb veri tabanında Id veri tipi ObjectId olarak tutulduğu için Client'dan gelecek Id'nin bu formatta gelmesi gerekkli. Dolayısıyla veri silme işleminin doğru çalışabilmesi için Delete Validator eklendi. İş veren için validator eklendi.
+17 Ekim 2022 -> MongoDb veri tabanında Id veri tipi ObjectId olarak tutulduğu için Client'dan gelecek Id'nin bu formatta gelmesi gerekkli.
+Dolayısıyla veri silme işleminin doğru çalışabilmesi için Delete Validator eklendi. İş veren için validator eklendi.
 
-20 Ekim 2022 -> Authentication işlemi dış dünyaya açılabilmesi için Auth service eklendi. Json Web Token'da code refactoring yapıldı. Rol bazlı yönetim mekanizması projeye entegre edildi. İş ilanının sisteme eklenmesi yapıldı. Veri tabanındaki bilgilerin, dış dünyaya response edilebilmesi için WebAPI katmanında gerekli controllerlar oluşturuldu. Yeni constant mesajlar, yeni dto nesneleri eklendi.
+20 Ekim 2022 -> Authentication işlemi dış dünyaya açılabilmesi için Auth service eklendi. Json Web Token'da code refactoring yapıldı.
+Rol bazlı yönetim mekanizması projeye entegre edildi. İş ilanının sisteme eklenmesi yapıldı.
+Veri tabanındaki bilgilerin, dış dünyaya response edilebilmesi için WebAPI katmanında gerekli controllerlar oluşturuldu.
+Yeni constant mesajlar, yeni dto nesneleri eklendi.
 
-22 Ekim 2022 -> İş arayan kişinin sisteme Cv yüklemesi sisteme eklendi. Gerekli controller WebAPI katmanında oluşturuldu. Cv için bazı entityler eklendi. MongoDb işlemleri için code refactoring yapıldı.
+22 Ekim 2022 -> İş arayan kişinin sisteme Cv yüklemesi sisteme eklendi. Gerekli controller WebAPI katmanında oluşturuldu.
+Cv için bazı entityler eklendi. MongoDb işlemleri için code refactoring yapıldı.
 
 27 Ekim 2022 -> KPSPublic Service (Mernis) sisteme entegre edildi. Cv işlemleri için Conditional Validation eklendi. Cv işlemleri için bazı entityler eklendi.
 
@@ -21,3 +28,11 @@ Projede yapılan bütün eklemeler, değişiklikler burada.
 3 Aralık 2022 -> İş arayanın kendi bilgilerini güncelleyebilme işlemindeki mantıksal hata giderildi.
 
 9 Aralık 2022 -> Azure Blob Storage servisi sisteme entegre edildi. İş arayanlar artık Cv'lerini dosya formatında sisteme yükleyebilir.
+
+25 Ocak 2023
+
+CQRS ve Mediator Design Pattern projeye eklenerek bütün altyapı bu design patternlara göre tekrardan yazıldı.
+API controllerları, Veri tabanı operasyonları ve Servis interfacelerine asenkron programlama eklendi.
+Bazı veri tabanı nesnelerinin propertylerinde değişiklikler yapıldı. Projedeki gereksiz DTO nesneleri silindi.
+Gereksiz validationlar silindi, bazı validationlar eklendi. Yeni constant mesajlar eklendi.
+Son olarak proje Microsoft Azure'da bulut sunucu üzerinde yayına alındı.
