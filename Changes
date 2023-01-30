@@ -36,3 +36,5 @@ API controllerları, Veri tabanı operasyonları ve Servis interfacelerine asenk
 Bazı veri tabanı nesnelerinin propertylerinde değişiklikler yapıldı. Projedeki gereksiz DTO nesneleri silindi.
 Gereksiz validationlar silindi, bazı validationlar eklendi. Yeni constant mesajlar eklendi.
 Son olarak proje Microsoft Azure'da bulut sunucu üzerinde yayına alındı.
+
+30 Ocak 2023 -> Bazı entity'lerde id bilgisi eksikti. Id bilgileri eklendi. Cv entity'sinde veri tabanına ekleme operasyonunda bazı değişiklikler yapıldı.
