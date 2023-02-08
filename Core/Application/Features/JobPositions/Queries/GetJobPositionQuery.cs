@@ -25,18 +25,7 @@ namespace Application.Features.JobPositions.Queries
             public async Task<GetJobPositionQueryResponse> Handle(GetJobPositionQuery request, CancellationToken cancellationToken)
             {
                 var result = _jobPositionService.GetAll();
-                if (result.IsSuccess)
-                {
-                    return new GetJobPositionQueryResponse
-                    {
-                        jobPositions = result
-                    };
-                }
-
-                return new GetJobPositionQueryResponse
-                {
-                    jobPositions = result
-                };
+                return new GetJobPositionQueryResponse { jobPositions = result };
 
             }
         }

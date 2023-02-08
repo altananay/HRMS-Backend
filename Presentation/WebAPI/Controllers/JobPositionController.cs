@@ -32,7 +32,7 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             GetJobPositionQueryResponse response = await _mediator.Send(new GetJobPositionQuery { });
-            return Ok(response.jobPositions.Data);
+            return Ok(response.jobPositions);
         }
 
         [HttpDelete("deletebyid/{id}")]

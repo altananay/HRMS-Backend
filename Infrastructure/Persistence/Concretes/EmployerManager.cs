@@ -77,7 +77,8 @@ namespace Persistence.Concretes
                 PasswordHash = result.PasswordHash,
                 PasswordSalt = result.PasswordHash,
                 Status = result.Status,
-                Id = result.Id
+                Id = result.Id,
+                Description = employer.Description
             };
             var result2 = await _employerWriteRepository.UpdateAsync(employerEntity);
             return new SuccessResult(Messages.EmployerUpdated);
