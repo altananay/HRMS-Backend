@@ -38,3 +38,5 @@ Gereksiz validationlar silindi, bazı validationlar eklendi. Yeni constant mesaj
 Son olarak proje Microsoft Azure'da bulut sunucu üzerinde yayına alındı.
 
 30 Ocak 2023 -> Bazı entity'lerde id bilgisi eksikti. Id bilgileri eklendi. Cv entity'sinde veri tabanına ekleme operasyonunda bazı değişiklikler yapıldı.
+
+8 Şubat 2023 -> API, iş pozisyonlarını response ederken istediğim formatta response etmiyordu. Response formatında düzenleme yapıldı ve Employer entity'sine yeni property eklendi.
