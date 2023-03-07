@@ -1,5 +1,6 @@
 ﻿using Application.Features.JobAdvertisements.Commands;
 using Application.Features.JobAdvertisements.Queries;
+using Application.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobAdvertisements.Commands.CreateJobAdvertisementCommand;
@@ -15,10 +16,12 @@ namespace WebAPI.Controllers
     public class JobAdvertisementsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IJobAdvertisementReadRepository _jobAdvertisementReadRepository;
 
-        public JobAdvertisementsController(IMediator mediator)
+        public JobAdvertisementsController(IMediator mediator, IJobAdvertisementReadRepository jobAdvertisementReadRepository)
         {
             _mediator = mediator;
+            _jobAdvertisementReadRepository = jobAdvertisementReadRepository;
         }
 
         [HttpGet("getall")]
@@ -68,7 +71,7 @@ namespace WebAPI.Controllers
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            GetByIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByIdJobAdvertisementQuery { Id = id});
+            GetByIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByIdJobAdvertisementQuery { Id = id });
             if (response.JobAdvertisement.IsSuccess)
             {
                 return Ok(response.JobAdvertisement);

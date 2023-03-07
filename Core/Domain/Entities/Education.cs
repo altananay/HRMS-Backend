@@ -7,6 +7,5 @@
         public string? Grade { get; set; }
         public string[] Years { get; set; }
         public string? Graduate { get; set; }
-        public string? Status { get; set; }
     }
 }

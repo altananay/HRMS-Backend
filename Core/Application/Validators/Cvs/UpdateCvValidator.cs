@@ -12,7 +12,7 @@ namespace Application.Validators.Cvs
             RuleFor(cv => cv.Information).NotEmpty().MinimumLength(20).MaximumLength(250);
             RuleForEach(cv => cv.Educations.OfType<Education>()).NotNull().OverridePropertyName("Education").SetValidator(new EducationValidator());
             RuleFor(cv => cv.Hobbies).NotEmpty().MinimumLength(10).MaximumLength(250);
-            RuleFor(cv => cv.Skills).NotEmpty().MinimumLength(20).MaximumLength(250);
+            RuleFor(cv => cv.Skills).NotEmpty();
             RuleForEach(cv => cv.Projects.OfType<Project>()).NotNull().OverridePropertyName("Project").SetValidator(new ProjectValidator());
             RuleFor(cv => cv.SocialMedias.WebSite).NotEmpty().MinimumLength(7).MaximumLength(30);
             RuleFor(cv => cv.SocialMedias.Github).NotEmpty().MinimumLength(5).MaximumLength(50);

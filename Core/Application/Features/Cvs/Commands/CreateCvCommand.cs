@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions;
+using Application.Dtos;
 using Application.Results;
 using Domain.Entities;
 using MediatR;
@@ -10,11 +11,11 @@ namespace Application.Features.Cvs.Commands
     {
         public string JobSeekerId { get; set; }
         public Education[] Educations { get; set; }
-        public JobExperience[]? JobExperiences { get; set; }
+        public CreateJobExperienceDto[] JobExperiences { get; set; }
         public ProgrammingLanguage[]? ProgrammingLanguages { get; set; }
-        public string? Skills { get; set; }
+        public string[] Skills { get; set; }
         public Language[]? Languages { get; set; }
-        public Project[]? Projects { get; set; }
+        public CreateProjectDto[] Projects { get; set; }
         public string? ImageUrl { get; set; }
         public SocialMedia? SocialMedias { get; set; }
         public string Information { get; set; }

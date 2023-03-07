@@ -32,10 +32,36 @@ namespace Persistence.Concretes
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
             Cv cv = new();
+            JobSeeker oldjobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
             Project[] projects = new Project[requestCv.Projects.Length];
             JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
-            projects = requestCv.Projects;
-            jobExperiences = requestCv.JobExperiences;
+
+
+            for (int i = 0; i < requestCv.Projects.Length; i++)
+            {
+                Project project = new();
+                project.Description = requestCv.Projects[i].Description;
+                project.ProjectName = requestCv.Projects[i].ProjectName;
+
+                projects[i] = project;
+                
+            }
+
+            for (int i = 0; i < requestCv.JobExperiences.Length; i++)
+            {
+                JobExperience jobExperience = new();
+
+                jobExperience.Description = requestCv.JobExperiences[i].Description;
+                jobExperience.CompanyName = requestCv.JobExperiences[i].CompanyName;
+                jobExperience.Department = requestCv.JobExperiences[i].Department;
+                jobExperience.Position = requestCv.JobExperiences[i].Position;
+                jobExperience.Years = requestCv.JobExperiences[i].Years;
+                jobExperience.LeaveWorkYear = requestCv.JobExperiences[i].LeaveWorkYear;
+
+                jobExperiences[i] = jobExperience;
+            }
+
+
             foreach (var project in projects)
             {
                 ObjectId id = ObjectId.GenerateNewId();
@@ -43,6 +69,9 @@ namespace Persistence.Concretes
                 project.CreatedAt = DateTime.UtcNow;
                 project.UpdatedAt = null;
             }
+
+            
+
             foreach (var jobExperience in jobExperiences)
             {
                 ObjectId id = ObjectId.GenerateNewId();
@@ -50,25 +79,30 @@ namespace Persistence.Concretes
                 jobExperience.CreatedAt = DateTime.UtcNow;
                 jobExperience.UpdatedAt = null;
             }
+
             cv.Educations = requestCv.Educations;
             cv.SocialMedias = requestCv.SocialMedias;
             cv.Skills = requestCv.Skills;
             cv.Projects = projects;
-            cv.Educations = requestCv.Educations;
             cv.Hobbies = requestCv.Hobbies;
             cv.ImageUrl = requestCv.ImageUrl;
             cv.ProgrammingLanguages = requestCv.ProgrammingLanguages;
             cv.JobExperiences = jobExperiences;
-            cv.JobSeekerId = requestCv.JobSeekerId;
+            cv.FirstName = oldjobSeeker.FirstName;
+            cv.LastName = oldjobSeeker.LastName;
+            cv.NationalityId = oldjobSeeker.NationalityId;
+            cv.DateOfBirth = oldjobSeeker.DateOfBirth;
+            cv.Email = oldjobSeeker.Email;
             cv.Information = requestCv.Information;
             cv.Languages = requestCv.Languages;
             cv.CreatedAt = DateTime.UtcNow;
+            cv.JobSeekerId = requestCv.JobSeekerId;
             
             await _cvWriteRepository.AddAsync(cv);
 
-            var result = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
-            result.CvId = cv.Id;
-            await _jobSeekerWriteRepository.UpdateAsync(result);
+            oldjobSeeker.Cv = cv;
+            
+            await _jobSeekerWriteRepository.UpdateAsync(oldjobSeeker);
 
             return new SuccessResult(Messages.CvAdded);
         }
@@ -93,27 +127,84 @@ namespace Persistence.Concretes
 
 
         [ValidationAspect(typeof(UpdateCvValidator))]
-        public async Task<IResult> Update(UpdateCvCommand cv)
+        public async Task<IResult> Update(UpdateCvCommand requestCv)
         {
-            var oldCv = GetByJobSeekerId(cv.JobSeekerId);
+            var oldCv = GetByJobSeekerId(requestCv.JobSeekerId);
+            var oldJobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
+            Project[] projects = new Project[requestCv.Projects.Length];
+            JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
+
+            for (int i = 0; i < requestCv.Projects.Length; i++)
+            {
+                Project project = new();
+                project.Description = requestCv.Projects[i].Description;
+                project.ProjectName = requestCv.Projects[i].ProjectName;
+
+                projects[i] = project;
+
+            }
+
+            for (int i = 0; i < requestCv.JobExperiences.Length; i++)
+            {
+                JobExperience jobExperience = new();
+
+                jobExperience.Description = requestCv.JobExperiences[i].Description;
+                jobExperience.CompanyName = requestCv.JobExperiences[i].CompanyName;
+                jobExperience.Department = requestCv.JobExperiences[i].Department;
+                jobExperience.Position = requestCv.JobExperiences[i].Position;
+                jobExperience.Years = requestCv.JobExperiences[i].Years;
+                jobExperience.LeaveWorkYear = requestCv.JobExperiences[i].LeaveWorkYear;
+
+                jobExperiences[i] = jobExperience;
+            }
+
+
+            foreach (var project in projects)
+            {
+                ObjectId id = ObjectId.GenerateNewId();
+                project.Id = id.ToString();
+                project.CreatedAt = DateTime.UtcNow;
+                project.UpdatedAt = null;
+            }
+
+
+
+            foreach (var jobExperience in jobExperiences)
+            {
+                ObjectId id = ObjectId.GenerateNewId();
+                jobExperience.Id = id.ToString();
+                jobExperience.CreatedAt = DateTime.UtcNow;
+                jobExperience.UpdatedAt = null;
+            }
+
 
             Cv newCv = new();
-            newCv.Id = cv.Id;
+            newCv.Id = requestCv.Id;
+            newCv.JobSeekerId = requestCv.JobSeekerId;
+            newCv.FirstName = oldJobSeeker.FirstName;
+            newCv.LastName = oldJobSeeker.LastName;
+            newCv.NationalityId = oldJobSeeker.NationalityId;
+            newCv.DateOfBirth = oldJobSeeker.DateOfBirth;
+            newCv.Email = oldJobSeeker.Email;
             newCv.CreatedAt = oldCv.Data.CreatedAt;
             newCv.UpdatedAt = DateTime.UtcNow;
-            newCv.Projects = cv.Projects;
-            newCv.Skills = cv.Skills;
-            newCv.Hobbies = cv.Hobbies;
-            newCv.Educations = cv.Educations;
-            newCv.SocialMedias = cv.SocialMedias;
-            newCv.ImageUrl = cv.ImageUrl;
-            newCv.Information = cv.Information;
-            newCv.JobExperiences = cv.JobExperiences;
-            newCv.Languages = cv.Languages;
-            newCv.ProgrammingLanguages = cv.ProgrammingLanguages;
-            newCv.JobSeekerId = cv.JobSeekerId;
+            newCv.Projects = projects;
+            newCv.Skills = requestCv.Skills;
+            newCv.Hobbies = requestCv.Hobbies;
+            newCv.Educations = requestCv.Educations;
+            newCv.SocialMedias = requestCv.SocialMedias;
+            newCv.ImageUrl = requestCv.ImageUrl;
+            newCv.Information = requestCv.Information;
+            newCv.JobExperiences = jobExperiences;
+            newCv.Languages = requestCv.Languages;
+            newCv.ProgrammingLanguages = requestCv.ProgrammingLanguages;
 
             await _cvWriteRepository.UpdateAsync(newCv);
+
+            oldJobSeeker.Cv = newCv;
+
+            await _jobSeekerWriteRepository.UpdateAsync(oldJobSeeker);
+
             return new SuccessResult(Messages.CvUpdated);
         }
     }
