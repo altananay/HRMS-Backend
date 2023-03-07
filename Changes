@@ -40,3 +40,7 @@ Son olarak proje Microsoft Azure'da bulut sunucu üzerinde yayına alındı.
 30 Ocak 2023 -> Bazı entity'lerde id bilgisi eksikti. Id bilgileri eklendi. Cv entity'sinde veri tabanına ekleme operasyonunda bazı değişiklikler yapıldı.
 
 8 Şubat 2023 -> API, iş pozisyonlarını response ederken istediğim formatta response etmiyordu. Response formatında düzenleme yapıldı ve Employer entity'sine yeni property eklendi.
+
+7 Mart 2023
+Referans ilişki türünden embedded document ilişki türüne geçildi. İlişki türünde değişiklik olunca veri tabanı işlemlerinde değişiklik olması gerekti.
+Veri tabanı işlemlerinde gerekli değişiklikler yapıldı ve validationlarda ufak düzeltmeler yapıldı.
