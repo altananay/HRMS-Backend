@@ -34,7 +34,7 @@ namespace Persistence.Concretes
         public IDataResult<Employer> Login(LoginQuery loginRequest)
         {
             var userToCheck = _employerService.GetByEmail(loginRequest.Email);
-            if (userToCheck == null)
+            if (userToCheck.Data == null)
             {
                 return new ErrorDataResult<Employer>(Messages.UserNotFound);
             }

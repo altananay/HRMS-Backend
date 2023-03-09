@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobAdvertisements.Commands.CreateJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Commands.DeleteJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Commands.UpdateJobAdvertisementCommand;
+using static Application.Features.JobAdvertisements.Queries.GetAllByStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByIdJobAdvertisementQuery;
 
@@ -28,6 +29,17 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             GetAllJobAdvertisementQueryResponse response = await _mediator.Send(new GetAllJobAdvertisementQuery { });
+            if (response.JobAdvertisements.IsSuccess)
+            {
+                return Ok(response.JobAdvertisements);
+            }
+            return BadRequest(response.JobAdvertisements);
+        }
+
+        [HttpGet("getallbystatus")]
+        public async Task<IActionResult> GetAllByStatus(bool status)
+        {
+            GetAllByStatusJobAdvertisementQueryResponse response = await _mediator.Send(new GetAllByStatusJobAdvertisementQuery { Status = status });
             if (response.JobAdvertisements.IsSuccess)
             {
                 return Ok(response.JobAdvertisements);

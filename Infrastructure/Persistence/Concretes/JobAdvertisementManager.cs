@@ -7,6 +7,7 @@ using Application.Results;
 using Application.Validators.Common;
 using Application.Validators.JobAdvertisements;
 using Domain.Entities;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Persistence.Concretes
 {
@@ -83,6 +84,11 @@ namespace Persistence.Concretes
         {
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll());
 
+        }
+
+        public IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status)
+        {
+            return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.Status == status));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]

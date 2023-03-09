@@ -25,10 +25,9 @@ namespace Persistence.Repositories
             return result;
         }
 
-        public IQueryable<T> GetAll()
+        public IQueryable<T> GetAll(Expression<Func<T, bool>> filter = null)
         {
-            var results = collection.AsQueryable();
-            return results;
+            return filter == null ? collection.AsQueryable() : collection.AsQueryable().Where(filter);
         }
 
         public T GetById(string id)
