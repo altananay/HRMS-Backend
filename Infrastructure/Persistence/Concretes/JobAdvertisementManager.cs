@@ -66,6 +66,7 @@ namespace Persistence.Concretes
             jobAdv.MinSalary = jobAdvertisement.MinSalary;
             jobAdv.JobType = jobAdvertisement.JobType;
             jobAdv.Status = true;
+            jobAdv.Currency = jobAdvertisement.Currency;
             
             await _jobAdvertisementWriteRepository.AddAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementAdded);
@@ -143,6 +144,7 @@ namespace Persistence.Concretes
             jobAdv.CompanyPhone = oldJobAdv.Data.CompanyPhone;
             jobAdv.WebSite = oldJobAdv.Data.WebSite;
             jobAdv.Email = oldJobAdv.Data.Email;
+            jobAdv.Currency = jobAdvertisement.Currency;
 
             await _jobAdvertisementWriteRepository.UpdateAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementUpdated);

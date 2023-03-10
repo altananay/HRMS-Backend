@@ -16,8 +16,9 @@ namespace Domain.Entities
         public string Experience { get; set; }
         public string[] Skills { get; set; }
         public string City { get; set; }
-        public double? MinSalary { get; set; }
-        public double? MaxSalary { get; set; }
+        public decimal? MinSalary { get; set; }
+        public decimal? MaxSalary { get; set; }
+        public string Currency { get; set; }
         public int OpenPosition { get; set; }
         public string JobType { get; set; }
         public DateTime Deadline { get; set; }
