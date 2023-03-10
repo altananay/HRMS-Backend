@@ -51,3 +51,7 @@ Read repository sınıfına bütün veri tabanı nesneleri için filtreli listel
 İş ilanlarını aktif veya pasif olanları listeletme özelliği eklendi.
 Company için login işleminde hata vardı hata fixlendi.
 Projenin en güncel hali Azure bulut sunucuya aktarıldı.
+
+10 Mart 2023
+İş ilanı veri tabanı nesnesine para birimi eklendi.
+İş ilanı veri tabanı ekleme ve güncelleme işleminde düzeltmeler yapıldı.
