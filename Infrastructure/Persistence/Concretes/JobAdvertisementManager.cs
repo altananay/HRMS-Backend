@@ -41,10 +41,7 @@ namespace Persistence.Concretes
             jobPosition.CreatedAt = DateTime.Now;
             jobPosition.PositionName = jobAdvertisement.JobPositionName;
 
-
             await _jobPositionWriteRepository.AddAsync(jobPosition);
-
-            
 
             JobAdvertisement jobAdv = new();
             jobAdv.CreatedAt = DateTime.UtcNow;
@@ -84,7 +81,6 @@ namespace Persistence.Concretes
         public IDataResult<IQueryable<JobAdvertisement>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll());
-
         }
 
         public IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status)

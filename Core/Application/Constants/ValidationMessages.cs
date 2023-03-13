@@ -10,6 +10,7 @@
 
         //Job experience validation messages
         public static string JobPositionCantEmpty = "İş pozisyonu bilgisi boş bırakılamaz";
+        public static string JobPositionLength = "İş pozisyonu 5 karakterden az olamaz.";
         public static string CompanyNameInformationCantEmpty = "Şirket ismi boş bırakılamaz";
         public static string DepartmentCantEmpty = "Departman boş bırakılamaz";
 

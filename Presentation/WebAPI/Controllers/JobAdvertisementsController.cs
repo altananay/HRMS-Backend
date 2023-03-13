@@ -48,7 +48,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> Add(CreateJobAdvertisementCommand jobAdvertisement)
+        public async Task<IActionResult> Add([FromBody] CreateJobAdvertisementCommand jobAdvertisement)
         {
             CreateJobAdvertisementCommandResponse response = await _mediator.Send(jobAdvertisement);
             if (response.Result.IsSuccess)

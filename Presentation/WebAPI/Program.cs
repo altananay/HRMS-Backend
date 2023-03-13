@@ -3,9 +3,12 @@ using Application.Extensions;
 using Application.Utilities.IoC;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Encryption;
+using Application.Validators.JobAdvertisements;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using FluentValidation.AspNetCore;
 using Infrastructure;
+using Infrastructure.Filters;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -21,10 +24,14 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory()).Conf
 
 builder.Services.AddMediatR(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddApplicationServices();
-builder.Services.AddCors();
+builder.Services.AddCors(options => options.AddPolicy("ApiCorsPolicy", builder => {
+    builder.WithOrigins("http://localhost:3000", "https://localhost:3000").AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
+}));
+builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>()).AddFluentValidation(configuration => 
+    configuration.RegisterValidatorsFromAssemblyContaining<CreateJobAdvertisementValidator>().RegisterValidatorsFromAssemblyContaining<UpdateJobAdvertisementValidator>()).ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
+
 
 IConfiguration configuration = builder.Configuration;
 
@@ -65,9 +72,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
-app.UseCors(builder => builder.WithOrigins("http://localhost:3000", "https://localhost:3000").AllowAnyHeader().AllowAnyMethod());
-
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors("ApiCorsPolicy");
 
 app.UseAuthentication();
 

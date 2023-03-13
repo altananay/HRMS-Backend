@@ -10,7 +10,8 @@ namespace Application.Validators.JobAdvertisements
         public UpdateJobAdvertisementValidator()
         {
             RuleFor(j => j.Id).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage(ValidationMessages.ObjectIdValidationError);
-            RuleFor(jp => jp.JobPositionName).NotEmpty().MinimumLength(5).WithMessage(ValidationMessages.JobPositionCantEmpty);
+            RuleFor(jp => jp.JobPositionName).MinimumLength(5);
+            RuleFor(jp => jp.JobPositionName).NotEmpty().WithMessage(ValidationMessages.JobPositionCantEmpty);
             RuleFor(j => j.Description).NotEmpty().MinimumLength(20).MaximumLength(1000);
             RuleFor(j => j.City).NotEmpty().MinimumLength(3).MaximumLength(20);
             RuleFor(j => j.Deadline).NotEmpty().WithMessage(ValidationMessages.DeadlineCantEmpty);
