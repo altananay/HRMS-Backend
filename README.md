@@ -25,7 +25,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Object Oriented Programming (OOP) </li>
   <li> Aspect Oriented Programming (AOP) </li>
   <li> Validation </li>
-  <li> Fluent Validation </li>
+  <li> Validation Filter </li>
   <li> JSON Web Token (JWT) </li>
   <li> Generic Repository Design Pattern </li>
   <li> CQRS Design Pattern </li>
