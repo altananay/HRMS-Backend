@@ -141,6 +141,7 @@ namespace Persistence.Concretes
             jobAdv.WebSite = oldJobAdv.Data.WebSite;
             jobAdv.Email = oldJobAdv.Data.Email;
             jobAdv.Currency = jobAdvertisement.Currency;
+            
 
             await _jobAdvertisementWriteRepository.UpdateAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementUpdated);

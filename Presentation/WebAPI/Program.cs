@@ -27,7 +27,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddApplicationServices();
 builder.Services.AddCors(options => options.AddPolicy("ApiCorsPolicy", builder => {
-    builder.WithOrigins("http://localhost:3000", "https://localhost:3000").AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
+    builder.WithOrigins("http://localhost:3000", "https://localhost:3000", "https://hrmstez.netlify.app").AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
 }));
 builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>()).AddFluentValidation(configuration => 
     configuration.RegisterValidatorsFromAssemblyContaining<CreateJobAdvertisementValidator>().RegisterValidatorsFromAssemblyContaining<UpdateJobAdvertisementValidator>()).ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);

@@ -4,6 +4,7 @@ using Application.Constants;
 using Application.Features.Employers.Commands;
 using Application.Repositories;
 using Application.Results;
+using Application.Utilities.Security.Hashing;
 using Application.Validators.Common;
 using Application.Validators.Employers.Auth;
 using Domain.Entities;
@@ -61,7 +62,7 @@ namespace Persistence.Concretes
             return new SuccessDataResult<Employer>(_employerReadRepository.Get(e => e.Id == id));
         }
 
-        [ValidationAspect(typeof(UpdateEmployerCommand))]
+        [ValidationAspect(typeof(EmployerValidator))]
         public async Task<IResult> Update(UpdateEmployerCommand employer)
         {
             var result = _employerReadRepository.Get(e => e.Email == employer.Email);
@@ -75,10 +76,13 @@ namespace Persistence.Concretes
                 UpdatedAt = DateTime.UtcNow,
                 WebSite = employer.WebSite,
                 PasswordHash = result.PasswordHash,
-                PasswordSalt = result.PasswordHash,
+                PasswordSalt = result.PasswordSalt,
                 Status = result.Status,
                 Id = result.Id,
-                Description = employer.Description
+                Description = employer.Description,
+                Departments = employer.Departments,
+                Sector = employer.Sector,
+                NumberOfEmployees = employer.NumberOfEmployees
             };
             var result2 = await _employerWriteRepository.UpdateAsync(employerEntity);
             return new SuccessResult(Messages.EmployerUpdated);
