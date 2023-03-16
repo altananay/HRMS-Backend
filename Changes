@@ -58,3 +58,7 @@ Projenin en güncel hali Azure bulut sunucuya aktarıldı.
 
 13 Mart 2023
 Fluent Validation kütüphanesini kullanarak Validation Filter eklendi.
+
+16 Mart 2023
+Employer nesnesine sector, departmanlar ve toplam çalışan sayısı eklendi.
+Employer güncelleme işleminde şifre güncellenmemesine rağmen şifre güncelleniyor ve hesaba giriş yapılamıyordu bu hata düzeltildi.
