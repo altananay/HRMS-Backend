@@ -55,3 +55,6 @@ Projenin en güncel hali Azure bulut sunucuya aktarıldı.
 10 Mart 2023
 İş ilanı veri tabanı nesnesine para birimi eklendi.
 İş ilanı veri tabanı ekleme ve güncelleme işleminde düzeltmeler yapıldı.
+
+13 Mart 2023
+Fluent Validation kütüphanesini kullanarak Validation Filter eklendi.

@@ -25,7 +25,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Object Oriented Programming (OOP) </li>
   <li> Aspect Oriented Programming (AOP) </li>
   <li> Validation </li>
-  <li> Fluent Validation </li>
+  <li> Validation Filter </li>
   <li> JSON Web Token (JWT) </li>
   <li> Generic Repository Design Pattern </li>
   <li> CQRS Design Pattern </li>
@@ -37,9 +37,10 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Authentication </li>
   <li> Hashing Password </li>
   <li> Encryption </li>
+  <li> Azure Blob Storage </li>
 </ul>
 
-![JWT][jwt]
+![JWT][jwt] ![Azure][azure]
 
 ## Test için kullanılanlar
 ![Postman][postman]
@@ -55,3 +56,4 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [vs]:https://img.shields.io/badge/Visual%20Studio-5C2D91.svg?style=for-the-badge&logo=visual-studio&logoColor=white
 [swagger]:https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white
 [postman]:https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white
+[azure]:https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white
