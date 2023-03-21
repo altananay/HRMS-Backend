@@ -44,7 +44,7 @@ namespace Persistence.Concretes
                 Claims = claims,
                 CreatedAt = DateTime.UtcNow,
                 DateOfBirth = userForRegisterDto.DateOfBirth,
-                NationalityId = userForRegisterDto.IdentityNumber
+                NationalityId = null
             };
             var result = await _jobSeekerService.Add(jobSeeker);
             if (result.IsSuccess)

@@ -1,6 +1,6 @@
 ﻿using Application.Abstractions;
+using Application.Dtos;
 using Application.Results;
-using Domain.Entities;
 using MediatR;
 using static Application.Features.JobSeekers.Queries.GetAllJobSeekerQuery;
 
@@ -10,7 +10,7 @@ namespace Application.Features.JobSeekers.Queries
     {
         public class GetAllJobSeekerCommandResponse
         {
-            public IDataResult<IQueryable<JobSeeker>> JobSeekers;
+            public IDataResult<IQueryable<GetAllJobSeekerDto>> JobSeekers;
         }
 
         public class GetAllJobSeekerCommandHandler : IRequestHandler<GetAllJobSeekerQuery, GetAllJobSeekerCommandResponse>
@@ -23,7 +23,7 @@ namespace Application.Features.JobSeekers.Queries
             }
             public async Task<GetAllJobSeekerCommandResponse> Handle(GetAllJobSeekerQuery request, CancellationToken cancellationToken)
             {
-                var result = _jobSeekerService.GetAll();
+                var result = _jobSeekerService.GetAllJobSeeker();
                 return new GetAllJobSeekerCommandResponse { JobSeekers = result };
             }
         }

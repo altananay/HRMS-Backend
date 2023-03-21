@@ -8,6 +8,7 @@ using static Application.Features.JobAdvertisements.Commands.DeleteJobAdvertisem
 using static Application.Features.JobAdvertisements.Commands.UpdateJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Queries.GetAllByStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementQuery;
+using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByIdJobAdvertisementQuery;
 
 namespace WebAPI.Controllers
@@ -67,6 +68,17 @@ namespace WebAPI.Controllers
                 return Ok(response.Result);
             }
             return BadRequest(response.Result);
+        }
+
+        [HttpGet("getbyemployerid/{id}")]
+        public async Task<IActionResult> GetByEmployerId(string id)
+        {
+            GetByEmployerIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByEmployerIdJobAdvertisementQuery { Id = id });
+            if (response.JobAdvertisement.IsSuccess)
+            {
+                return Ok(response.JobAdvertisement);
+            }
+            return BadRequest(response.JobAdvertisement);
         }
 
         [HttpPut("update")]

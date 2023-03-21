@@ -31,13 +31,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(JobSeekerValidator))]
         public async Task<IResult> Add(JobSeeker jobSeeker)
         {
-            if (_checkPersonService.CheckIfRealPerson(new MernisCheckDto()
-            {
-                DateOfBirth = jobSeeker.DateOfBirth,
-                NationalityId = jobSeeker.NationalityId,
-                FirstName = jobSeeker.FirstName,
-                LastName = jobSeeker.LastName,
-            }))
+            if (_checkPersonService.CheckPerson())
             {
                 var user = new User();
                 await _userService.Add(user);
@@ -101,6 +95,11 @@ namespace Persistence.Concretes
             {
                 return new ErrorResult(Messages.UnknownError);
             }
+        }
+
+        public IDataResult<IQueryable<GetAllJobSeekerDto>> GetAllJobSeeker()
+        {
+            return new SuccessDataResult<IQueryable<GetAllJobSeekerDto>>(_jobSeekerReadRepository.GetAllJobSeeker());
         }
     }
 }

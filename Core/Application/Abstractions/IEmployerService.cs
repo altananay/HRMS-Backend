@@ -1,4 +1,5 @@
-﻿using Application.Features.Employers.Commands;
+﻿using Application.Dtos;
+using Application.Features.Employers.Commands;
 using Application.Results;
 using Domain.Entities;
 
@@ -12,5 +13,7 @@ namespace Application.Abstractions
         Task<IResult> Update(UpdateEmployerCommand employer);
         IDataResult<Employer> GetById(string id);
         IDataResult<Employer> GetByEmail(string email);
+        IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id);
+        IDataResult<IQueryable<GetAllEmployerDto>> GetAllEmployer();
     }
 }

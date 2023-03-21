@@ -1,10 +1,10 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
+using Application.Dtos;
 using Application.Features.Employers.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Utilities.Security.Hashing;
 using Application.Validators.Common;
 using Application.Validators.Employers.Auth;
 using Domain.Entities;
@@ -50,10 +50,20 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<Employer>>(_employerReadRepository.GetAll());
         }
 
+        public IDataResult<IQueryable<GetAllEmployerDto>> GetAllEmployer()
+        {
+            return new SuccessDataResult<IQueryable<GetAllEmployerDto>>(_employerReadRepository.GetAllEmployer());
+        }
+
         public IDataResult<Employer> GetByEmail(string email)
         {
             return new SuccessDataResult<Employer>(_employerReadRepository.Get(u => u.Email == email));
 
+        }
+
+        public IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id)
+        {
+            return new SuccessDataResult<GetEmployerDto>(_employerReadRepository.GetByEmployerIdWithFields(id));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]

@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions;
+using Application.Dtos;
 using Application.Results;
 using Domain.Entities;
 using MediatR;
@@ -12,7 +13,7 @@ namespace Application.Features.Employers.Queries
 
         public class GetByIdEmployerQueryResponse
         {
-            public IDataResult<Employer> Employer;
+            public IDataResult<GetEmployerDto> Employer;
         }
 
         public class GetByIdEmployerQueryHandler : IRequestHandler<GetByIdEmployerQuery, GetByIdEmployerQueryResponse>
@@ -26,7 +27,7 @@ namespace Application.Features.Employers.Queries
 
             public async Task<GetByIdEmployerQueryResponse> Handle(GetByIdEmployerQuery request, CancellationToken cancellationToken)
             {
-                var result = _employerService.GetById(request.Id);
+                var result = _employerService.GetByEmployerIdWithFields(request.Id);
                 return new GetByIdEmployerQueryResponse { Employer = result };
             }
         }

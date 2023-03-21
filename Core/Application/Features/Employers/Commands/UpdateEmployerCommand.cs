@@ -12,10 +12,10 @@ namespace Application.Features.Employers.Commands
         public string CompanyPhone { get; set; }
         public string WebSite { get; set; }
         public string Email { get; set; }
-        public string Description { get; set; }
-        public string[] Sector { get; set; }
-        public string[] Departments { get; set; }
-        public string NumberOfEmployees { get; set; }
+        public string? Description { get; set; }
+        public string[]? Sector { get; set; }
+        public Department[]? Departments { get; set; }
+        public string? NumberOfEmployees { get; set; }
 
         public class UpdateEmployerCommandResponse
         {

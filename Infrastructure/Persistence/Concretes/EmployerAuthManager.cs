@@ -1,7 +1,6 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
-using Application.Dtos;
 using Application.Features.EmployerAuth.Commands;
 using Application.Features.EmployerAuth.Queries;
 using Application.Results;
@@ -66,7 +65,7 @@ namespace Persistence.Concretes
                 CreatedAt = DateTime.UtcNow,
             };
             await _employerService.Add(user);
-            return new SuccessDataResult<Employer>(user, Messages.UserRegistered);
+            return new SuccessResult(Messages.UserRegistered);
         }
 
         public IResult UserExists(string email)

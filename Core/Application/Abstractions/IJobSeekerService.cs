@@ -1,4 +1,5 @@
-﻿using Application.Features.JobSeekers.Commands;
+﻿using Application.Dtos;
+using Application.Features.JobSeekers.Commands;
 using Application.Results;
 using Domain.Entities;
 
@@ -12,6 +13,7 @@ namespace Application.Abstractions
         Task<IResult> Update(UpdateJobSeekerCommand jobSeeker);
         //IDataResult<IQueryable<JobSeeker>> GetClaims(JobSeeker user);
         IDataResult<JobSeeker> GetByMail(string email);
-        public IResult NationalityIdExists(string nationalityId);
+        IResult NationalityIdExists(string nationalityId);
+        IDataResult<IQueryable<GetAllJobSeekerDto>> GetAllJobSeeker();
     }
 }

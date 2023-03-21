@@ -7,7 +7,6 @@ using Application.Results;
 using Application.Validators.Common;
 using Application.Validators.JobAdvertisements;
 using Domain.Entities;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Persistence.Concretes
 {
@@ -65,6 +64,7 @@ namespace Persistence.Concretes
             jobAdv.Status = true;
             jobAdv.Currency = jobAdvertisement.Currency;
             
+            
             await _jobAdvertisementWriteRepository.AddAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisementAdded);
         }
@@ -86,6 +86,11 @@ namespace Persistence.Concretes
         public IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status)
         {
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.Status == status));
+        }
+
+        public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string id)
+        {
+            return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.EmployerId == id));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]

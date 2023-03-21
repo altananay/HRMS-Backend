@@ -1,11 +1,6 @@
 ﻿using Application.Features.JobAdvertisements.Commands;
 using Application.Results;
 using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Abstractions
 {
@@ -18,5 +13,6 @@ namespace Application.Abstractions
         IDataResult<JobAdvertisement> GetById(string id);
         IResult JobAdvertisementExists(string jobPosition);
         IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status);
+        IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string employerId);
     }
 }

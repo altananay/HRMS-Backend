@@ -12,7 +12,6 @@ namespace Application.Features.JobSeekers.Commands
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public DateTime DateOfBirth { get; set; }
-        public string IdentityNumber { get; set; }
 
         public class CreateJobSeekerCommandResponse
         {
@@ -32,15 +31,6 @@ namespace Application.Features.JobSeekers.Commands
 
             public async Task<CreateJobSeekerCommandResponse> Handle(CreateJobSeekerCommand request, CancellationToken cancellationToken)
             {
-                var result = _jobSeekerService.NationalityIdExists(request.IdentityNumber);
-                if (!result.IsSuccess)
-                {
-                    return new CreateJobSeekerCommandResponse()
-                    {
-                        Result = result
-                    };
-                }
-
                 var result2 = await _authService.Register(request, request.Password);
                 if (result2.IsSuccess)
                 {
