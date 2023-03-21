@@ -62,3 +62,9 @@ Fluent Validation kütüphanesini kullanarak Validation Filter eklendi.
 16 Mart 2023
 Employer nesnesine sector, departmanlar ve toplam çalışan sayısı eklendi.
 Employer güncelleme işleminde şifre güncellenmemesine rağmen şifre güncelleniyor ve hesaba giriş yapılamıyordu bu hata düzeltildi.
+
+21 Mart 2023
+Verileri listeleme işleminde veri tabanındaki bütün alanlar listeleniyordu. Bütün verilerin gelmesine gerek yok kullanıcıların her veriyi görmesi gerekmez.
+Bu durum için özel sorgular yazıldı ve veri tabanından sadece gerekli olan veriler getirildi.
+Company kayıt olma işleminde mantıksal hata giderildi.
+Company veri tabanı nesnesine departman ve çalışan sayısı bilgileri eklendi.
