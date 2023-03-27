@@ -1,4 +1,4 @@
-### Kullanılan Programlama Dili ve Veri Tabanı
+### Kullanılan Programlama Dili ve Veri Tabanı / Programming Language and Database Used
 
 ![C#][csharp]
 ![.NET][dotnet]
@@ -12,7 +12,7 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_
 Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
 -->
 
-## Kullanılan Teknolojiler - Teknikler
+## Kullanılan Teknikler / Used Techniques
 
 <ul>
   <li> Onion Architecture </li>
@@ -42,7 +42,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 
 ![JWT][jwt] ![Azure][azure]
 
-## Test için kullanılanlar
+## Test için kullanılanlar / Used for Test
 ![Postman][postman]
 ![Swagger][swagger]
 
@@ -58,7 +58,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [postman]:https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white
 [azure]:https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white
 
-## Kullanılan Kütüphaneler
+## Kullanılan Kütüphaneler / Libraries Used
 
 | Kütüphane             | Sürümü                                                                |
 | ----------------- | ------------------------------------------------------------------ |
