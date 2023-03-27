@@ -68,3 +68,6 @@ Verileri listeleme işleminde veri tabanındaki bütün alanlar listeleniyordu. 
 Bu durum için özel sorgular yazıldı ve veri tabanından sadece gerekli olan veriler getirildi.
 Company kayıt olma işleminde mantıksal hata giderildi.
 Company veri tabanı nesnesine departman ve çalışan sayısı bilgileri eklendi.
+
+27 Mart 2023
+Bütün kütüphaneler en güncel sürüme güncellendi ve MediatR kütüphanesinin yeni konfigürasyonu yapıldı.
