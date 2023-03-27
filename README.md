@@ -68,4 +68,21 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 | Microsoft.AspNetCore.Authentication.JwtBearer | 7.0.4 |
 | Microsoft.AspNetCore.Cors | 2.2.0 |
 | Microsoft.OpenApi | 1.6.3 |
-| Swashbuckle.AspNetCore | 6.5.0|
+| Swashbuckle.AspNetCore | 6.5.0 |
+| Autofac.Extras.DynamicProxy | 6.0.1 |
+| Castle.Core | 5.1.1 |
+| Microsoft.Extensions.Configuration | 7.0.0 |
+| Microsoft.Extensions.Configuration.Json | 7.0.0 |
+| MongoDB.Driver | 2.19.0 |
+| Azure.Storage.Blobs | 12.15.1 |
+| Microsoft.Extensions.Configuration.Binder | 7.0.4 |
+| System.IdentityModel.Tokens.Jwt | 6.27.0 |
+| System.ServiceModel.Security | 4.10.0 |
+| System.ServiceModel.Http | 4.10.0 |
+| FluentValidation | 11.5.1 |
+| FluentValidation.DependencyInjectionExtensions | 11.5.1 |
+| MediatR | 12.0.1 |
+| Microsoft.Extensions.Configuration.Abstractions | 7.0.0 |
+| Microsoft.Extensions.DependencyInjection | 7.0.0 |
+| Microsoft.Extensions.DependencyInjection.Abstractions | 7.0.0 |
+| Microsoft.IdentityModel.Tokens | 6.27.0 |
