@@ -62,7 +62,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 
 | Kütüphane             | Sürümü                                                                |
 | ----------------- | ------------------------------------------------------------------ |
-| Autofac | ![#222831]6.4.0 #222831 |
+| Autofac | 6.4.0  |
 | Secondary Color | ![#393E46](https://via.placeholder.com/10/393E46?text=+) #393E46 |
 | Accent Color | ![#00ADB5](https://via.placeholder.com/10/00ADB5?text=+) #00ADB5 |
 | Text Color | ![#EEEEEE](https://via.placeholder.com/10/EEEEEE?text=+) #EEEEEE |
