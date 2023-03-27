@@ -63,6 +63,9 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 | Kütüphane             | Sürümü                                                                |
 | ----------------- | ------------------------------------------------------------------ |
 | Autofac | 6.4.0  |
-| Secondary Color | ![#393E46](https://via.placeholder.com/10/393E46?text=+) #393E46 |
-| Accent Color | ![#00ADB5](https://via.placeholder.com/10/00ADB5?text=+) #00ADB5 |
-| Text Color | ![#EEEEEE](https://via.placeholder.com/10/EEEEEE?text=+) #EEEEEE |
+| Autofac.Extensions.DependencyInjection | 8.0.0 |
+| FluentValidation.AspNetCore | 11.2.2 |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 7.0.0 |
+| Microsoft.AspNetCore.Cors | 2.2.0 |
+| Microsoft.OpenApi | 1.5.0 |
+| Swashbuckle.AspNetCore | 6.5.0|
