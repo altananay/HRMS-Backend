@@ -1,4 +1,4 @@
-### Kullanılan Programlama Dili ve Veri Tabanı
+### Kullanılan Programlama Dili ve Veri Tabanı / Programming Language and Database Used
 
 ![C#][csharp]
 ![.NET][dotnet]
@@ -12,7 +12,7 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_
 Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
 -->
 
-## Kullanılan Teknolojiler - Teknikler
+## Kullanılan Teknikler / Used Techniques
 
 <ul>
   <li> Onion Architecture </li>
@@ -42,7 +42,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 
 ![JWT][jwt] ![Azure][azure]
 
-## Test için kullanılanlar
+## Test için kullanılanlar / Used for Test
 ![Postman][postman]
 ![Swagger][swagger]
 
@@ -57,3 +57,32 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [swagger]:https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white
 [postman]:https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white
 [azure]:https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white
+
+## Kullanılan Kütüphaneler / Libraries Used
+
+| Kütüphane             | Sürümü                                                                |
+| ----------------- | ------------------------------------------------------------------ |
+| Autofac | 7.0.0  |
+| Autofac.Extensions.DependencyInjection | 8.0.0 |
+| FluentValidation.AspNetCore | 11.2.2 |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 7.0.4 |
+| Microsoft.AspNetCore.Cors | 2.2.0 |
+| Microsoft.OpenApi | 1.6.3 |
+| Swashbuckle.AspNetCore | 6.5.0 |
+| Autofac.Extras.DynamicProxy | 6.0.1 |
+| Castle.Core | 5.1.1 |
+| Microsoft.Extensions.Configuration | 7.0.0 |
+| Microsoft.Extensions.Configuration.Json | 7.0.0 |
+| MongoDB.Driver | 2.19.0 |
+| Azure.Storage.Blobs | 12.15.1 |
+| Microsoft.Extensions.Configuration.Binder | 7.0.4 |
+| System.IdentityModel.Tokens.Jwt | 6.27.0 |
+| System.ServiceModel.Security | 4.10.0 |
+| System.ServiceModel.Http | 4.10.0 |
+| FluentValidation | 11.5.1 |
+| FluentValidation.DependencyInjectionExtensions | 11.5.1 |
+| MediatR | 12.0.1 |
+| Microsoft.Extensions.Configuration.Abstractions | 7.0.0 |
+| Microsoft.Extensions.DependencyInjection | 7.0.0 |
+| Microsoft.Extensions.DependencyInjection.Abstractions | 7.0.0 |
+| Microsoft.IdentityModel.Tokens | 6.27.0 |
