@@ -62,10 +62,10 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 
 | Kütüphane             | Sürümü                                                                |
 | ----------------- | ------------------------------------------------------------------ |
-| Autofac | 6.4.0  |
+| Autofac | 7.0.0  |
 | Autofac.Extensions.DependencyInjection | 8.0.0 |
 | FluentValidation.AspNetCore | 11.2.2 |
-| Microsoft.AspNetCore.Authentication.JwtBearer | 7.0.0 |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 7.0.4 |
 | Microsoft.AspNetCore.Cors | 2.2.0 |
-| Microsoft.OpenApi | 1.5.0 |
+| Microsoft.OpenApi | 1.6.3 |
 | Swashbuckle.AspNetCore | 6.5.0|
