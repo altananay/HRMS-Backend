@@ -71,3 +71,6 @@ Company veri tabanı nesnesine departman ve çalışan sayısı bilgileri eklend
 
 27 Mart 2023
 Bütün kütüphaneler en güncel sürüme güncellendi ve MediatR kütüphanesinin yeni konfigürasyonu yapıldı.
+
+29 Mart 2023
+Company id'ye göre şirket bilgilerini getirme işleminde eksik gelen email bilgisi için düzeltme yapıldı.
