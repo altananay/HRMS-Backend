@@ -24,7 +24,7 @@ namespace Persistence.Repositories
         {
             var result = (from employer in collection.AsQueryable()
             where employer.Id == id
-            select new GetEmployerDto { Id=employer.Id, NumberOfEmployees = employer.NumberOfEmployees, CompanyName = employer.CompanyName, CompanyPhone = employer.CompanyPhone, Departments = employer.Departments, Description = employer.Description, Sector = employer.Sector, WebSite = employer.WebSite }).FirstOrDefault();
+            select new GetEmployerDto { Id=employer.Id, NumberOfEmployees = employer.NumberOfEmployees, CompanyName = employer.CompanyName, CompanyPhone = employer.CompanyPhone, Departments = employer.Departments, Description = employer.Description, Sector = employer.Sector, WebSite = employer.WebSite, Email = employer.Email }).FirstOrDefault();
             return result;
         }
 
