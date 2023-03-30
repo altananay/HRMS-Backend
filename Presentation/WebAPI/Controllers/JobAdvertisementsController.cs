@@ -9,6 +9,7 @@ using static Application.Features.JobAdvertisements.Commands.UpdateJobAdvertisem
 using static Application.Features.JobAdvertisements.Queries.GetAllByStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdJobAdvertisementQuery;
+using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdWithStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByIdJobAdvertisementQuery;
 
 namespace WebAPI.Controllers
@@ -18,12 +19,10 @@ namespace WebAPI.Controllers
     public class JobAdvertisementsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IJobAdvertisementReadRepository _jobAdvertisementReadRepository;
 
-        public JobAdvertisementsController(IMediator mediator, IJobAdvertisementReadRepository jobAdvertisementReadRepository)
+        public JobAdvertisementsController(IMediator mediator)
         {
             _mediator = mediator;
-            _jobAdvertisementReadRepository = jobAdvertisementReadRepository;
         }
 
         [HttpGet("getall")]
@@ -74,6 +73,17 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetByEmployerId(string id)
         {
             GetByEmployerIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByEmployerIdJobAdvertisementQuery { Id = id });
+            if (response.JobAdvertisement.IsSuccess)
+            {
+                return Ok(response.JobAdvertisement);
+            }
+            return BadRequest(response.JobAdvertisement);
+        }
+
+        [HttpGet("getbyemployerid/{id}/{status}")]
+        public async Task<IActionResult> GetByEmployerIdWithStatus(string id, bool status)
+        {
+            GetByEmployerIdWithStatusJobAdvertisementQueryResponse response = await _mediator.Send(new GetByEmployerIdWithStatusJobAdvertisementQuery { Id = id, Status = status });
             if (response.JobAdvertisement.IsSuccess)
             {
                 return Ok(response.JobAdvertisement);

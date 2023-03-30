@@ -93,6 +93,11 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.EmployerId == id));
         }
 
+        public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerIdWithStatus(string id, bool status)
+        {
+            return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(ja => ja.EmployerId == id && ja.Status == status));
+        }
+
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobAdvertisement> GetById(string id)
         {

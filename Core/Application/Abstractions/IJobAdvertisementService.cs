@@ -14,5 +14,6 @@ namespace Application.Abstractions
         IResult JobAdvertisementExists(string jobPosition);
         IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status);
         IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string employerId);
+        IDataResult<IQueryable<JobAdvertisement>> GetByEmployerIdWithStatus(string id, bool status);
     }
 }
