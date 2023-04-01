@@ -87,3 +87,6 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 | Microsoft.Extensions.DependencyInjection | 7.0.0 |
 | Microsoft.Extensions.DependencyInjection.Abstractions | 7.0.0 |
 | Microsoft.IdentityModel.Tokens | 6.27.0 |
+| Serilog.AspNetCore | 6.1.0 |
+| Serilog.Sinks.MongoDB | 5.3.1 |
+| Serilog.Sinks.Seq | 5.2.2 |
