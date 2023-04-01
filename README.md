@@ -38,6 +38,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Hashing Password </li>
   <li> Encryption </li>
   <li> Azure Blob Storage </li>
+  <li> Logging with Serilog and Logged to MongoDb </li>
 </ul>
 
 ![JWT][jwt] ![Azure][azure]
