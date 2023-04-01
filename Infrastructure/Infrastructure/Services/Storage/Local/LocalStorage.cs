@@ -40,7 +40,6 @@ namespace Infrastructure.Services.Storage.Local
             }
             catch (Exception exception)
             {
-                //todo log!
                 throw exception;
             }
         }
@@ -52,6 +51,12 @@ namespace Infrastructure.Services.Storage.Local
             {
                 Directory.CreateDirectory(uploadPath);
             }
+            else
+            {
+                throw new Exception("Dosyalar yüklenirken hata oluştu.");
+            }
+
+
 
             List<(string fileName, string path)> datas = new();
             foreach (IFormFile file in files)
@@ -64,7 +69,6 @@ namespace Infrastructure.Services.Storage.Local
             }
 
             return datas;
-            /*todo eğer ki yukarıdaki if geçerli değilse dosyaların sunucuda yüklenirken hata alındığına dair uyarıcı bir exception oluştur ve fırlat.*/
         }
     }
 }

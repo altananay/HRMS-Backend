@@ -10,10 +10,17 @@ using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using Persistence;
+using Serilog;
+using Serilog.Context;
+using Serilog.Core;
+using Serilog.Events;
 using System.Reflection;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,9 +55,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = tokenOptions.Issuer,
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
+            IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey),
+            NameClaimType = ClaimTypes.Name, //Jwt üzerinde name claimine karþýlýk gelen deðeri
+                                             //User.identity.name propertysinden al.
+                                             //todo: Loglama için
         };
     });
+
+var connectionString = builder.Configuration.GetConnectionString("MongoDb");
+
+Logger log = new LoggerConfiguration().WriteTo.Seq(builder.Configuration["Seq:SeqUrl"]).WriteTo.MongoDBBson(conf =>
+    {
+        var mongoDbInstance = new MongoClient(connectionString).GetDatabase("humanresource");
+        conf.SetMongoDatabase(mongoDbInstance);
+        conf.SetCollectionName("logs");
+        conf.SetCreateCappedCollection(300);
+    }).Enrich.FromLogContext()
+    .MinimumLevel.Information().CreateLogger();
+
+builder.Host.UseSerilog(log);
+
+builder.Services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = HttpLoggingFields.All;
+    logging.RequestHeaders.Add("sec-ch-ua");
+    logging.MediaTypeOptions.AddText("application/javascript");
+    logging.RequestBodyLogLimit = 4096;
+    logging.ResponseBodyLogLimit = 4096;
+});
 
 builder.Services.AddDependencyResolvers(new ICoreModule[] { new CoreModule() });
 
@@ -70,7 +102,31 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.ConfigureExceptionHandler(app.Services.GetRequiredService<ILogger<Program>>());
+
 app.UseStaticFiles();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "{RemoteIpAddress} {RequestScheme} {RequestHost} {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+
+    options.GetLevel = (httpContext, elapsed, ex) => LogEventLevel.Debug;
+
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+        diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress);
+    };
+});
+
+app.Use(async (ctx, next) =>
+{
+    using (LogContext.PushProperty("IpAddress", ctx.Connection.RemoteIpAddress))
+    {
+        await next(ctx);
+    }
+});
 
 app.UseHttpsRedirection();
 

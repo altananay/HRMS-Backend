@@ -38,6 +38,7 @@ namespace Infrastructure.Services.JWT
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
             var token = jwtSecurityTokenHandler.WriteToken(jwt);
 
+
             return new AccessToken
             {
                 Token = token,
