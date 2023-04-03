@@ -39,6 +39,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Encryption </li>
   <li> Azure Blob Storage </li>
   <li> Logging with Serilog and Logged to MongoDb and Seq </li>
+  <li> Global Exception Handler </li>
 </ul>
 
 ![JWT][jwt] ![Azure][azure]
