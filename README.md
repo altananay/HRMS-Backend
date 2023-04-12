@@ -40,6 +40,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
   <li> Azure Blob Storage </li>
   <li> Logging with Serilog and Logged to MongoDb and Seq </li>
   <li> Global Exception Handler </li>
+  <li> Adapter Design Pattern </li>
 </ul>
 
 ![JWT][jwt] ![Azure][azure]
