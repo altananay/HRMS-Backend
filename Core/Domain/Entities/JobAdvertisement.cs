@@ -1,7 +1,10 @@
 ﻿using Domain.Common;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
 
 namespace Domain.Entities
 {
+    [BsonIgnoreExtraElements]
     public class JobAdvertisement : BaseEntity
     {
         public string EmployerId { get; set; }
@@ -16,7 +19,9 @@ namespace Domain.Entities
         public string Experience { get; set; }
         public string[] Skills { get; set; }
         public string City { get; set; }
+        [BsonRepresentation(BsonType.Decimal128)]
         public decimal? MinSalary { get; set; }
+        [BsonRepresentation(BsonType.Decimal128)]
         public decimal? MaxSalary { get; set; }
         public string Currency { get; set; }
         public int OpenPosition { get; set; }

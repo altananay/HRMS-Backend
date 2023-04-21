@@ -1,6 +1,7 @@
 ﻿using Application.Context;
 using Application.Repositories;
 using Domain.Common;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System.Linq.Expressions;
 
@@ -8,8 +9,8 @@ namespace Persistence.Repositories
 {
     public class ReadRepository<T> : IReadRepository<T> where T : BaseEntity
     {
-        private readonly IMongoContext _mongoContext;
-        private readonly string _collection;
+        private readonly IMongoContext? _mongoContext;
+        private readonly string? _collection;
 
         public ReadRepository(IMongoContext mongoContext)
         {
@@ -32,6 +33,7 @@ namespace Persistence.Repositories
 
         public T GetById(string id)
         {
+            var logger = LoggerFactory.Create(options => { }).CreateLogger<MongoClient>();
             var result = collection.AsQueryable().Where(x => x.Id == id.ToString()).FirstOrDefault();
             return result;
         }

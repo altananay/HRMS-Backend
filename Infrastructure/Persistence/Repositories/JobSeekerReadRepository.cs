@@ -22,7 +22,7 @@ namespace Persistence.Repositories
         public IQueryable<GetAllJobSeekerDto> GetAllJobSeeker()
         {
             var result = from jobseeker in collection.AsQueryable()
-                         select new GetAllJobSeekerDto { Cv = jobseeker.Cv, FirstName = jobseeker.FirstName, DateOfBirth = jobseeker.DateOfBirth, Email = jobseeker.Email, LastName = jobseeker.LastName, NationalityId = jobseeker.NationalityId };
+                         select new GetAllJobSeekerDto { Id= jobseeker.Id, Cv = jobseeker.Cv, FirstName = jobseeker.FirstName, DateOfBirth = jobseeker.DateOfBirth, Email = jobseeker.Email, LastName = jobseeker.LastName, NationalityId = jobseeker.NationalityId };
             return result;
         }
     }

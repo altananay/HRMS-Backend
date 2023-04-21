@@ -1,6 +1,7 @@
 ﻿using Application.Context;
 using Application.Repositories;
 using Domain.Entities;
+using MongoDB.Driver;
 
 namespace Persistence.Repositories
 {
@@ -8,7 +9,8 @@ namespace Persistence.Repositories
     {
         public JobAdvertisementReadRepository(IMongoContext mongoContext) : base(mongoContext)
         {
-            
+
         }
+
     }
 }

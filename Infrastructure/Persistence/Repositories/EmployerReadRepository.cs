@@ -8,8 +8,8 @@ namespace Persistence.Repositories
 {
     public class EmployerReadRepository : ReadRepository<Employer>, IEmployerReadRepository
     {
-        private readonly IMongoContext _mongoContext;
-        private readonly string _collection;
+        private readonly IMongoContext? _mongoContext;
+        private readonly string? _collection;
 
 
         public EmployerReadRepository(IMongoContext mongoContext) : base(mongoContext)
@@ -19,9 +19,11 @@ namespace Persistence.Repositories
         }
 
         public IMongoCollection<Employer> collection => _mongoContext.database.GetCollection<Employer>(_collection);
+        
 
         public GetEmployerDto GetByEmployerIdWithFields(string id)
         {
+
             var result = (from employer in collection.AsQueryable()
             where employer.Id == id
             select new GetEmployerDto { Id=employer.Id, NumberOfEmployees = employer.NumberOfEmployees, CompanyName = employer.CompanyName, CompanyPhone = employer.CompanyPhone, Departments = employer.Departments, Description = employer.Description, Sector = employer.Sector, WebSite = employer.WebSite, Email = employer.Email }).FirstOrDefault();

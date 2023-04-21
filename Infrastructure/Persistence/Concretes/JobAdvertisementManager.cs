@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;
@@ -78,10 +78,15 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.JobAdvertisementDeleted);
         }
 
-        [SecuredOperation("employer")]
+        //[SecuredOperation("employer")]
         public IDataResult<IQueryable<JobAdvertisement>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll());
+        }
+
+        public IDataResult<IQueryable<JobAdvertisement>> GetAllByHighestSalary()
+        {
+            return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll().OrderByDescending(j=> j.MaxSalary));
         }
 
         public IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status)

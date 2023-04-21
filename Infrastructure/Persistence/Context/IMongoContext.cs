@@ -6,5 +6,6 @@ namespace Application.Context
     {
         MongoClient connection { get; }
         IMongoDatabase database { get; }
+        MongoClientSettings settings { get; set; }
     }
 }

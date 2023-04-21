@@ -15,5 +15,6 @@ namespace Application.Abstractions
         IDataResult<Employer> GetByEmail(string email);
         IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id);
         IDataResult<IQueryable<GetAllEmployerDto>> GetAllEmployer();
+        IDataResult<IQueryable<Employer>> GetAllByHighestNumberOfEmployees(); 
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions;
 using Application.Dtos;
 using Application.Results;
-using Domain.Entities;
+using Domain.Objects;
 using MediatR;
 using static Application.Features.Cvs.Commands.UpdateCvCommand;
 
@@ -13,7 +13,6 @@ namespace Application.Features.Cvs.Commands
         public string JobSeekerId { get; set; }
         public Education[] Educations { get; set; }
         public UpdateJobExperienceDto[]? JobExperiences { get; set; }
-        public ProgrammingLanguage[]? ProgrammingLanguages { get; set; }
         public string[] Skills { get; set; }
         public Language[]? Languages { get; set; }
         public UpdateProjectDto[]? Projects { get; set; }

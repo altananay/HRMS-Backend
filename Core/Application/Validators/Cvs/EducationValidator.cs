@@ -1,5 +1,5 @@
 ﻿using Application.Constants;
-using Domain.Entities;
+using Domain.Objects;
 using FluentValidation;
 
 namespace Application.Validators.Cvs

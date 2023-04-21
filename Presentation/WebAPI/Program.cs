@@ -64,12 +64,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var connectionString = builder.Configuration.GetConnectionString("MongoDb");
 
+
 Logger log = new LoggerConfiguration().WriteTo.Seq(builder.Configuration["Seq:SeqUrl"]).WriteTo.MongoDBBson(conf =>
     {
         var mongoDbInstance = new MongoClient(connectionString).GetDatabase("humanresource");
         conf.SetMongoDatabase(mongoDbInstance);
         conf.SetCollectionName("logs");
         conf.SetCreateCappedCollection(300);
+        conf.SetBatchPeriod(TimeSpan.FromSeconds(0.1));
     }).Enrich.FromLogContext()
     .MinimumLevel.Information().CreateLogger();
 
@@ -93,6 +95,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "The API", Version = "v1" });
 });
 
+//
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -101,6 +105,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
 
 app.ConfigureExceptionHandler(app.Services.GetRequiredService<ILogger<Program>>());
 

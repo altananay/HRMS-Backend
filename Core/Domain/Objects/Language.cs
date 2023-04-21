@@ -1,4 +1,4 @@
-﻿namespace Domain.Entities
+﻿namespace Domain.Objects
 {
     public class Language
     {

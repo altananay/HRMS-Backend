@@ -3,7 +3,7 @@ using Application.Features.EmployerAuth.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.EmployerAuth.Commands.EmployerRegisterCommand;
-using static Application.Features.EmployerAuth.Queries.LoginQuery;
+using static Application.Features.EmployerAuth.Queries.EmployerLoginQuery;
 
 namespace WebAPI.Controllers
 {
@@ -19,9 +19,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginQuery loginRequest)
+        public async Task<IActionResult> Login(EmployerLoginQuery loginRequest)
         {
-            LoginQueryResponse response = await _mediator.Send(loginRequest);
+            EmployerLoginQueryResponse response = await _mediator.Send(loginRequest);
             if (!response.Employer.IsSuccess)
             {
                 return BadRequest(response.Employer);

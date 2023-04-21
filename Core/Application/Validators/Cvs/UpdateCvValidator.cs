@@ -1,6 +1,6 @@
 ﻿using Application.Features.Cvs.Commands;
 using Application.Validators.CustomValidateRules;
-using Domain.Entities;
+using Domain.Objects;
 using FluentValidation;
 
 namespace Application.Validators.Cvs
@@ -20,7 +20,6 @@ namespace Application.Validators.Cvs
             RuleForEach(cv => cv.JobExperiences.OfType<JobExperience>()).NotNull().OverridePropertyName("JobExperience").SetValidator(new JobExperienceValidator());
             RuleFor(cv => cv.JobSeekerId).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage("Bilgiyi doğru formatta girin.");
             RuleForEach(cv => cv.Languages.OfType<Language>()).NotNull().OverridePropertyName("Language").SetValidator(new LanguageValidator());
-            RuleForEach(cv => cv.ProgrammingLanguages.OfType<ProgrammingLanguage>()).NotNull().OverridePropertyName("ProgrammingLanguages").SetValidator(new ProgrammingLanguageValidator());
             RuleFor(cv => cv.Id).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage("Bilgileri doğru girin");
         }
     }

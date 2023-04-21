@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Application.Validators.JobSeekers.Auth
 {
-    public class JobSeekerLoginAuthValidator : AbstractValidator<AuthQuery>
+    public class JobSeekerLoginAuthValidator : AbstractValidator<JobSeekerLoginQuery>
     {
         public JobSeekerLoginAuthValidator()
         {

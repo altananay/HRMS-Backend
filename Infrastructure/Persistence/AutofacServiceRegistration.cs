@@ -6,7 +6,6 @@ using Application.Utilities.Interceptors;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Castle.DynamicProxy;
-using Domain.Entities;
 using Persistence.Concretes;
 using Persistence.Context;
 using Persistence.Repositories;
@@ -61,6 +60,9 @@ namespace Persistence
             builder.RegisterType<CvFileReadRepository>().As<ICvFileReadRepository>().SingleInstance();
             builder.RegisterType<CvFileWriteRepository>().As<ICvFileWriteRepository>().SingleInstance();
             builder.RegisterType<CvFileDeleteRepository>().As<ICvFileDeleteRepository>().SingleInstance();
+
+            //employer dependencies
+            builder.RegisterType<EmployerReadRepository>().As<IEmployerReadRepository>().SingleInstance();
 
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 

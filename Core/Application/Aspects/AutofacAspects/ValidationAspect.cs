@@ -3,7 +3,7 @@ using Application.Utilities.Validation;
 using Castle.DynamicProxy;
 using FluentValidation;
 
-namespace Application.Aspects
+namespace Application.Aspects.AutofacAspects
 {
     public class ValidationAspect : MethodInterception
     {

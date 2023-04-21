@@ -2,7 +2,7 @@
 using Application.Features.JobSeekers.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.Auth.Queries.AuthQuery;
+using static Application.Features.Auth.Queries.JobSeekerLoginQuery;
 using static Application.Features.JobSeekers.Commands.CreateJobSeekerCommand;
 
 namespace WebAPI.Controllers
@@ -19,9 +19,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(AuthQuery authQuery)
+        public async Task<IActionResult> Login(JobSeekerLoginQuery authQuery)
         {
-            AuthQueryResponse response = await _mediator.Send(authQuery);
+            JobSeekerLoginQueryResponse response = await _mediator.Send(authQuery);
             if (response.Result == null)
             {
                 return Ok(response.DataResult);

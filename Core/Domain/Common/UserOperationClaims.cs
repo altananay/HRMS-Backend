@@ -1,6 +1,4 @@
-﻿using Domain.Common;
-
-namespace Domain.Entities
+﻿namespace Domain.Common
 {
     public class UserOperationClaim
     {

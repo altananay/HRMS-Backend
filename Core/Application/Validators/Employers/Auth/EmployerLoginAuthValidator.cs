@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Application.Validators.Employers.Auth
 {
-    public class EmployerLoginAuthValidator : AbstractValidator<LoginQuery>
+    public class EmployerLoginAuthValidator : AbstractValidator<EmployerLoginQuery>
     {
         public EmployerLoginAuthValidator()
         {

@@ -15,5 +15,6 @@ namespace Application.Abstractions
         IDataResult<IQueryable<JobAdvertisement>> GetAllByStatus(bool status);
         IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string employerId);
         IDataResult<IQueryable<JobAdvertisement>> GetByEmployerIdWithStatus(string id, bool status);
+        IDataResult<IQueryable<JobAdvertisement>> GetAllByHighestSalary();
     }
 }

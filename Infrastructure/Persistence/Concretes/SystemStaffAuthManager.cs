@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Features.SystemStaffAuth.Queries;
 using Application.Features.SystemStaffs.Commands;

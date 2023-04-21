@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions;
 using Application.Dtos;
 using Application.Results;
-using Domain.Entities;
+using Domain.Objects;
 using MediatR;
 using static Application.Features.Cvs.Commands.CreateCvCommand;
 
@@ -12,7 +12,6 @@ namespace Application.Features.Cvs.Commands
         public string JobSeekerId { get; set; }
         public Education[] Educations { get; set; }
         public CreateJobExperienceDto[] JobExperiences { get; set; }
-        public ProgrammingLanguage[]? ProgrammingLanguages { get; set; }
         public string[] Skills { get; set; }
         public Language[]? Languages { get; set; }
         public CreateProjectDto[] Projects { get; set; }

@@ -10,7 +10,7 @@ namespace Application.Abstractions
     public interface IAuthService
     {
         Task<IResult> Register(CreateJobSeekerCommand userForRegisterDto, string password);
-        IDataResult<JobSeeker> Login(AuthQuery userForLoginDto);
+        IDataResult<JobSeeker> Login(JobSeekerLoginQuery userForLoginDto);
         IResult UserExists(string email);
         IDataResult<AccessToken> CreateAccessToken(JobSeeker user);
     }

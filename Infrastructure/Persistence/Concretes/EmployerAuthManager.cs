@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Features.EmployerAuth.Commands;
 using Application.Features.EmployerAuth.Queries;
@@ -30,7 +31,7 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(EmployerLoginAuthValidator))]
-        public IDataResult<Employer> Login(LoginQuery loginRequest)
+        public IDataResult<Employer> Login(EmployerLoginQuery loginRequest)
         {
             var userToCheck = _employerService.GetByEmail(loginRequest.Email);
             if (userToCheck.Data == null)

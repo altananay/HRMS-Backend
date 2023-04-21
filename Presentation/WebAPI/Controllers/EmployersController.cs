@@ -1,9 +1,11 @@
-﻿using Application.Features.Employers.Commands;
+﻿using Application.Abstractions;
+using Application.Features.Employers.Commands;
 using Application.Features.Employers.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Employers.Commands.DeleteEmployerCommand;
 using static Application.Features.Employers.Commands.UpdateEmployerCommand;
+using static Application.Features.Employers.Queries.GetAllEmployerOrderByNumberOfEmployeesQuery;
 using static Application.Features.Employers.Queries.GetAllEmployerQuery;
 using static Application.Features.Employers.Queries.GetByEmailEmployerQuery;
 using static Application.Features.Employers.Queries.GetByIdEmployerQuery;
@@ -26,6 +28,17 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             GetAllEmployerQueryResponse response = await _mediator.Send(new GetAllEmployerQuery { });
+            if (response.Employers.IsSuccess)
+            {
+                return Ok(response.Employers);
+            }
+            return BadRequest(response.Employers);
+        }
+
+        [HttpGet("getallorderbynumberofemployees")]
+        public async Task<IActionResult> GetAllByHighestNumberOfEmployees()
+        {
+            GetAllEmployerOrderByNumberOfEmployeesQueryResponse response = await _mediator.Send(new GetAllEmployerOrderByNumberOfEmployeesQuery { });
             if (response.Employers.IsSuccess)
             {
                 return Ok(response.Employers);

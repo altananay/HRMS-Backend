@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Domain.Entities
+namespace Domain.Objects
 {
     public class Project
     {
@@ -9,8 +9,8 @@ namespace Domain.Entities
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
         public string ProjectName { get; set; }
-        public string Description { get; set; } 
+        public string Description { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set;}
+        public DateTime? UpdatedAt { get; set; }
     }
 }

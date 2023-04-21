@@ -6,7 +6,7 @@ using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Application.Aspects
+namespace Application.Aspects.AutofacAspects
 {
     public class SecuredOperation : MethodInterception
     {

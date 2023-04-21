@@ -9,7 +9,7 @@ namespace Application.Abstractions
     public interface IEmployerAuthService
     {
         Task<IResult> Register(EmployerRegisterCommand userForRegisterDto, string password);
-        IDataResult<Employer> Login(LoginQuery authRequest);
+        IDataResult<Employer> Login(EmployerLoginQuery authRequest);
         IResult UserExists(string email);
         IDataResult<AccessToken> CreateAccessToken(Employer user);
     }

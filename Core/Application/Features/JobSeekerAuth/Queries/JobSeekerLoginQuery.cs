@@ -3,36 +3,36 @@ using Application.Results;
 using Application.Utilities.JWT;
 using Domain.Entities;
 using MediatR;
-using static Application.Features.Auth.Queries.AuthQuery;
+using static Application.Features.Auth.Queries.JobSeekerLoginQuery;
 
 namespace Application.Features.Auth.Queries
 {
-    public partial class AuthQuery : IRequest<AuthQueryResponse>
+    public partial class JobSeekerLoginQuery : IRequest<JobSeekerLoginQueryResponse>
     {
         public string Email { get; set; }
         public string Password { get; set; }
 
-        public class AuthQueryResponse
+        public class JobSeekerLoginQueryResponse
         {
             public IDataResult<JobSeeker> Result { get; set; }
             public IDataResult<AccessToken> DataResult { get; set; }
         }
 
-        public class AuthHandler : IRequestHandler<AuthQuery, AuthQueryResponse>
+        public class JobSeekerLoginQueryHandler : IRequestHandler<JobSeekerLoginQuery, JobSeekerLoginQueryResponse>
         {
             private readonly IAuthService _authService;
 
-            public AuthHandler(IAuthService authService)
+            public JobSeekerLoginQueryHandler(IAuthService authService)
             {
                 _authService = authService;
             }
 
-            public async Task<AuthQueryResponse> Handle(AuthQuery request, CancellationToken cancellationToken)
+            public async Task<JobSeekerLoginQueryResponse> Handle(JobSeekerLoginQuery request, CancellationToken cancellationToken)
             {
                 var userToLogin = _authService.Login(request);
                 if (!userToLogin.IsSuccess)
                 {
-                    return new AuthQueryResponse()
+                    return new JobSeekerLoginQueryResponse()
                     {
                         Result = userToLogin
                     };
@@ -41,13 +41,13 @@ namespace Application.Features.Auth.Queries
                 var result = _authService.CreateAccessToken(userToLogin.Data);
                 if (result.IsSuccess)
                 {
-                    return new AuthQueryResponse()
+                    return new JobSeekerLoginQueryResponse()
                     {
                         DataResult = result
                     };
                 }
 
-                return new AuthQueryResponse()
+                return new JobSeekerLoginQueryResponse()
                 {
                     DataResult = result
                 };

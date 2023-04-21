@@ -1,13 +1,14 @@
 ﻿using Application.Features.JobAdvertisements.Commands;
 using Application.Features.JobAdvertisements.Queries;
-using Application.Repositories;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobAdvertisements.Commands.CreateJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Commands.DeleteJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Commands.UpdateJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Queries.GetAllByStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementQuery;
+using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementsOrderByHighestSalaryQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdWithStatusJobAdvertisementQuery;
 using static Application.Features.JobAdvertisements.Queries.GetByIdJobAdvertisementQuery;
@@ -29,6 +30,17 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             GetAllJobAdvertisementQueryResponse response = await _mediator.Send(new GetAllJobAdvertisementQuery { });
+            if (response.JobAdvertisements.IsSuccess)
+            {
+                return Ok(response.JobAdvertisements);
+            }
+            return BadRequest(response.JobAdvertisements);
+        }
+
+        [HttpGet("getallorderbysalary")]
+        public async Task<IActionResult> GetAllByHighestSalary()
+        {
+            GetAllJobAdvertisementsOrderByHighestSalaryQueryResponse response = await _mediator.Send(new GetAllJobAdvertisementsOrderByHighestSalaryQuery { });
             if (response.JobAdvertisements.IsSuccess)
             {
                 return Ok(response.JobAdvertisements);

@@ -1,4 +1,5 @@
 ﻿using Domain.Common;
+using Domain.Objects;
 
 namespace Domain.Entities
 {
@@ -8,11 +9,10 @@ namespace Domain.Entities
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string NationalityId { get; set; }
-        public DateTime DateOfBirth { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public string Email { get; set; }
         public Education[] Educations { get; set; }
         public JobExperience[]? JobExperiences { get; set; }
-        public ProgrammingLanguage[]? ProgrammingLanguages { get; set; }
         public string[] Skills { get; set; }
         public Language[]? Languages { get; set; }
         public Project[]? Projects { get; set; }

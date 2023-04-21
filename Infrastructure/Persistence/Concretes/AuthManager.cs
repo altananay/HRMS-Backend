@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
@@ -27,6 +28,11 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(RegisterValidator))]
         public async Task<IResult> Register(CreateJobSeekerCommand userForRegisterDto, string password)
         {
+            var userExists = UserExists(userForRegisterDto.Email);
+            if (!userExists.IsSuccess)
+            {
+                return new ErrorResult(Messages.UserAlreadyExists);
+            }
             var user = new User();
             await _userService.Add(user);
             string[] claims = { "jobseeker" };
@@ -43,7 +49,7 @@ namespace Persistence.Concretes
                 Status = true,
                 Claims = claims,
                 CreatedAt = DateTime.UtcNow,
-                DateOfBirth = userForRegisterDto.DateOfBirth,
+                DateOfBirth = null,
                 NationalityId = null
             };
             var result = await _jobSeekerService.Add(jobSeeker);
@@ -55,7 +61,7 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(JobSeekerLoginAuthValidator))]
-        public IDataResult<JobSeeker> Login(AuthQuery userForLoginDto)
+        public IDataResult<JobSeeker> Login(JobSeekerLoginQuery userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);
             if (userToCheck.Data == null)

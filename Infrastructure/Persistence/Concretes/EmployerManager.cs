@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Dtos;
 using Application.Features.Employers.Commands;
@@ -8,6 +9,7 @@ using Application.Results;
 using Application.Validators.Common;
 using Application.Validators.Employers.Auth;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Persistence.Concretes
 {
@@ -17,8 +19,7 @@ namespace Persistence.Concretes
         private readonly IEmployerDeleteRepository _employerDeleteRepository;
         private readonly IEmployerWriteRepository _employerWriteRepository;
         private readonly IUserService _userService;
-
-        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService)
+        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService, ILogger<EmployerManager> logger)
         {
             _employerReadRepository = employerReadRepository;
             _employerDeleteRepository = employerDeleteRepository;
@@ -48,6 +49,11 @@ namespace Persistence.Concretes
         public IDataResult<IQueryable<Employer>> GetAll()
         {
             return new SuccessDataResult<IQueryable<Employer>>(_employerReadRepository.GetAll());
+        }
+
+        public IDataResult<IQueryable<Employer>> GetAllByHighestNumberOfEmployees()
+        {
+            return new SuccessDataResult<IQueryable<Employer>>(_employerReadRepository.GetAll().OrderBy(e => e.NumberOfEmployees));
         }
 
         public IDataResult<IQueryable<GetAllEmployerDto>> GetAllEmployer()

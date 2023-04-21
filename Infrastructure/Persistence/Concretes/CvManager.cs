@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
+using Application.Aspects.AutofacAspects;
 using Application.Constants;
 using Application.Features.Cvs.Commands;
 using Application.Repositories;
@@ -7,6 +7,8 @@ using Application.Results;
 using Application.Validators.Common;
 using Application.Validators.Cvs;
 using Domain.Entities;
+using Domain.Objects;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 
 namespace Persistence.Concretes
@@ -86,7 +88,6 @@ namespace Persistence.Concretes
             cv.Projects = projects;
             cv.Hobbies = requestCv.Hobbies;
             cv.ImageUrl = requestCv.ImageUrl;
-            cv.ProgrammingLanguages = requestCv.ProgrammingLanguages;
             cv.JobExperiences = jobExperiences;
             cv.FirstName = oldjobSeeker.FirstName;
             cv.LastName = oldjobSeeker.LastName;
@@ -122,7 +123,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Cv> GetByJobSeekerId(string id)
         {
-            return new SuccessDataResult<Cv>(_cvReadRepository.Get(cv => cv.JobSeekerId == id));
+            return new SuccessDataResult<Cv>(_cvReadRepository.GetById(id));
         }
 
 
@@ -197,7 +198,6 @@ namespace Persistence.Concretes
             newCv.Information = requestCv.Information;
             newCv.JobExperiences = jobExperiences;
             newCv.Languages = requestCv.Languages;
-            newCv.ProgrammingLanguages = requestCv.ProgrammingLanguages;
 
             await _cvWriteRepository.UpdateAsync(newCv);
 

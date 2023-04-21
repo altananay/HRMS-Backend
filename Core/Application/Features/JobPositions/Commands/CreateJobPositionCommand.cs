@@ -2,6 +2,7 @@
 using Application.Results;
 using Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using static Application.Features.JobPositions.Commands.CreateJobPositionCommand;
 
 namespace Application.Features.JobPositions.Commands
@@ -18,14 +19,17 @@ namespace Application.Features.JobPositions.Commands
         public class CreateJobPositionCommandHandler : IRequestHandler<CreateJobPositionCommand, CreateJobPositionCommandResponse>
         {
             private readonly IJobPositionService _jobPositionService;
-
-            public CreateJobPositionCommandHandler(IJobPositionService jobPositionService)
+            private readonly ILogger<CreateJobPositionCommandHandler> _logger;
+            
+            public CreateJobPositionCommandHandler(IJobPositionService jobPositionService, ILogger<CreateJobPositionCommandHandler> logger)
             {
                 _jobPositionService = jobPositionService;
+                _logger = logger;
             }
 
             public async Task<CreateJobPositionCommandResponse> Handle(CreateJobPositionCommand request, CancellationToken cancellationToken)
             {
+                
                 var jobPositionExists = _jobPositionService.JobPositionExists(request.PositionName);
                 if (!jobPositionExists.IsSuccess)
                 {

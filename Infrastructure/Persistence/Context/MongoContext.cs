@@ -9,12 +9,13 @@ namespace Persistence.Context
         public MongoClient connection { get; }
 
         public IMongoDatabase database { get; set; }
-
+        public MongoClientSettings settings { get; set; }
 
         public MongoContext()
         {
             this.connection = new MongoClient(Configuration.ConnectionString);
             this.database = this.connection.GetDatabase("humanresource");
+            this.settings = MongoClientSettings.FromConnectionString(Configuration.ConnectionString);
         }
     }
 }
