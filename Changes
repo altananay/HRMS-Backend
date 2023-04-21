@@ -81,3 +81,7 @@ Employer id'ye göre pasif ve aktif iş ilanlarını listeletme eklendi.
 1 Nisan 2023
 Serilog kütüphanesi ile loglama mekanizması devreye alındı. Loglar MongoDb veri tabanında tutuldu.
 Tutulan bu loglar Seq ile görselleştirildi.
+
+21 Nisan 2023
+En yüksek çalışan sayısına sahip kişiler listelendi.
+En yüksek maaşı olan iş ilanları listelendi.
