@@ -76,4 +76,8 @@ Bütün kütüphaneler en güncel sürüme güncellendi ve MediatR kütüphanesi
 Employer id'ye göre şirket bilgilerini getirme işleminde email bilgisi gelmiyordu. Düzeltildi.
 
 30 Mart 2023 
-Employer id'ye göre pasif ve aktif iş ilanlarını listeletme eklendiç
+Employer id'ye göre pasif ve aktif iş ilanlarını listeletme eklendi.
+
+1 Nisan 2023
+Serilog kütüphanesi ile loglama mekanizması devreye alındı. Loglar MongoDb veri tabanında tutuldu.
+Tutulan bu loglar Seq ile görselleştirildi.
