@@ -17,6 +17,7 @@ namespace Infrastructure
             serviceCollection.AddScoped<ICheckPersonService, CheckPerson>();
             serviceCollection.AddScoped<IStorage, AzureStorage>();
             serviceCollection.AddScoped<IStorageService, StorageService>();
+            
         }
     }
 }

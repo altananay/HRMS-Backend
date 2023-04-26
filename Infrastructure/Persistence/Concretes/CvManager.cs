@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions;
-using Application.Aspects.AutofacAspects;
+using Application.Aspects;
 using Application.Constants;
 using Application.Features.Cvs.Commands;
 using Application.Repositories;
@@ -20,14 +20,16 @@ namespace Persistence.Concretes
         private readonly ICvReadRepository _cvReadRepository;
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
         private readonly IJobSeekerWriteRepository _jobSeekerWriteRepository;
+        private readonly ILogger<CvManager> _logger;
 
-        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository)
+        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository, ILogger<CvManager> logger)
         {
             _cvWriteRepository = cvWriteRepository;
             _cvDeleteRepository = cvDeleteRepository;
             _cvReadRepository = cvReadRepository;
             _jobSeekerReadRepository = jobSeekerReadRepository;
             _jobSeekerWriteRepository = jobSeekerWriteRepository;
+            _logger = logger;
         }
 
         [ValidationAspect(typeof(CvValidator))]
@@ -46,7 +48,7 @@ namespace Persistence.Concretes
                 project.ProjectName = requestCv.Projects[i].ProjectName;
 
                 projects[i] = project;
-                
+
             }
 
             for (int i = 0; i < requestCv.JobExperiences.Length; i++)
@@ -72,7 +74,7 @@ namespace Persistence.Concretes
                 project.UpdatedAt = null;
             }
 
-            
+
 
             foreach (var jobExperience in jobExperiences)
             {
@@ -98,11 +100,11 @@ namespace Persistence.Concretes
             cv.Languages = requestCv.Languages;
             cv.CreatedAt = DateTime.UtcNow;
             cv.JobSeekerId = requestCv.JobSeekerId;
-            
+
             await _cvWriteRepository.AddAsync(cv);
 
             oldjobSeeker.Cv = cv;
-            
+
             await _jobSeekerWriteRepository.UpdateAsync(oldjobSeeker);
 
             return new SuccessResult(Messages.CvAdded);
@@ -117,13 +119,14 @@ namespace Persistence.Concretes
 
         public IDataResult<IQueryable<Cv>> GetAll()
         {
+            _logger.LogInformation("Test amaçlı getall fonksiyonu tetiklendi ve loglandı");
             return new SuccessDataResult<IQueryable<Cv>>(_cvReadRepository.GetAll());
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Cv> GetByJobSeekerId(string id)
         {
-            return new SuccessDataResult<Cv>(_cvReadRepository.GetById(id));
+            return new SuccessDataResult<Cv>(_cvReadRepository.Get(cv => cv.JobSeekerId == id));
         }
 
 

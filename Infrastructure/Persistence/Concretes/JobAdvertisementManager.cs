@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions;
-using Application.Aspects.AutofacAspects;
+using Application.Aspects;
 using Application.Constants;
 using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;

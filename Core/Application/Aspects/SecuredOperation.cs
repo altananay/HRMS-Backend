@@ -1,12 +1,12 @@
 ﻿using Application.Constants;
+using Application.Extensions;
 using Application.Utilities.Interceptors;
 using Application.Utilities.IoC;
-using Application.Extensions;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Application.Aspects.AutofacAspects
+namespace Application.Aspects
 {
     public class SecuredOperation : MethodInterception
     {

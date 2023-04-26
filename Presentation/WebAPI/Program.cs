@@ -18,7 +18,6 @@ using Persistence;
 using Serilog;
 using Serilog.Context;
 using Serilog.Core;
-using Serilog.Events;
 using System.Reflection;
 using System.Security.Claims;
 
@@ -43,6 +42,8 @@ builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>
 IConfiguration configuration = builder.Configuration;
 
 var tokenOptions = configuration.GetSection("TokenOptions").Get<TokenOptions>();
+
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -106,25 +107,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-
 app.ConfigureExceptionHandler(app.Services.GetRequiredService<ILogger<Program>>());
 
+
 app.UseStaticFiles();
-
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate = "{RemoteIpAddress} {RequestScheme} {RequestHost} {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-
-    options.GetLevel = (httpContext, elapsed, ex) => LogEventLevel.Debug;
-
-    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-        diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress);
-    };
-});
 
 app.Use(async (ctx, next) =>
 {
