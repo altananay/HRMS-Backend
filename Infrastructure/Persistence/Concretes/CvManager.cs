@@ -114,7 +114,7 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.CvDeleted);
         }
 
-        [LogAspect("cv getall fonksiyonu çalıştırıldı", true)]
+        [LogAspect(true)]
         public IDataResult<IQueryable<Cv>> GetAll()
         {
             return new SuccessDataResult<IQueryable<Cv>>(_cvReadRepository.GetAll());

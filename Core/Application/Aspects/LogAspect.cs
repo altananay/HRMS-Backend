@@ -67,7 +67,10 @@ namespace Application.Aspects
             {
                 logger.LogInformation($"{DateTime.Now} tarihinde - on before log");
             }
-            
+            else if (onBeforeMessage == null && !isDate)
+            {
+                logger.LogInformation("on before log");
+            }
         }
 
         protected override void OnAfter(IInvocation invocation)
@@ -83,7 +86,14 @@ namespace Application.Aspects
                     logger.LogInformation(onBeforeMessage);
                 }
             }
-            logger.LogInformation("on after log.");
+            else if (onAfterMessage == null && isDate)
+            {
+                logger.LogInformation($"{DateTime.Now} tarihinde - on after log");
+            }
+            else if (onAfterMessage == null && !isDate)
+            {
+                logger.LogInformation("on after log");
+            }
         }
     }
 }
