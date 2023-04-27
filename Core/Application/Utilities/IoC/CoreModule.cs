@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Application.Aspects;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Utilities.IoC
 {
@@ -10,6 +12,7 @@ namespace Application.Utilities.IoC
             //serviceCollection.AddMemoryCache();
             serviceCollection.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             //serviceCollection.AddSingleton<Stopwatch>();
+            serviceCollection.AddScoped<ILogger, Logger<LogAspect>>();
         }
     }
 }

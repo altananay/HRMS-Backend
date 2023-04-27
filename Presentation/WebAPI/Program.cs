@@ -10,7 +10,6 @@ using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -18,6 +17,7 @@ using Persistence;
 using Serilog;
 using Serilog.Context;
 using Serilog.Core;
+using Serilog.Events;
 using System.Reflection;
 using System.Security.Claims;
 
@@ -74,18 +74,9 @@ Logger log = new LoggerConfiguration().WriteTo.Seq(builder.Configuration["Seq:Se
         conf.SetCreateCappedCollection(300);
         conf.SetBatchPeriod(TimeSpan.FromSeconds(0.1));
     }).Enrich.FromLogContext()
-    .MinimumLevel.Information().CreateLogger();
+    .MinimumLevel.Information().MinimumLevel.Override("Microsoft", LogEventLevel.Error).MinimumLevel.Override("Microsoft", LogEventLevel.Error).CreateLogger();
 
 builder.Host.UseSerilog(log);
-
-builder.Services.AddHttpLogging(logging =>
-{
-    logging.LoggingFields = HttpLoggingFields.All;
-    logging.RequestHeaders.Add("sec-ch-ua");
-    logging.MediaTypeOptions.AddText("application/javascript");
-    logging.RequestBodyLogLimit = 4096;
-    logging.ResponseBodyLogLimit = 4096;
-});
 
 builder.Services.AddDependencyResolvers(new ICoreModule[] { new CoreModule() });
 
@@ -96,7 +87,6 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "The API", Version = "v1" });
 });
 
-//
 
 var app = builder.Build();
 

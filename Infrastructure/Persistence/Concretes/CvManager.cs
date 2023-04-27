@@ -8,7 +8,6 @@ using Application.Validators.Common;
 using Application.Validators.Cvs;
 using Domain.Entities;
 using Domain.Objects;
-using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 
 namespace Persistence.Concretes
@@ -20,16 +19,14 @@ namespace Persistence.Concretes
         private readonly ICvReadRepository _cvReadRepository;
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
         private readonly IJobSeekerWriteRepository _jobSeekerWriteRepository;
-        private readonly ILogger<CvManager> _logger;
 
-        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository, ILogger<CvManager> logger)
+        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository)
         {
             _cvWriteRepository = cvWriteRepository;
             _cvDeleteRepository = cvDeleteRepository;
             _cvReadRepository = cvReadRepository;
             _jobSeekerReadRepository = jobSeekerReadRepository;
             _jobSeekerWriteRepository = jobSeekerWriteRepository;
-            _logger = logger;
         }
 
         [ValidationAspect(typeof(CvValidator))]
@@ -117,9 +114,9 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.CvDeleted);
         }
 
+        [LogAspect("cv getall fonksiyonu çalıştırıldı", true)]
         public IDataResult<IQueryable<Cv>> GetAll()
         {
-            _logger.LogInformation("Test amaçlı getall fonksiyonu tetiklendi ve loglandı");
             return new SuccessDataResult<IQueryable<Cv>>(_cvReadRepository.GetAll());
         }
 
@@ -128,7 +125,6 @@ namespace Persistence.Concretes
         {
             return new SuccessDataResult<Cv>(_cvReadRepository.Get(cv => cv.JobSeekerId == id));
         }
-
 
         [ValidationAspect(typeof(UpdateCvValidator))]
         public async Task<IResult> Update(UpdateCvCommand requestCv)
