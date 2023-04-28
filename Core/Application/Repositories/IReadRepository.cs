@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace Application.Repositories
 {
-    public interface IReadRepository<T> : IRepository<T> where T : BaseEntity
+    public interface IReadRepository<T> : IRepository<T> where T : BaseEntity 
     {
         T GetById(string id);
         IQueryable<T> GetAll(Expression<Func<T, bool>> filter = null);

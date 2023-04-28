@@ -1,11 +1,11 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
+using Application.CrossCuttingConcerns.Validation.Validators.Common;
+using Application.CrossCuttingConcerns.Validation.Validators.JobAdvertisements;
 using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;
 using Application.Results;
-using Application.Validators.Common;
-using Application.Validators.JobAdvertisements;
 using Domain.Entities;
 
 namespace Persistence.Concretes

@@ -1,5 +1,4 @@
-﻿using Application.Dtos;
-using Application.Features.Auth.Queries;
+﻿using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
 using Application.Results;
 using Application.Utilities.JWT;

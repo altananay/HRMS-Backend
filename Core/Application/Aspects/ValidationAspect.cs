@@ -1,5 +1,5 @@
-﻿using Application.Utilities.Interceptors;
-using Application.Utilities.Validation;
+﻿using Application.CrossCuttingConcerns.Validation;
+using Application.Utilities.Interceptors;
 using Castle.DynamicProxy;
 using FluentValidation;
 

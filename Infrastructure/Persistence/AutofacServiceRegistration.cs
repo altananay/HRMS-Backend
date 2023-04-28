@@ -64,6 +64,10 @@ namespace Persistence
             //employer dependencies
             builder.RegisterType<EmployerReadRepository>().As<IEmployerReadRepository>().SingleInstance();
 
+            //
+            builder.RegisterType<LogReadRepository>().As<ILogReadRepository>().SingleInstance();
+            builder.RegisterType<LogManager>().As<ILogService>().SingleInstance();
+
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()

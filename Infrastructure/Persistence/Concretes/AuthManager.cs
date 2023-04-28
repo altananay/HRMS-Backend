@@ -1,13 +1,13 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
 using Application.Constants;
+using Application.CrossCuttingConcerns.Validation.Validators.JobSeekers.Auth;
 using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
 using Application.Results;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
-using Application.Validators.JobSeekers.Auth;
 using Domain.Entities;
 
 namespace Persistence.Concretes

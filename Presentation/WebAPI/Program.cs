@@ -1,15 +1,16 @@
 using Application;
+using Application.CrossCuttingConcerns.Validation.Validators.JobAdvertisements;
 using Application.Extensions;
 using Application.Utilities.IoC;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Encryption;
-using Application.Validators.JobAdvertisements;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -74,7 +75,8 @@ Logger log = new LoggerConfiguration().WriteTo.Seq(builder.Configuration["Seq:Se
         conf.SetCreateCappedCollection(300);
         conf.SetBatchPeriod(TimeSpan.FromSeconds(0.1));
     }).Enrich.FromLogContext()
-    .MinimumLevel.Information().MinimumLevel.Override("Microsoft", LogEventLevel.Error).MinimumLevel.Override("Microsoft", LogEventLevel.Error).CreateLogger();
+    .MinimumLevel.Information().MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+            .MinimumLevel.Override("System", LogEventLevel.Error).CreateLogger();
 
 builder.Host.UseSerilog(log);
 
@@ -97,11 +99,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.ConfigureExceptionHandler(app.Services.GetRequiredService<ILogger<Program>>());
-
-
-app.UseStaticFiles();
-
 app.Use(async (ctx, next) =>
 {
     using (LogContext.PushProperty("IpAddress", ctx.Connection.RemoteIpAddress))
@@ -109,6 +106,10 @@ app.Use(async (ctx, next) =>
         await next(ctx);
     }
 });
+
+app.ConfigureExceptionHandler(app.Services.GetRequiredService<ILogger<Program>>());
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 

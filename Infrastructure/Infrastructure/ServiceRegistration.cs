@@ -16,8 +16,7 @@ namespace Infrastructure
             serviceCollection.AddScoped<ITokenHelper, TokenHandler>();
             serviceCollection.AddScoped<ICheckPersonService, CheckPerson>();
             serviceCollection.AddScoped<IStorage, AzureStorage>();
-            serviceCollection.AddScoped<IStorageService, StorageService>();
-            
+            serviceCollection.AddScoped<IStorageService, StorageService>();            
         }
     }
 }
