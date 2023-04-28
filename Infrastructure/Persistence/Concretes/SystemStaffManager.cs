@@ -25,7 +25,7 @@ namespace Persistence.Concretes
             _userService = userService;
         }
 
-        //[SecuredOperation("admin")]
+        [SecuredOperation("admin")]
         [ValidationAspect(typeof(SystemStaffValidator))]
         public async Task<IResult> Add(SystemStaff systemStaff)
         {
@@ -37,7 +37,7 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
-        //[SecuredOperation("admin")]
+        [SecuredOperation("admin")]
         public async Task<IResult> Delete(string id)
         {
             await _userService.Delete(id);
@@ -45,25 +45,26 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.SystemStaffDeleted);
         }
 
-        //[SecuredOperation("admin")]
+        [SecuredOperation("admin")]
         public IDataResult<IQueryable<SystemStaff>> GetAll()
         {
             return new SuccessDataResult<IQueryable<SystemStaff>>(_systemStaffReadRepository.GetAll());
         }
 
+        [SecuredOperation("admin")]
         public IDataResult<SystemStaff> GetByEmail(string email)
         {
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(ss => ss.Email == email));
         }
 
-        //[SecuredOperation("admin")]
+        [SecuredOperation("admin")]
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<SystemStaff> GetById(string id)
         {
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(e => e.Id == id));
         }
 
-        //[SecuredOperation("admin")]
+        [SecuredOperation("admin")]
         [ValidationAspect(typeof(UpdateSystemStaffValidator))]
         public async Task<IResult> UpdateAsync(UpdateSystemStaffCommand systemStaff)
         {
