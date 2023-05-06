@@ -78,7 +78,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.JobAdvertisementDeleted);
         }
 
-        [SecuredOperation("employer")]
         public IDataResult<IQueryable<JobAdvertisement>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll());

@@ -19,12 +19,10 @@ namespace Application.Features.JobPositions.Commands
         public class CreateJobPositionCommandHandler : IRequestHandler<CreateJobPositionCommand, CreateJobPositionCommandResponse>
         {
             private readonly IJobPositionService _jobPositionService;
-            private readonly ILogger<CreateJobPositionCommandHandler> _logger;
-            
-            public CreateJobPositionCommandHandler(IJobPositionService jobPositionService, ILogger<CreateJobPositionCommandHandler> logger)
+
+            public CreateJobPositionCommandHandler(IJobPositionService jobPositionService)
             {
                 _jobPositionService = jobPositionService;
-                _logger = logger;
             }
 
             public async Task<CreateJobPositionCommandResponse> Handle(CreateJobPositionCommand request, CancellationToken cancellationToken)

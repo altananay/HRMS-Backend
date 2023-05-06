@@ -64,9 +64,15 @@ namespace Persistence
             //employer dependencies
             builder.RegisterType<EmployerReadRepository>().As<IEmployerReadRepository>().SingleInstance();
 
-            //
+            //logs dependencies
             builder.RegisterType<LogReadRepository>().As<ILogReadRepository>().SingleInstance();
             builder.RegisterType<LogManager>().As<ILogService>().SingleInstance();
+
+            //contacts dependencies
+            builder.RegisterType<ContactManager>().As<IContactService>().SingleInstance();
+            builder.RegisterType<ContactReadRepository>().As<IContactReadRepository>().SingleInstance();
+            builder.RegisterType<ContactWriteRepository>().As<IContactWriteRepository>().SingleInstance();
+            builder.RegisterType<ContactDeleteRepository>().As<IContactDeleteRepository>().SingleInstance();
 
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 

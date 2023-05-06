@@ -8,7 +8,9 @@ using Application.Repositories;
 using Application.Results;
 using Domain.Entities;
 using Domain.Objects;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using System.Text;
 
 namespace Persistence.Concretes
 {
@@ -19,23 +21,34 @@ namespace Persistence.Concretes
         private readonly ICvReadRepository _cvReadRepository;
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
         private readonly IJobSeekerWriteRepository _jobSeekerWriteRepository;
+        private readonly ILogger<CvManager> _logger;
 
-        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository)
+        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository, ILogger<CvManager> logger)
         {
             _cvWriteRepository = cvWriteRepository;
             _cvDeleteRepository = cvDeleteRepository;
             _cvReadRepository = cvReadRepository;
             _jobSeekerReadRepository = jobSeekerReadRepository;
             _jobSeekerWriteRepository = jobSeekerWriteRepository;
+            _logger = logger;
         }
 
         [ValidationAspect(typeof(CvValidator))]
+        [LogAspect("Cv ekleme fonksiyonu başlangıç", true)]
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
             Cv cv = new();
             JobSeeker oldjobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
             Project[] projects = new Project[requestCv.Projects.Length];
             JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
+
+            StringBuilder builder = new();
+            builder.Append(requestCv.JobSeekerId);
+            
+            builder.Append(requestCv.SocialMedias.Github);
+            builder.Append(requestCv.SocialMedias.Linkedin);
+            builder.Append(requestCv.SocialMedias.WebSite);
+            
 
 
             for (int i = 0; i < requestCv.Projects.Length; i++)
@@ -45,6 +58,7 @@ namespace Persistence.Concretes
                 project.ProjectName = requestCv.Projects[i].ProjectName;
 
                 projects[i] = project;
+                builder.Append(project.ProjectName + " " + project.Description);
 
             }
 
@@ -60,6 +74,7 @@ namespace Persistence.Concretes
                 jobExperience.LeaveWorkYear = requestCv.JobExperiences[i].LeaveWorkYear;
 
                 jobExperiences[i] = jobExperience;
+                builder.Append(jobExperience.Years + " " + jobExperience.LeaveWorkYear + " " + jobExperience.Department + " " + jobExperience.Position + " " + jobExperience.CompanyName + " " + jobExperience.Description);
             }
 
 
@@ -103,6 +118,8 @@ namespace Persistence.Concretes
             oldjobSeeker.Cv = cv;
 
             await _jobSeekerWriteRepository.UpdateAsync(oldjobSeeker);
+
+            _logger.LogInformation(builder.ToString());
 
             return new SuccessResult(Messages.CvAdded);
         }

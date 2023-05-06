@@ -30,10 +30,13 @@
         public static string CvDeleted = "Cv silindi";
         public static string CvAdded = "Cv eklendi";
         public static string CitizenError = "Hatalı vatandaş bilgisi.";
-        public static string CitizenSuccessfull = "Vatandaş bilgisi doğru.";
+        public static string CitizenSuccessful = "Vatandaş bilgisi doğru.";
         public static string NationalityIdExists = "Bu TC kimlik numarasıyla daha önce kullanıcı kayıt edilmiş";
         public static string JobApplicationMade = "İş başvurusu yapıldı.";
         public static string JobApplicationDeleted = "İş başvurusu silindi.";
         public static string JobApplicationUpdated = "İş başvurusu güncellendi.";
+        public static string ContactAdded = "Mesajınız gönderildi.";
+        public static string ContactDeleted = "Mesaj silindi.";
+        public static string ContactUpdated = "Mesaj güncellendi.";
     }
 }

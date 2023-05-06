@@ -22,7 +22,7 @@ namespace WebAPI.Controllers
             var result = _checkRealPersonService.CheckIfRealPerson(checkUser);
             if (result)
             {
-                return Ok(Messages.CitizenSuccessfull);
+                return Ok(Messages.CitizenSuccessful);
             }
             return BadRequest(Messages.CitizenError);  
         }
