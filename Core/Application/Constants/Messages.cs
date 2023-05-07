@@ -38,5 +38,6 @@
         public static string ContactAdded = "Mesajınız gönderildi.";
         public static string ContactDeleted = "Mesaj silindi.";
         public static string ContactUpdated = "Mesaj güncellendi.";
+        public static string CvExists = "Daha önce cv eklenmiş.";
     }
 }

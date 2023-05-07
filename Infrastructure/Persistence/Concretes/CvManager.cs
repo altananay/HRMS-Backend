@@ -37,6 +37,11 @@ namespace Persistence.Concretes
         [LogAspect("Cv ekleme fonksiyonu başlangıç", true)]
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
+            var cvExists = CheckIfCvExistsByJobSeekerId(requestCv.JobSeekerId);
+            if (!cvExists.IsSuccess)
+            {
+                return new ErrorResult(Messages.CvExists);
+            }
             Cv cv = new();
             JobSeeker oldjobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
             Project[] projects = new Project[requestCv.Projects.Length];
@@ -44,11 +49,11 @@ namespace Persistence.Concretes
 
             StringBuilder builder = new();
             builder.Append(requestCv.JobSeekerId);
-            
+
             builder.Append(requestCv.SocialMedias.Github);
             builder.Append(requestCv.SocialMedias.Linkedin);
             builder.Append(requestCv.SocialMedias.WebSite);
-            
+
 
 
             for (int i = 0; i < requestCv.Projects.Length; i++)
@@ -222,6 +227,16 @@ namespace Persistence.Concretes
             await _jobSeekerWriteRepository.UpdateAsync(oldJobSeeker);
 
             return new SuccessResult(Messages.CvUpdated);
+        }
+
+        private IResult CheckIfCvExistsByJobSeekerId(string id)
+        {
+            var values = _cvReadRepository.Get(cv => cv.JobSeekerId == id);
+            if (values != null)
+            {
+                return new ErrorResult(Messages.CvExists);
+            }
+            return new SuccessResult();
         }
     }
 }
