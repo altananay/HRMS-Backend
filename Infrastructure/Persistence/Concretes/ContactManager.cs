@@ -2,6 +2,7 @@
 using Application.Aspects;
 using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
+using Application.CrossCuttingConcerns.Validation.Validators.Contacts;
 using Application.Features.Contacts.Commands;
 using Application.Repositories;
 using Application.Results;
@@ -22,6 +23,7 @@ namespace Persistence.Concretes
             _contactDeleteRepository = contactDeleteRepository;
         }
 
+        [ValidationAspect(typeof(ContactValidator))]
         public async Task<IResult> AddAsync(CreateContactCommand requestContact)
         {
             Contact contact = new();
@@ -57,6 +59,7 @@ namespace Persistence.Concretes
         }
 
         [SecuredOperation("admin")]
+        [ValidationAspect(typeof(UpdateContactValidator))]
         public async Task<IResult> UpdateAsync(UpdateContactCommand requestContact)
         {
             Contact contact = _contactReadRepository.GetById(requestContact.Id);

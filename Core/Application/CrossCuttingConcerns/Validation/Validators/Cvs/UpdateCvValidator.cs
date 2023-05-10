@@ -1,4 +1,5 @@
-﻿using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
+﻿using Application.Constants;
+using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
 using Application.Features.Cvs.Commands;
 using Domain.Objects;
 using FluentValidation;
@@ -18,9 +19,9 @@ namespace Application.CrossCuttingConcerns.Validation.Validators.Cvs
             RuleFor(cv => cv.SocialMedias.Github).NotEmpty().MinimumLength(5).MaximumLength(50);
             RuleFor(cv => cv.SocialMedias.Linkedin).NotEmpty().MinimumLength(5).MaximumLength(100);
             RuleForEach(cv => cv.JobExperiences.OfType<JobExperience>()).NotNull().OverridePropertyName("JobExperience").SetValidator(new JobExperienceValidator());
-            RuleFor(cv => cv.JobSeekerId).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage("Bilgiyi doğru formatta girin.");
+            RuleFor(cv => cv.JobSeekerId).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage(ValidationMessages.ObjectIdValidationError);
             RuleForEach(cv => cv.Languages.OfType<Language>()).NotNull().OverridePropertyName("Language").SetValidator(new LanguageValidator());
-            RuleFor(cv => cv.Id).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage("Bilgileri doğru girin");
+            RuleFor(cv => cv.Id).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage(ValidationMessages.ObjectIdValidationError);
         }
     }
 }

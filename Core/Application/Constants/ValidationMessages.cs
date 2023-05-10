@@ -63,5 +63,9 @@
         //SystemStaff
         public static string ClaimCantBeEmpty = "Lütfen yetki verin.";
         public static string ClaimFormat = "Yetkiyi doğru formatta verin.";
+
+        //Contact
+        public static string MessageLength = "Mesajınız 20 ile 200 karakter arasında olmalı.";
+        public static string SubjectLength = "Konu başlığınız 5 ile 100 karakter arasında olmalı";
     }
 }
