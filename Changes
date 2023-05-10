@@ -94,3 +94,6 @@ Contact entity eklendi ve repository kodları, cqrs kodları yazıldı.
 
 7 Mayıs 2023
 Cv ekleme işlemi için business rule eklendi. Her kullanıcı sadece 1 tane cv ekleyebilir.
+
+10 Mayıs 2023
+Contact validator eklendi.
