@@ -1,7 +1,6 @@
 ﻿using Application.Context;
 using Application.Repositories;
 using Domain.Common;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System.Linq.Expressions;
 
@@ -33,7 +32,6 @@ namespace Persistence.Repositories
 
         public T GetById(string id)
         {
-            var logger = LoggerFactory.Create(options => { }).CreateLogger<MongoClient>();
             var result = collection.AsQueryable().Where(x => x.Id == id.ToString()).FirstOrDefault();
             return result;
         }
