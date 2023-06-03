@@ -11,7 +11,6 @@ namespace Application.CrossCuttingConcerns.Validation.Validators.JobApplications
         {
             RuleFor(j => j.JobAdvertisementId).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage(ValidationMessages.ObjectIdValidationError);
             RuleFor(j => j.JobSeekerId).NotEmpty().Must(ObjectIdValidation.ObjectIdValidate).WithMessage(ValidationMessages.ObjectIdValidationError);
-            RuleFor(j => j.Result).NotEmpty().MinimumLength(10).MaximumLength(50).WithMessage(ValidationMessages.JobApplicationResultCantEmpty);
         }
 
     }

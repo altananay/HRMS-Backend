@@ -1,5 +1,5 @@
-﻿using Application.Features.JobApplications.Commands;
-using Application.Features.JobPositions.Commands;
+﻿using Application.Dtos;
+using Application.Features.JobApplications.Commands;
 using Application.Results;
 using Domain.Entities;
 
@@ -12,5 +12,6 @@ namespace Application.Abstractions
         Task<IResult> Update(UpdateJobApplicationCommand jobApplication);
         IDataResult<IQueryable<JobApplication>> GetAll();
         IDataResult<JobApplication> GetById(string id);
+        IDataResult<GetJobApplicationResultDto> GetResultById(string id);
     }
 }

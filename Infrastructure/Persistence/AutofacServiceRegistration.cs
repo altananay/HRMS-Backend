@@ -74,6 +74,12 @@ namespace Persistence
             builder.RegisterType<ContactWriteRepository>().As<IContactWriteRepository>().SingleInstance();
             builder.RegisterType<ContactDeleteRepository>().As<IContactDeleteRepository>().SingleInstance();
 
+            //job applications
+            builder.RegisterType<JobApplicationManager>().As<IJobApplicationService>().SingleInstance();
+            builder.RegisterType<JobApplicationReadRepository>().As<IJobApplicationReadRepository>().SingleInstance();
+            builder.RegisterType<JobApplicationWriteRepository>().As<IJobApplicationWriteRepository>().SingleInstance();
+            builder.RegisterType<JobApplicationDeleteRepository>().As<IJobApplicationDeleteRepository>().SingleInstance();
+
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces()

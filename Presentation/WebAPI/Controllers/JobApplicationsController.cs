@@ -1,9 +1,6 @@
-﻿using Application.Abstractions;
-using Application.Features.JobApplications.Commands;
+﻿using Application.Features.JobApplications.Commands;
 using Application.Features.JobApplications.Queries;
-using Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobApplications.Commands.CreateJobApplicationCommand;
 using static Application.Features.JobApplications.Commands.DeleteJobApplicationCommand;
@@ -44,6 +41,17 @@ namespace WebAPI.Controllers
                 return Ok(response.JobApplication);
             }
             return BadRequest(response.JobApplication);
+        }
+
+        [HttpGet("getresultbyid/{id}")]
+        public async Task<IActionResult> GetResultById(string id)
+        {
+            var result = await _mediator.Send(new GetResultByIdJobApplicationQuery { Id= id });
+            if (result.Result.IsSuccess)
+            {
+                return Ok(result.Result);
+            }
+            return BadRequest(result);
         }
 
         [HttpPost("add")]

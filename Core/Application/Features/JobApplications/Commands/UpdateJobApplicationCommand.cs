@@ -7,9 +7,9 @@ namespace Application.Features.JobApplications.Commands
 {
     public partial class UpdateJobApplicationCommand : IRequest<UpdateJobApplicationCommandResponse>
     {
-        public string JobApplicationId { get; set; }
+        public string? JobApplicationId { get; set; }
+        public string EmployerDescription { get; set; }
         public string Result { get; set; }
-        public string Description { get; set; }
 
         public class UpdateJobApplicationCommandResponse
         {
