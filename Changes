@@ -97,3 +97,6 @@ Cv ekleme işlemi için business rule eklendi. Her kullanıcı sadece 1 tane cv 
 
 10 Mayıs 2023
 Contact validator eklendi.
+
+3 Haziran 2023
+Sisteme giriş yapan kullanıcının, kullanıcı adı, id ve rol bilgileri loglandı.
