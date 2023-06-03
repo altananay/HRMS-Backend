@@ -33,6 +33,7 @@ builder.Services.AddMediatR(mr => mr.RegisterServicesFromAssembly(Assembly.GetEx
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddApplicationServices();
+builder.Services.AddMemoryCache();
 builder.Services.AddCors(options => options.AddPolicy("ApiCorsPolicy", builder => {
     builder.WithOrigins("http://localhost:3000", "https://localhost:3000", "https://hrmstez.netlify.app").AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
 }));
@@ -120,6 +121,16 @@ app.UseCors("ApiCorsPolicy");
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    var username = context.User?.Identity?.IsAuthenticated != null || true ? context.User.Identity.Name : null;
+    var id = context.User?.Identity?.IsAuthenticated != null || true ? context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value : null;
+    var roles = context.User?.Identity?.IsAuthenticated != null || true ? context.User.FindFirst(ClaimTypes.Role)?.Value : null;
+    LogContext.PushProperty("Username", username);
+    LogContext.PushProperty("Id", id);
+    LogContext.PushProperty("Roles", roles);
+    await next();
+});
 
 app.MapControllers();
 

@@ -6,6 +6,7 @@ using Application.CrossCuttingConcerns.Validation.Validators.JobPositions;
 using Application.Repositories;
 using Application.Results;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Persistence.Concretes
 {
@@ -14,16 +15,22 @@ namespace Persistence.Concretes
         IJobPositionReadRepository _jobPositionReadRepository;
         IJobPositionWriteRepository _jobPositionWriteRepository;
         IJobPositionDeleteRepository _jobPositionDeleteRepository;
+        string roles;
+        private readonly ILogger<JobPositionManager> _logger;
 
-        public JobPositionManager(IJobPositionReadRepository jobPositionReadRepository, IJobPositionWriteRepository jobPositionWriteRepository, IJobPositionDeleteRepository jobPositionDeleteRepository)
+        public JobPositionManager(IJobPositionReadRepository jobPositionReadRepository, IJobPositionWriteRepository jobPositionWriteRepository, IJobPositionDeleteRepository jobPositionDeleteRepository, ILogger<JobPositionManager> logger)
         {
             _jobPositionReadRepository = jobPositionReadRepository;
             _jobPositionWriteRepository = jobPositionWriteRepository;
             _jobPositionDeleteRepository = jobPositionDeleteRepository;
+            roles = "";
+            _logger = logger;
         }
 
 
         [ValidationAspect(typeof(JobPositionValidator))]
+        [SecuredOperation("employer")]
+        [LogAspect()]
         public async Task<IResult> Add(JobPosition jobPosition)
         {
             await _jobPositionWriteRepository.AddAsync(jobPosition);

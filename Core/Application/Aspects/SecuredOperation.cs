@@ -11,8 +11,6 @@ namespace Application.Aspects
     public class SecuredOperation : MethodInterception
     {
         private string[] _roles;
-        //Web tabanlı bir projede birden çok kişi aynı anda istekte bulunabilir.
-        //her ayrı kişi için bir httpcontext oluşturacak. Herkese ayrı bir thread.
         private IHttpContextAccessor _httpContextAccessor;
 
         public SecuredOperation(string roles)

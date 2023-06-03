@@ -30,7 +30,7 @@ namespace Persistence.Concretes
             jobApp.CreatedAt = DateTime.UtcNow;
             jobApp.JobAdvertisementId = jobApplication.JobAdvertisementId;
             jobApp.Description = jobApplication.Description;
-            jobApp.JobSeekerId = jobApplication.JobSeekerId;
+            //jobApp.JobSeekerId = jobApplication.JobSeekerId;
             jobApp.Result = jobApplication.Result;
             await _jobApplicationWriteRepository.AddAsync(jobApp);
             return new SuccessResult(Messages.JobApplicationMade);
