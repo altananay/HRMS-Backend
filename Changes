@@ -100,3 +100,4 @@ Contact validator eklendi.
 
 3 Haziran 2023
 Sisteme giriş yapan kullanıcının, kullanıcı adı, id ve rol bilgileri loglandı.
+İş ilanı için yeni endpoint ve query eklendi.
