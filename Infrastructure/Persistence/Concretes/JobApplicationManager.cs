@@ -62,11 +62,25 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
+        public IDataResult<IQueryable<JobApplication>> GetAllByEmployerId(string id)
+        {
+            return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll(jobApp => jobApp.EmployerId == id));
+        }
+
+        [ValidationAspect(typeof(ObjectIdValidator))]
+
+        public IDataResult<IQueryable<JobApplication>> GetAllByJobSeekerId(string id)
+        {
+            return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll(jobApp => jobApp.JobSeekerId == id));
+        }
+
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobApplication> GetById(string id)
         {
             return new SuccessDataResult<JobApplication>(_jobApplicationReadRepository.GetById(id));
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<GetJobApplicationResultDto> GetResultById(string id)
         {
             return new SuccessDataResult<GetJobApplicationResultDto>(_jobApplicationReadRepository.GetResultById(id));

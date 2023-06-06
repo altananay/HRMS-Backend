@@ -11,6 +11,8 @@ namespace Application.Abstractions
         Task<IResult> Delete(string id);
         Task<IResult> Update(UpdateJobApplicationCommand jobApplication);
         IDataResult<IQueryable<JobApplication>> GetAll();
+        IDataResult<IQueryable<JobApplication>> GetAllByEmployerId(string id);
+        IDataResult<IQueryable<JobApplication>> GetAllByJobSeekerId(string id);
         IDataResult<JobApplication> GetById(string id);
         IDataResult<GetJobApplicationResultDto> GetResultById(string id);
     }

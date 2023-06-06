@@ -66,6 +66,7 @@ namespace Persistence.Concretes
 
         }
 
+        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id)
         {
             return new SuccessDataResult<GetEmployerDto>(_employerReadRepository.GetByEmployerIdWithFields(id));
