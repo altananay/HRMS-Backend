@@ -101,5 +101,10 @@ namespace Persistence.Concretes
         {
             return new SuccessDataResult<IQueryable<GetAllJobSeekerDto>>(_jobSeekerReadRepository.GetAllJobSeeker());
         }
+
+        public IDataResult<JobSeeker> GetById(string id)
+        {
+            return new SuccessDataResult<JobSeeker>(_jobSeekerReadRepository.GetById(id));
+        }
     }
 }

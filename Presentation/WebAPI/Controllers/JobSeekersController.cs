@@ -2,11 +2,11 @@
 using Application.Features.JobSeekers.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.JobSeekers.Commands.CreateJobSeekerCommand;
 using static Application.Features.JobSeekers.Commands.DeleteJobSeekerCommand;
 using static Application.Features.JobSeekers.Commands.UpdateJobSeekerCommand;
 using static Application.Features.JobSeekers.Queries.GetAllJobSeekerQuery;
 using static Application.Features.JobSeekers.Queries.GetByEmailJobSeekerQuery;
+using static Application.Features.JobSeekers.Queries.GetByIdJobSeekerQuery;
 
 namespace WebAPI.Controllers
 {
@@ -37,6 +37,17 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetByEmail(GetByEmailJobSeekerQuery request)
         {
             GetByEmailJobSeekerResponse response = await _mediator.Send(request);
+            if (response.JobSeeker.IsSuccess)
+            {
+                return Ok(response.JobSeeker);
+            }
+            return BadRequest(response.JobSeeker);
+        }
+
+        [HttpGet("getbyid/{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            GetByIdJobSeekerQueryResponse response = await _mediator.Send(new GetByIdJobSeekerQuery { Id = id});
             if (response.JobSeeker.IsSuccess)
             {
                 return Ok(response.JobSeeker);

@@ -13,6 +13,7 @@ namespace Application.Abstractions
         Task<IResult> Update(UpdateJobSeekerCommand jobSeeker);
         //IDataResult<IQueryable<JobSeeker>> GetClaims(JobSeeker user);
         IDataResult<JobSeeker> GetByMail(string email);
+        IDataResult<JobSeeker> GetById(string id);
         IResult NationalityIdExists(string nationalityId);
         IDataResult<IQueryable<GetAllJobSeekerDto>> GetAllJobSeeker();
     }
