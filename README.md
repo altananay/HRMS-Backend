@@ -92,3 +92,5 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 | Serilog.AspNetCore | 6.1.0 |
 | Serilog.Sinks.MongoDB | 5.3.1 |
 | Serilog.Sinks.Seq | 5.2.2 |
+| AutoMapper | 12.0.1 |
+| AutoMapper.Extensions.Microsoft.DependencyInjection | 12.0.1 |
