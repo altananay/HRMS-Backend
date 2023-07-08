@@ -107,3 +107,6 @@ Sisteme giriş yapan kullanıcının, kullanıcı adı, id ve rol bilgileri logl
 
 8 Temmuz 2023
 Business rules (iş kuralları) eklendi ve code refactoring yapıldı.
+
+9 Temmuz 2023
+Automapper kütüphanesi ile mapping işlemleri ve code refactoring yapıldı.
