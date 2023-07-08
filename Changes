@@ -104,3 +104,6 @@ Sisteme giriş yapan kullanıcının, kullanıcı adı, id ve rol bilgileri logl
 
 6 Haziran 2023
 İş ilanı için yeni endpoint ve queryler eklendi.
+
+8 Temmuz 2023
+Business rules (iş kuralları) eklendi ve code refactoring yapıldı.
