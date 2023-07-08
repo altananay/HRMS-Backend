@@ -1,6 +1,6 @@
-﻿using Application.Dtos;
-using Application.Features.Employers.Commands;
+﻿using Application.Features.Employers.Commands;
 using Application.Results;
+using Application.Utilities.Dtos;
 using Domain.Entities;
 
 namespace Application.Abstractions

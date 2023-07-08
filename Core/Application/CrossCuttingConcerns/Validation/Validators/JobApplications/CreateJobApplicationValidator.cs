@@ -1,6 +1,6 @@
-﻿using Application.Constants;
-using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
+﻿using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
 using Application.Features.JobApplications.Commands;
+using Application.Utilities.Constants;
 using FluentValidation;
 
 namespace Application.CrossCuttingConcerns.Validation.Validators.JobApplications

@@ -1,12 +1,13 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.JobAdvertisements;
 using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;
 using Application.Results;
+using Application.Utilities.Constants;
 using Domain.Entities;
+using Persistence.Rules;
 
 namespace Persistence.Concretes
 {
@@ -15,20 +16,18 @@ namespace Persistence.Concretes
         private readonly IJobAdvertisementDeleteRepository _jobAdvertisementDeleteRepository;
         private readonly IJobAdvertisementReadRepository _jobAdvertisementReadRepository;
         private readonly IJobAdvertisementWriteRepository _jobAdvertisementWriteRepository;
-        private readonly IEmployerReadRepository _employerReadRepository;
-        private readonly IJobPositionWriteRepository _jobPositionWriteRepository;
-        private readonly IJobPositionReadRepository _jobPositionReadRepository;
-        private readonly IJobPositionDeleteRepository _jobPositionDeleteRepository;
+        private readonly IEmployerService _employerService;
+        private readonly IJobPositionService _jobPositionService;
+        private readonly JobAdvertisementBusinessRules _jobAdvertisementBusinessRules;
 
-        public JobAdvertisementManager(IJobAdvertisementDeleteRepository jobAdvertisementDeleteRepository, IJobAdvertisementReadRepository jobAdvertisementReadRepository, IJobAdvertisementWriteRepository jobAdvertisementWriteRepository, IEmployerReadRepository employerReadRepository, IJobPositionWriteRepository jobPositionWriteRepository, IJobPositionReadRepository jobPositionReadRepository, IJobPositionDeleteRepository jobPositionDeleteRepository)
+        public JobAdvertisementManager(IJobAdvertisementDeleteRepository jobAdvertisementDeleteRepository, IJobAdvertisementReadRepository jobAdvertisementReadRepository, IJobAdvertisementWriteRepository jobAdvertisementWriteRepository, IEmployerService employerService, IJobPositionService jobPositionService, JobAdvertisementBusinessRules jobAdvertisementBusinessRules)
         {
             _jobAdvertisementDeleteRepository = jobAdvertisementDeleteRepository;
             _jobAdvertisementReadRepository = jobAdvertisementReadRepository;
             _jobAdvertisementWriteRepository = jobAdvertisementWriteRepository;
-            _employerReadRepository = employerReadRepository;
-            _jobPositionWriteRepository = jobPositionWriteRepository;
-            _jobPositionReadRepository = jobPositionReadRepository;
-            _jobPositionDeleteRepository = jobPositionDeleteRepository;
+            _employerService = employerService;
+            _jobPositionService = jobPositionService;
+            _jobAdvertisementBusinessRules = jobAdvertisementBusinessRules;
         }
 
         //[SecuredOperation("employer")]
@@ -36,11 +35,11 @@ namespace Persistence.Concretes
         public async Task<IResult> Add(CreateJobAdvertisementCommand jobAdvertisement)
         {
             JobPosition jobPosition = new();
-            Employer employer = _employerReadRepository.GetById(jobAdvertisement.EmployerId);
+            var employer = _employerService.GetById(jobAdvertisement.EmployerId);
             jobPosition.CreatedAt = DateTime.Now;
             jobPosition.PositionName = jobAdvertisement.JobPositionName;
 
-            await _jobPositionWriteRepository.AddAsync(jobPosition);
+            await _jobPositionService.Add(jobPosition);
 
             JobAdvertisement jobAdv = new();
             jobAdv.CreatedAt = DateTime.UtcNow;
@@ -49,15 +48,15 @@ namespace Persistence.Concretes
             jobAdv.Description = jobAdvertisement.Description;
             jobAdv.JobPosition = jobAdvertisement.JobPositionName;
             jobAdv.OpenPosition = jobAdvertisement.OpenPosition;
-            jobAdv.CompanyName = employer.CompanyName;
-            jobAdv.CompanyPhone = employer.CompanyPhone;
-            jobAdv.WebSite = employer.WebSite;
-            jobAdv.EmployerId = employer.Id;
+            jobAdv.CompanyName = employer.Data.CompanyName;
+            jobAdv.CompanyPhone = employer.Data.CompanyPhone;
+            jobAdv.WebSite = employer.Data.WebSite;
+            jobAdv.EmployerId = employer.Data.Id;
             jobAdv.JobPositionId = jobPosition.Id;
             jobAdv.Skills = jobAdvertisement.Skills;
             jobAdv.Experience = jobAdvertisement.Experience;
             jobAdv.Title = jobAdvertisement.Title;
-            jobAdv.Email = employer.Email;
+            jobAdv.Email = employer.Data.Email;
             jobAdv.MaxSalary = jobAdvertisement.MaxSalary;
             jobAdv.MinSalary = jobAdvertisement.MinSalary;
             jobAdv.JobType = jobAdvertisement.JobType;
@@ -66,16 +65,17 @@ namespace Persistence.Concretes
             
             
             await _jobAdvertisementWriteRepository.AddAsync(jobAdv);
-            return new SuccessResult(Messages.JobAdvertisementAdded);
+            return new SuccessResult(Messages.JobAdvertisement.JobAdvertisementAdded);
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
+            _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             JobAdvertisement jobAdvertisement = _jobAdvertisementReadRepository.GetById(id);
-            await _jobPositionDeleteRepository.Delete(jobAdvertisement.JobPositionId);
+            await _jobPositionService.Delete(jobAdvertisement.JobPositionId);
             await _jobAdvertisementDeleteRepository.Delete(id);
-            return new SuccessResult(Messages.JobAdvertisementDeleted);
+            return new SuccessResult(Messages.JobAdvertisement.JobAdvertisementDeleted);
         }
 
         public IDataResult<IQueryable<JobAdvertisement>> GetAll()
@@ -96,43 +96,36 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string id)
         {
+            _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.EmployerId == id));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerIdWithStatus(string id, bool status)
         {
+            _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(ja => ja.EmployerId == id && ja.Status == status));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobAdvertisement> GetById(string id)
         {
+            _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             return new SuccessDataResult<JobAdvertisement>(_jobAdvertisementReadRepository.GetById(id));
         }
 
-        public IResult JobAdvertisementExists(string id)
-        {
-            var result = _jobAdvertisementReadRepository.Get(e => e.Id == id);
-            if (result == null)
-            {
-                return new SuccessDataResult<JobAdvertisement>();
-            }
-            else
-            {
-                return new ErrorDataResult<JobAdvertisement>(Messages.JobAdvertisementExists);
-            }
-        }
+        
 
         [ValidationAspect(typeof(UpdateJobAdvertisementValidator))]
         public async Task<IResult> Update(UpdateJobAdvertisementCommand jobAdvertisement)
         {
+            _jobAdvertisementBusinessRules.JobAdvertisementExists(jobAdvertisement.Id);
             var oldJobAdv = GetById(jobAdvertisement.Id);
-            JobPosition jobPosition = _jobPositionReadRepository.GetById(jobAdvertisement.JobPositionId);
-            jobPosition.PositionName = jobAdvertisement.JobPositionName;
-            jobPosition.UpdatedAt = DateTime.Now;
+            var jobPosition = _jobPositionService.GetById(jobAdvertisement.JobPositionId);
+            jobPosition.Data.PositionName = jobAdvertisement.JobPositionName;
+            jobPosition.Data.UpdatedAt = DateTime.Now;
 
-            await _jobPositionWriteRepository.UpdateAsync(jobPosition);
+            await _jobPositionService.Update(jobPosition.Data);
 
             JobAdvertisement jobAdv = new();
 
@@ -161,7 +154,7 @@ namespace Persistence.Concretes
             
 
             await _jobAdvertisementWriteRepository.UpdateAsync(jobAdv);
-            return new SuccessResult(Messages.JobAdvertisementUpdated);
+            return new SuccessResult(Messages.JobAdvertisement.JobAdvertisementUpdated);
         }
     }
 }

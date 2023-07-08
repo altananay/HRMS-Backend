@@ -1,6 +1,6 @@
 ﻿using Application.Abstractions;
-using Application.Constants;
-using Application.Dtos;
+using Application.Utilities.Constants;
+using Application.Utilities.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -22,9 +22,9 @@ namespace WebAPI.Controllers
             var result = _checkRealPersonService.CheckIfRealPerson(checkUser);
             if (result)
             {
-                return Ok(Messages.CitizenSuccessful);
+                return Ok(Messages.Mernis.CitizenSuccessful);
             }
-            return BadRequest(Messages.CitizenError);  
+            return BadRequest(Messages.Mernis.CitizenError);  
         }
     }
 }

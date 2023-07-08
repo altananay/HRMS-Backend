@@ -1,7 +1,7 @@
 ﻿using Amazon.Runtime.Internal.Util;
 using Application.Abstractions;
-using Application.Dtos;
 using Application.Results;
+using Application.Utilities.Dtos;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using static Application.Features.Employers.Queries.GetAllEmployerQuery;

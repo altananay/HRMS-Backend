@@ -1,4 +1,4 @@
-﻿namespace Application.Constants
+﻿namespace Application.Utilities.Constants
 {
     public static class ValidationMessages
     {

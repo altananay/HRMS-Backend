@@ -1,10 +1,10 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.SystemStaffs.Auth;
 using Application.Features.SystemStaffAuth.Queries;
 using Application.Features.SystemStaffs.Commands;
 using Application.Results;
+using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
@@ -26,7 +26,7 @@ namespace Persistence.Concretes
         public IDataResult<AccessToken> CreateAccessToken(SystemStaff user)
         {
             var accessToken = _tokenHelper.CreateTokenForSystemStaff(user);
-            return new SuccessDataResult<AccessToken>(accessToken, Messages.SuccessfulLogin);
+            return new SuccessDataResult<AccessToken>(accessToken, Messages.Authentication.SuccessfulLogin);
         }
 
         [ValidationAspect(typeof(SystemStaffLoginAuthValidator))]
@@ -35,15 +35,15 @@ namespace Persistence.Concretes
             var userToCheck = _systemStaffService.GetByEmail(userForLoginDto.Email);
             if (userToCheck == null)
             {
-                return new ErrorDataResult<SystemStaff>(Messages.UserNotFound);
+                return new ErrorDataResult<SystemStaff>(Messages.User.UserNotFound);
             }
 
             if (!HashingHelper.VerifyPasswordHash(userForLoginDto.Password, userToCheck.Data.PasswordHash, userToCheck.Data.PasswordSalt))
             {
-                return new ErrorDataResult<SystemStaff>(Messages.PasswordError);
+                return new ErrorDataResult<SystemStaff>(Messages.Authentication.PasswordError);
             }
 
-            return new SuccessDataResult<SystemStaff>(userToCheck.Data, Messages.SuccessfulLogin);
+            return new SuccessDataResult<SystemStaff>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
         }
 
         [ValidationAspect(typeof(CreateSystemStaffCommand))]
@@ -63,14 +63,14 @@ namespace Persistence.Concretes
                 CreatedAt = DateTime.UtcNow,
             };
             await _systemStaffService.Add(user);
-            return new SuccessResult(Messages.SystemStaffAdded);
+            return new SuccessResult(Messages.SystemStaff.SystemStaffAdded);
         }
 
         public IResult UserExists(string email)
         {
             if (_systemStaffService.GetByEmail(email).Data != null)
             {
-                return new ErrorResult(Messages.UserAlreadyExists);
+                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
             }
             return new SuccessResult();
         }

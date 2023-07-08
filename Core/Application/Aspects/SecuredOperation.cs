@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.Extensions;
+﻿using Application.Utilities.Constants;
+using Application.Utilities.Extensions;
 using Application.Utilities.Interceptors;
 using Application.Utilities.IoC;
 using Castle.DynamicProxy;
@@ -30,7 +30,7 @@ namespace Application.Aspects
                     return;
                 }
             }
-            throw new Exception(Messages.AuthorizationDenied);
+            throw new Exception(Messages.Authentication.AuthorizationDenied);
         }
     }
 }

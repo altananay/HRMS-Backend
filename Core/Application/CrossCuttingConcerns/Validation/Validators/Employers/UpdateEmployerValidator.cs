@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.Features.Employers.Commands;
+﻿using Application.Features.Employers.Commands;
+using Application.Utilities.Constants;
 using FluentValidation;
 
 namespace Application.CrossCuttingConcerns.Validation.Validators.Employers

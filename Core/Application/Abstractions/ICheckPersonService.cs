@@ -1,4 +1,5 @@
-﻿using Application.Dtos;
+﻿using Application.Utilities.Dtos;
+
 namespace Application.Abstractions
 {
     public interface ICheckPersonService

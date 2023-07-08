@@ -1,6 +1,6 @@
-﻿using Application.Constants;
-using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
+﻿using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
 using Application.Features.Cvs.Commands;
+using Application.Utilities.Constants;
 using Domain.Objects;
 using FluentValidation;
 

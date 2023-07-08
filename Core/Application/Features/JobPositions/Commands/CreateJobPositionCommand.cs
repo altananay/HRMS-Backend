@@ -2,7 +2,6 @@
 using Application.Results;
 using Domain.Entities;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using static Application.Features.JobPositions.Commands.CreateJobPositionCommand;
 
 namespace Application.Features.JobPositions.Commands
@@ -28,15 +27,6 @@ namespace Application.Features.JobPositions.Commands
             public async Task<CreateJobPositionCommandResponse> Handle(CreateJobPositionCommand request, CancellationToken cancellationToken)
             {
                 
-                var jobPositionExists = _jobPositionService.JobPositionExists(request.PositionName);
-                if (!jobPositionExists.IsSuccess)
-                {
-                    return new CreateJobPositionCommandResponse
-                    {
-                        Result = jobPositionExists
-                    };
-                }
-
                 var position = new JobPosition
                 {
                     CreatedAt = DateTime.UtcNow,
@@ -44,14 +34,6 @@ namespace Application.Features.JobPositions.Commands
                     PositionName = request.PositionName
                 };
                 var result = await _jobPositionService.Add(position);
-
-                if (result.IsSuccess)
-                {
-                    return new CreateJobPositionCommandResponse
-                    {
-                        Result = result
-                    };
-                }
 
                 return new CreateJobPositionCommandResponse
                 {

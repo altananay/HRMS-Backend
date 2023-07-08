@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.Features.Contacts.Commands;
+﻿using Application.Features.Contacts.Commands;
+using Application.Utilities.Constants;
 using FluentValidation;
 
 namespace Application.CrossCuttingConcerns.Validation.Validators.Contacts

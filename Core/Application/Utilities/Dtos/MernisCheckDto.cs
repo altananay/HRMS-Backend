@@ -1,6 +1,6 @@
 ﻿using Domain.Common;
 
-namespace Application.Dtos
+namespace Application.Utilities.Dtos
 {
     public class MernisCheckDto : IDto
     {

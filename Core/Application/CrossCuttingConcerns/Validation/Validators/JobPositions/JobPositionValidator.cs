@@ -1,4 +1,4 @@
-﻿using Application.Constants;
+﻿using Application.Utilities.Constants;
 using Domain.Entities;
 using FluentValidation;
 

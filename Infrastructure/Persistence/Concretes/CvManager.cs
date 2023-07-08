@@ -1,16 +1,15 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Cvs;
 using Application.Features.Cvs.Commands;
 using Application.Repositories;
 using Application.Results;
-using Domain.Entities;
+using Application.Utilities.Constants;
 using Domain.Objects;
-using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
-using System.Text;
+using Persistence.Rules;
+using Cv = Domain.Entities.Cv;
 
 namespace Persistence.Concretes
 {
@@ -19,41 +18,28 @@ namespace Persistence.Concretes
         private readonly ICvWriteRepository _cvWriteRepository;
         private readonly ICvDeleteRepository _cvDeleteRepository;
         private readonly ICvReadRepository _cvReadRepository;
-        private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
-        private readonly IJobSeekerWriteRepository _jobSeekerWriteRepository;
-        private readonly ILogger<CvManager> _logger;
+        private readonly IJobSeekerService _jobSeekerService;
+        private readonly CvBusinessRules _rules;
 
-        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerReadRepository jobSeekerReadRepository, IJobSeekerWriteRepository jobSeekerWriteRepository, ILogger<CvManager> logger)
+        public CvManager(ICvWriteRepository cvWriteRepository, ICvDeleteRepository cvDeleteRepository, ICvReadRepository cvReadRepository, IJobSeekerService jobSeekerService, CvBusinessRules rules)
         {
             _cvWriteRepository = cvWriteRepository;
             _cvDeleteRepository = cvDeleteRepository;
             _cvReadRepository = cvReadRepository;
-            _jobSeekerReadRepository = jobSeekerReadRepository;
-            _jobSeekerWriteRepository = jobSeekerWriteRepository;
-            _logger = logger;
+            _jobSeekerService = jobSeekerService;
+            _rules = rules;
         }
 
         [ValidationAspect(typeof(CvValidator))]
         [LogAspect("Cv ekleme fonksiyonu başlangıç", true)]
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
-            var cvExists = CheckIfCvExistsByJobSeekerId(requestCv.JobSeekerId);
-            if (!cvExists.IsSuccess)
-            {
-                return new ErrorResult(Messages.CvExists);
-            }
+            _rules.CheckIfCvExistsByJobSeekerId(requestCv.JobSeekerId);
             Cv cv = new();
-            JobSeeker oldjobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
+
+            var oldjobSeeker = _jobSeekerService.GetById(requestCv.JobSeekerId);
             Project[] projects = new Project[requestCv.Projects.Length];
             JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
-
-            StringBuilder builder = new();
-            builder.Append(requestCv.JobSeekerId);
-
-            builder.Append(requestCv.SocialMedias.Github);
-            builder.Append(requestCv.SocialMedias.Linkedin);
-            builder.Append(requestCv.SocialMedias.WebSite);
-
 
 
             for (int i = 0; i < requestCv.Projects.Length; i++)
@@ -63,7 +49,6 @@ namespace Persistence.Concretes
                 project.ProjectName = requestCv.Projects[i].ProjectName;
 
                 projects[i] = project;
-                builder.Append(project.ProjectName + " " + project.Description);
 
             }
 
@@ -79,7 +64,7 @@ namespace Persistence.Concretes
                 jobExperience.LeaveWorkYear = requestCv.JobExperiences[i].LeaveWorkYear;
 
                 jobExperiences[i] = jobExperience;
-                builder.Append(jobExperience.Years + " " + jobExperience.LeaveWorkYear + " " + jobExperience.Department + " " + jobExperience.Position + " " + jobExperience.CompanyName + " " + jobExperience.Description);
+                
             }
 
 
@@ -108,11 +93,11 @@ namespace Persistence.Concretes
             cv.Hobbies = requestCv.Hobbies;
             cv.ImageUrl = requestCv.ImageUrl;
             cv.JobExperiences = jobExperiences;
-            cv.FirstName = oldjobSeeker.FirstName;
-            cv.LastName = oldjobSeeker.LastName;
-            cv.NationalityId = oldjobSeeker.NationalityId;
-            cv.DateOfBirth = oldjobSeeker.DateOfBirth;
-            cv.Email = oldjobSeeker.Email;
+            cv.FirstName = oldjobSeeker.Data.FirstName;
+            cv.LastName = oldjobSeeker.Data.LastName;
+            cv.NationalityId = oldjobSeeker.Data.NationalityId;
+            cv.DateOfBirth = oldjobSeeker.Data.DateOfBirth;
+            cv.Email = oldjobSeeker.Data.Email;
             cv.Information = requestCv.Information;
             cv.Languages = requestCv.Languages;
             cv.CreatedAt = DateTime.UtcNow;
@@ -120,20 +105,20 @@ namespace Persistence.Concretes
 
             await _cvWriteRepository.AddAsync(cv);
 
-            oldjobSeeker.Cv = cv;
+            oldjobSeeker.Data.Cv = cv;
 
-            await _jobSeekerWriteRepository.UpdateAsync(oldjobSeeker);
+            await _jobSeekerService.UpdateCvById(oldjobSeeker.Data.Id, oldjobSeeker.Data.Cv);
 
-            _logger.LogInformation(builder.ToString());
 
-            return new SuccessResult(Messages.CvAdded);
+            return new SuccessResult(Messages.Cv.CvAdded);
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
+            _rules.CheckIfCvExists(id);
             await _cvDeleteRepository.Delete(id);
-            return new SuccessResult(Messages.CvDeleted);
+            return new SuccessResult(Messages.Cv.CvDeleted);
         }
 
         [LogAspect(true)]
@@ -145,14 +130,17 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Cv> GetByJobSeekerId(string id)
         {
+            _rules.CheckIfCvExists(id);
             return new SuccessDataResult<Cv>(_cvReadRepository.Get(cv => cv.JobSeekerId == id));
         }
 
         [ValidationAspect(typeof(UpdateCvValidator))]
         public async Task<IResult> Update(UpdateCvCommand requestCv)
         {
+            _rules.CheckIfCvExists(requestCv.Id);
+            _rules.CheckIfCvExistsByJobSeekerId(requestCv.JobSeekerId);
             var oldCv = GetByJobSeekerId(requestCv.JobSeekerId);
-            var oldJobSeeker = _jobSeekerReadRepository.GetById(requestCv.JobSeekerId);
+            var oldJobSeeker = _jobSeekerService.GetById(requestCv.JobSeekerId);
             Project[] projects = new Project[requestCv.Projects.Length];
             JobExperience[] jobExperiences = new JobExperience[requestCv.JobExperiences.Length];
 
@@ -203,11 +191,11 @@ namespace Persistence.Concretes
             Cv newCv = new();
             newCv.Id = requestCv.Id;
             newCv.JobSeekerId = requestCv.JobSeekerId;
-            newCv.FirstName = oldJobSeeker.FirstName;
-            newCv.LastName = oldJobSeeker.LastName;
-            newCv.NationalityId = oldJobSeeker.NationalityId;
-            newCv.DateOfBirth = oldJobSeeker.DateOfBirth;
-            newCv.Email = oldJobSeeker.Email;
+            newCv.FirstName = oldJobSeeker.Data.FirstName;
+            newCv.LastName = oldJobSeeker.Data.LastName;
+            newCv.NationalityId = oldJobSeeker.Data.NationalityId;
+            newCv.DateOfBirth = oldJobSeeker.Data.DateOfBirth;
+            newCv.Email = oldJobSeeker.Data.Email;
             newCv.CreatedAt = oldCv.Data.CreatedAt;
             newCv.UpdatedAt = DateTime.UtcNow;
             newCv.Projects = projects;
@@ -222,21 +210,14 @@ namespace Persistence.Concretes
 
             await _cvWriteRepository.UpdateAsync(newCv);
 
-            oldJobSeeker.Cv = newCv;
+            oldJobSeeker.Data.Cv = newCv;
 
-            await _jobSeekerWriteRepository.UpdateAsync(oldJobSeeker);
 
-            return new SuccessResult(Messages.CvUpdated);
+            await _jobSeekerService.UpdateCvById(oldJobSeeker.Data.Id, oldJobSeeker.Data.Cv);
+
+            return new SuccessResult(Messages.Cv.CvUpdated);
         }
 
-        private IResult CheckIfCvExistsByJobSeekerId(string id)
-        {
-            var values = _cvReadRepository.Get(cv => cv.JobSeekerId == id);
-            if (values != null)
-            {
-                return new ErrorResult(Messages.CvExists);
-            }
-            return new SuccessResult();
-        }
+        
     }
 }

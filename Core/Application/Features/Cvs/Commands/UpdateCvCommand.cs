@@ -1,6 +1,6 @@
 ﻿using Application.Abstractions;
-using Application.Dtos;
 using Application.Results;
+using Application.Utilities.Dtos;
 using Domain.Objects;
 using MediatR;
 using static Application.Features.Cvs.Commands.UpdateCvCommand;

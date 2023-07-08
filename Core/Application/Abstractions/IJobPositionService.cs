@@ -10,7 +10,5 @@ namespace Application.Abstractions
         Task<IResult> Update(JobPosition jobPosition);
         IDataResult<IQueryable<JobPosition>> GetAll();
         IDataResult<JobPosition> GetById(string id);
-        IResult JobPositionExists(string jobPosition);
-
     }
 }

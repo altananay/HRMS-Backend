@@ -1,10 +1,10 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Employers.Auth;
 using Application.Features.EmployerAuth.Commands;
 using Application.Features.EmployerAuth.Queries;
 using Application.Results;
+using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
@@ -12,7 +12,7 @@ using Domain.Entities;
 
 namespace Persistence.Concretes
 {
-    internal class EmployerAuthManager : IEmployerAuthService
+    public class EmployerAuthManager : IEmployerAuthService
     {
         private IEmployerService _employerService;
         private ITokenHelper _tokenHelper;
@@ -26,24 +26,25 @@ namespace Persistence.Concretes
         public IDataResult<AccessToken> CreateAccessToken(Employer user)
         {
             var accessToken = _tokenHelper.CreateTokenForEmployer(user);
-            return new SuccessDataResult<AccessToken>(accessToken, Messages.SuccessfulLogin);
+            return new SuccessDataResult<AccessToken>(accessToken, Messages.Authentication.SuccessfulLogin);
         }
 
         [ValidationAspect(typeof(EmployerLoginAuthValidator))]
+        [LogAspect()]
         public IDataResult<Employer> Login(EmployerLoginQuery loginRequest)
         {
             var userToCheck = _employerService.GetByEmail(loginRequest.Email);
             if (userToCheck.Data == null)
             {
-                return new ErrorDataResult<Employer>(Messages.UserNotFound);
+                return new ErrorDataResult<Employer>(Messages.User.UserNotFound);
             }
 
             if (!HashingHelper.VerifyPasswordHash(loginRequest.Password, userToCheck.Data.PasswordHash, userToCheck.Data.PasswordSalt))
             {
-                return new ErrorDataResult<Employer>(Messages.PasswordError);
+                return new ErrorDataResult<Employer>(Messages.Authentication.PasswordError);
             }
 
-            return new SuccessDataResult<Employer>(userToCheck.Data, Messages.SuccessfulLogin);
+            return new SuccessDataResult<Employer>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
@@ -65,14 +66,14 @@ namespace Persistence.Concretes
                 CreatedAt = DateTime.UtcNow,
             };
             await _employerService.Add(user);
-            return new SuccessResult(Messages.UserRegistered);
+            return new SuccessResult(Messages.User.UserRegistered);
         }
 
         public IResult UserExists(string email)
         {
             if (_employerService.GetByEmail(email).Data != null)
             {
-                return new ErrorResult(Messages.UserAlreadyExists);
+                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
             }
             return new SuccessResult();
         }

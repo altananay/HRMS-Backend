@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.Features.JobSeekers.Commands;
+﻿using Application.Features.JobSeekers.Commands;
+using Application.Utilities.Constants;
 using FluentValidation;
 
 namespace Application.CrossCuttingConcerns.Validation.Validators.JobSeekers.Auth

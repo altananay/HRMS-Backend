@@ -1,10 +1,10 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.JobSeekers.Auth;
 using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
 using Application.Results;
+using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
@@ -30,7 +30,7 @@ namespace Persistence.Concretes
             var userExists = UserExists(userForRegisterDto.Email);
             if (!userExists.IsSuccess)
             {
-                return new ErrorResult(Messages.UserAlreadyExists);
+                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
             }
             var user = new User();
             await _userService.Add(user);
@@ -54,33 +54,34 @@ namespace Persistence.Concretes
             var result = await _jobSeekerService.Add(jobSeeker);
             if (result.IsSuccess)
             {
-                return new SuccessResult(Messages.UserRegistered);
+                return new SuccessResult(Messages.User.UserRegistered);
             }
-            return new ErrorResult(Messages.CitizenError);
+            return new ErrorResult(Messages.Mernis.CitizenError);
         }
 
         [ValidationAspect(typeof(JobSeekerLoginAuthValidator))]
+        [LogAspect()]
         public IDataResult<JobSeeker> Login(JobSeekerLoginQuery userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);
             if (userToCheck.Data == null)
             {
-                return new ErrorDataResult<JobSeeker>(Messages.UserNotFound);
+                return new ErrorDataResult<JobSeeker>(Messages.User.UserNotFound);
             }
 
             if (!HashingHelper.VerifyPasswordHash(userForLoginDto.Password, userToCheck.Data.PasswordHash, userToCheck.Data.PasswordSalt))
             {
-                return new ErrorDataResult<JobSeeker>(Messages.PasswordError);
+                return new ErrorDataResult<JobSeeker>(Messages.Authentication.PasswordError);
             }
 
-            return new SuccessDataResult<JobSeeker>(userToCheck.Data, Messages.SuccessfulLogin);
+            return new SuccessDataResult<JobSeeker>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
         }
 
         public IResult UserExists(string email)
         {
             if (_jobSeekerService.GetByMail(email).Data != null)
             {
-                return new ErrorResult(Messages.UserAlreadyExists);
+                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
             }
             return new SuccessResult();
         }
@@ -88,7 +89,7 @@ namespace Persistence.Concretes
         public IDataResult<AccessToken> CreateAccessToken(JobSeeker user)
         {
             var accessToken = _tokenHelper.CreateToken(user);
-            return new SuccessDataResult<AccessToken>(accessToken, Messages.SuccessfulLogin);
+            return new SuccessDataResult<AccessToken>(accessToken, Messages.Authentication.SuccessfulLogin);
         }
     }
 }

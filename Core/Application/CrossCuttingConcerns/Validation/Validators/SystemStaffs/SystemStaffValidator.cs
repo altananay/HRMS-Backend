@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
+﻿using Application.CrossCuttingConcerns.Validation.Validators.CustomValidateRules;
+using Application.Utilities.Constants;
 using Domain.Entities;
 using FluentValidation;
 

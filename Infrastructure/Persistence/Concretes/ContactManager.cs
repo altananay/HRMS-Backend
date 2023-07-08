@@ -1,12 +1,13 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Contacts;
 using Application.Features.Contacts.Commands;
 using Application.Repositories;
 using Application.Results;
+using Application.Utilities.Constants;
 using Domain.Entities;
+using Persistence.Rules;
 
 namespace Persistence.Concretes
 {
@@ -15,12 +16,14 @@ namespace Persistence.Concretes
         private readonly IContactWriteRepository _contactWriteRepository;
         private readonly IContactReadRepository _contactReadRepository;
         private readonly IContactDeleteRepository _contactDeleteRepository;
+        private readonly ContactBusinessRules _rules;
 
-        public ContactManager(IContactWriteRepository contactWriteRepository, IContactReadRepository contactReadRepository, IContactDeleteRepository contactDeleteRepository)
+        public ContactManager(IContactWriteRepository contactWriteRepository, IContactReadRepository contactReadRepository, IContactDeleteRepository contactDeleteRepository, ContactBusinessRules rules)
         {
             _contactWriteRepository = contactWriteRepository;
             _contactReadRepository = contactReadRepository;
             _contactDeleteRepository = contactDeleteRepository;
+            _rules = rules;
         }
 
         [ValidationAspect(typeof(ContactValidator))]
@@ -34,15 +37,16 @@ namespace Persistence.Concretes
             contact.Message = requestContact.Message;
             contact.CreatedAt = DateTime.UtcNow;
             await _contactWriteRepository.AddAsync(contact);
-            return new SuccessResult(Messages.ContactAdded);
+            return new SuccessResult(Messages.Contact.ContactAdded);
         }
 
         [SecuredOperation("admin")]
         [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> DeleteAsync(string id)
         {
+            _rules.CheckIfContactExists(id);
             await _contactDeleteRepository.Delete(id);
-            return new SuccessResult(Messages.ContactDeleted);
+            return new SuccessResult(Messages.Contact.ContactDeleted);
         }
 
         [SecuredOperation("admin")]
@@ -55,6 +59,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Contact> GetById(string id)
         {
+            _rules.CheckIfContactExists(id);
             return new SuccessDataResult<Contact>(_contactReadRepository.GetById(id));
         }
 
@@ -62,6 +67,7 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(UpdateContactValidator))]
         public async Task<IResult> UpdateAsync(UpdateContactCommand requestContact)
         {
+            _rules.CheckIfContactExists(requestContact.Id);
             Contact contact = _contactReadRepository.GetById(requestContact.Id);
             contact.FirstName = requestContact.FirstName;
             contact.LastName = requestContact.LastName;
@@ -70,7 +76,7 @@ namespace Persistence.Concretes
             contact.Message = requestContact.Message;
             contact.UpdatedAt = DateTime.UtcNow;
             await _contactWriteRepository.UpdateAsync(contact);
-            return new SuccessResult(Messages.ContactUpdated);
+            return new SuccessResult(Messages.Contact.ContactUpdated);
         }
     }
 }

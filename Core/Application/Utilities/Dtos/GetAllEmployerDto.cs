@@ -1,7 +1,7 @@
 ﻿using Domain.Common;
 using Domain.Entities;
 
-namespace Application.Dtos
+namespace Application.Utilities.Dtos
 {
     public class GetAllEmployerDto : IDto
     {

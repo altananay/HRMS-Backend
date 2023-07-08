@@ -1,6 +1,6 @@
 ﻿using Application.Abstractions;
-using Application.Dtos;
 using Application.Results;
+using Application.Utilities.Dtos;
 using Domain.Entities;
 using MediatR;
 using static Application.Features.Employers.Queries.GetByIdEmployerQuery;

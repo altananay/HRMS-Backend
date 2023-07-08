@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions;
-using Application.Dtos;
+using Application.Utilities.Dtos;
 using MernisServiceReference;
 
 namespace Infrastructure.Services.Mernis

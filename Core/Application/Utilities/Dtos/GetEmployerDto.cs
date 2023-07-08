@@ -1,7 +1,7 @@
 ﻿using Domain.Common;
 using Domain.Entities;
 
-namespace Application.Dtos
+namespace Application.Utilities.Dtos
 {
     public class GetEmployerDto : IDto
     {
@@ -10,9 +10,9 @@ namespace Application.Dtos
         public string CompanyPhone { get; set; }
         public string WebSite { get; set; }
         public string Email { get; set; }
-        public string[] Sector { get; set;}
-        public Department[] Departments { get; set;}
-        public string NumberOfEmployees { get; set;}
+        public string[] Sector { get; set; }
+        public Department[] Departments { get; set; }
+        public string NumberOfEmployees { get; set; }
         public string Description { get; set; }
     }
 }

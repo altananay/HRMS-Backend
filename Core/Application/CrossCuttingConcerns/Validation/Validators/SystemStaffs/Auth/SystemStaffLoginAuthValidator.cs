@@ -1,5 +1,5 @@
-﻿using Application.Constants;
-using Application.Features.SystemStaffAuth.Queries;
+﻿using Application.Features.SystemStaffAuth.Queries;
+using Application.Utilities.Constants;
 using FluentValidation;
 
 namespace Application.CrossCuttingConcerns.Validation.Validators.SystemStaffs.Auth

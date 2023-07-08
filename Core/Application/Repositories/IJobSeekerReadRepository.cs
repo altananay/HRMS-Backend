@@ -1,4 +1,4 @@
-﻿using Application.Dtos;
+﻿using Application.Utilities.Dtos;
 using Domain.Entities;
 
 namespace Application.Repositories

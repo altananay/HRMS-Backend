@@ -1,14 +1,14 @@
 ﻿using Application.Abstractions;
 using Application.Aspects;
-using Application.Constants;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Employers.Auth;
-using Application.Dtos;
 using Application.Features.Employers.Commands;
 using Application.Repositories;
 using Application.Results;
+using Application.Utilities.Constants;
+using Application.Utilities.Dtos;
 using Domain.Entities;
-using Microsoft.Extensions.Logging;
+using Persistence.Rules;
 
 namespace Persistence.Concretes
 {
@@ -18,12 +18,15 @@ namespace Persistence.Concretes
         private readonly IEmployerDeleteRepository _employerDeleteRepository;
         private readonly IEmployerWriteRepository _employerWriteRepository;
         private readonly IUserService _userService;
-        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService, ILogger<EmployerManager> logger)
+        private readonly EmployerBusinessRules _rules;
+
+        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService, EmployerBusinessRules rules)
         {
             _employerReadRepository = employerReadRepository;
             _employerDeleteRepository = employerDeleteRepository;
             _employerWriteRepository = employerWriteRepository;
             _userService = userService;
+            _rules = rules;
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
@@ -33,15 +36,16 @@ namespace Persistence.Concretes
             await _userService.Add(user);
             employer.Id = user.Id;
             await _employerWriteRepository.AddAsync(employer);
-            return new SuccessResult(Messages.EmployerAdded);
+            return new SuccessResult(Messages.Employer.EmployerAdded);
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
-            await _userService.Delete(id);
+            _rules.CheckIfEmployerExists(id);
             await _employerDeleteRepository.Delete(id);
-            return new SuccessResult(Messages.EmployerDeleted);
+            await _userService.Delete(id);
+            return new SuccessResult(Messages.Employer.EmployerDeleted);
 
         }
 
@@ -69,18 +73,21 @@ namespace Persistence.Concretes
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id)
         {
+            _rules.CheckIfEmployerExists(id);
             return new SuccessDataResult<GetEmployerDto>(_employerReadRepository.GetByEmployerIdWithFields(id));
         }
 
         [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Employer> GetById(string id)
         {
+            _rules.CheckIfEmployerExists(id);
             return new SuccessDataResult<Employer>(_employerReadRepository.Get(e => e.Id == id));
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
         public async Task<IResult> Update(UpdateEmployerCommand employer)
         {
+            _rules.CheckIfEmployerExistsByEmail(employer.Email);
             var result = _employerReadRepository.Get(e => e.Email == employer.Email);
             var employerEntity = new Employer
             {
@@ -100,8 +107,8 @@ namespace Persistence.Concretes
                 Sector = employer.Sector,
                 NumberOfEmployees = employer.NumberOfEmployees
             };
-            var result2 = await _employerWriteRepository.UpdateAsync(employerEntity);
-            return new SuccessResult(Messages.EmployerUpdated);
+            await _employerWriteRepository.UpdateAsync(employerEntity);
+            return new SuccessResult(Messages.Employer.EmployerUpdated);
         }
     }
 }

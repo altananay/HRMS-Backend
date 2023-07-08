@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 
-namespace Application.Extensions
+namespace Application.Utilities.Extensions
 {
     public static class ConfigureExceptionHandlerExtension
     {
@@ -24,8 +24,8 @@ namespace Application.Extensions
                         logger.LogError(contextFeature.Error.Message);
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new
                         {
-                            StatusCode = context.Response.StatusCode,
-                            Message = contextFeature.Error.Message,
+                            context.Response.StatusCode,
+                            contextFeature.Error.Message,
                             Title = "Hata alındı!"
                         }));
                     }

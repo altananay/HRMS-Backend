@@ -1,5 +1,4 @@
-﻿using Application.Dtos;
-using Application.Results;
+﻿using Application.Results;
 using Domain.Entities;
 
 namespace Application.Abstractions

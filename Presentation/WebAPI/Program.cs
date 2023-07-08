@@ -1,6 +1,6 @@
 using Application;
 using Application.CrossCuttingConcerns.Validation.Validators.JobAdvertisements;
-using Application.Extensions;
+using Application.Utilities.Extensions;
 using Application.Utilities.IoC;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Encryption;
@@ -10,7 +10,6 @@ using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -59,9 +58,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = tokenOptions.Audience,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey),
-            NameClaimType = ClaimTypes.Name, //Jwt üzerinde name claimine karþýlýk gelen deðeri
-                                             //User.identity.name propertysinden al.
-                                             //todo: Loglama için
+            NameClaimType = ClaimTypes.Name,
         };
     });
 
