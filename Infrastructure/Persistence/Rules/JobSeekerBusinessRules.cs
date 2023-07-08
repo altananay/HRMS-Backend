@@ -7,6 +7,12 @@ namespace Persistence.Rules
     public class JobSeekerBusinessRules
     {
         private readonly IJobSeekerReadRepository _jobSeekerReadRepository;
+
+        public JobSeekerBusinessRules(IJobSeekerReadRepository jobSeekerReadRepository)
+        {
+            _jobSeekerReadRepository = jobSeekerReadRepository;
+        }
+
         public void NationalityIdExists(string nationalityId)
         {
             var result = _jobSeekerReadRepository.Get(js => js.NationalityId == nationalityId);

@@ -8,6 +8,7 @@ using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using AutoMapper;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -16,11 +17,13 @@ namespace Persistence.Concretes
     {
         private ISystemStaffService _systemStaffService;
         private ITokenHelper _tokenHelper;
+        private IMapper _mapper;
 
-        public SystemStaffAuthManager(ISystemStaffService systemStaffService, ITokenHelper tokenHelper)
+        public SystemStaffAuthManager(ISystemStaffService systemStaffService, ITokenHelper tokenHelper, IMapper mapper)
         {
             _systemStaffService = systemStaffService;
             _tokenHelper = tokenHelper;
+            _mapper = mapper;
         }
 
         public IDataResult<AccessToken> CreateAccessToken(SystemStaff user)
@@ -51,18 +54,12 @@ namespace Persistence.Concretes
         {
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
-            var user = new SystemStaff
-            {
-                Email = createSystemStaffCommand.Email,
-                FirstName = createSystemStaffCommand.FirstName,
-                LastName = createSystemStaffCommand.LastName,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Status = true,
-                Claims = createSystemStaffCommand.Claims,
-                CreatedAt = DateTime.UtcNow,
-            };
-            await _systemStaffService.Add(user);
+            var systemStaff = _mapper.Map<SystemStaff>(createSystemStaffCommand);
+            systemStaff.PasswordHash = passwordHash;
+            systemStaff.PasswordSalt = passwordSalt;
+            systemStaff.Status = true;
+            systemStaff.CreatedAt = DateTime.UtcNow;
+            await _systemStaffService.Add(systemStaff);
             return new SuccessResult(Messages.SystemStaff.SystemStaffAdded);
         }
 

@@ -7,6 +7,7 @@ using Application.Repositories;
 using Application.Results;
 using Application.Utilities.Constants;
 using Application.Utilities.Dtos;
+using AutoMapper;
 using Domain.Entities;
 using Persistence.Rules;
 
@@ -19,14 +20,16 @@ namespace Persistence.Concretes
         private readonly IEmployerWriteRepository _employerWriteRepository;
         private readonly IUserService _userService;
         private readonly EmployerBusinessRules _rules;
+        private readonly IMapper _mapper;
 
-        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService, EmployerBusinessRules rules)
+        public EmployerManager(IEmployerReadRepository employerReadRepository, IEmployerDeleteRepository employerDeleteRepository, IEmployerWriteRepository employerWriteRepository, IUserService userService, EmployerBusinessRules rules, IMapper mapper)
         {
             _employerReadRepository = employerReadRepository;
             _employerDeleteRepository = employerDeleteRepository;
             _employerWriteRepository = employerWriteRepository;
             _userService = userService;
             _rules = rules;
+            _mapper = mapper;
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
@@ -89,24 +92,14 @@ namespace Persistence.Concretes
         {
             _rules.CheckIfEmployerExistsByEmail(employer.Email);
             var result = _employerReadRepository.Get(e => e.Email == employer.Email);
-            var employerEntity = new Employer
-            {
-                Email = employer.Email,
-                Claims = result.Claims,
-                CompanyName = employer.CompanyName,
-                CompanyPhone = employer.CompanyPhone,
-                CreatedAt = result.CreatedAt,
-                UpdatedAt = DateTime.UtcNow,
-                WebSite = employer.WebSite,
-                PasswordHash = result.PasswordHash,
-                PasswordSalt = result.PasswordSalt,
-                Status = result.Status,
-                Id = result.Id,
-                Description = employer.Description,
-                Departments = employer.Departments,
-                Sector = employer.Sector,
-                NumberOfEmployees = employer.NumberOfEmployees
-            };
+            Employer employerEntity = _mapper.Map<Employer>(employer);
+            employerEntity.Claims = result.Claims;
+            employerEntity.CreatedAt = result.CreatedAt;
+            employerEntity.UpdatedAt = DateTime.UtcNow;
+            employerEntity.PasswordHash = result.PasswordHash;
+            employerEntity.PasswordSalt = result.PasswordSalt;
+            employerEntity.Status = result.Status;
+            employerEntity.Id = result.Id;
             await _employerWriteRepository.UpdateAsync(employerEntity);
             return new SuccessResult(Messages.Employer.EmployerUpdated);
         }

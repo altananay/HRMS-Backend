@@ -10,7 +10,6 @@ namespace Application.Abstractions
     {
         Task<IResult> Register(CreateJobSeekerCommand userForRegisterDto, string password);
         IDataResult<JobSeeker> Login(JobSeekerLoginQuery userForLoginDto);
-        IResult UserExists(string email);
         IDataResult<AccessToken> CreateAccessToken(JobSeeker user);
     }
 }

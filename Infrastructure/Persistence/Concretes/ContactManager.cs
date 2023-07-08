@@ -6,6 +6,7 @@ using Application.Features.Contacts.Commands;
 using Application.Repositories;
 using Application.Results;
 using Application.Utilities.Constants;
+using AutoMapper;
 using Domain.Entities;
 using Persistence.Rules;
 
@@ -17,24 +18,21 @@ namespace Persistence.Concretes
         private readonly IContactReadRepository _contactReadRepository;
         private readonly IContactDeleteRepository _contactDeleteRepository;
         private readonly ContactBusinessRules _rules;
+        private readonly IMapper _mapper;
 
-        public ContactManager(IContactWriteRepository contactWriteRepository, IContactReadRepository contactReadRepository, IContactDeleteRepository contactDeleteRepository, ContactBusinessRules rules)
+        public ContactManager(IContactWriteRepository contactWriteRepository, IContactReadRepository contactReadRepository, IContactDeleteRepository contactDeleteRepository, ContactBusinessRules rules, IMapper mapper)
         {
             _contactWriteRepository = contactWriteRepository;
             _contactReadRepository = contactReadRepository;
             _contactDeleteRepository = contactDeleteRepository;
             _rules = rules;
+            _mapper = mapper;
         }
 
         [ValidationAspect(typeof(ContactValidator))]
         public async Task<IResult> AddAsync(CreateContactCommand requestContact)
         {
-            Contact contact = new();
-            contact.FirstName = requestContact.FirstName;
-            contact.LastName = requestContact.LastName;
-            contact.Email = requestContact.Email;
-            contact.Subject = requestContact.Subject;
-            contact.Message = requestContact.Message;
+            Contact contact = _mapper.Map<Contact>(requestContact);
             contact.CreatedAt = DateTime.UtcNow;
             await _contactWriteRepository.AddAsync(contact);
             return new SuccessResult(Messages.Contact.ContactAdded);
@@ -48,8 +46,8 @@ namespace Persistence.Concretes
             await _contactDeleteRepository.Delete(id);
             return new SuccessResult(Messages.Contact.ContactDeleted);
         }
-
-        [SecuredOperation("admin")]
+        
+        //[SecuredOperation("admin")]
         public IDataResult<IQueryable<Contact>> GetAll()
         {
             return new SuccessDataResult<IQueryable<Contact>>(_contactReadRepository.GetAll());
@@ -63,17 +61,13 @@ namespace Persistence.Concretes
             return new SuccessDataResult<Contact>(_contactReadRepository.GetById(id));
         }
 
-        [SecuredOperation("admin")]
+        //[SecuredOperation("admin")]
         [ValidationAspect(typeof(UpdateContactValidator))]
         public async Task<IResult> UpdateAsync(UpdateContactCommand requestContact)
         {
             _rules.CheckIfContactExists(requestContact.Id);
             Contact contact = _contactReadRepository.GetById(requestContact.Id);
-            contact.FirstName = requestContact.FirstName;
-            contact.LastName = requestContact.LastName;
-            contact.Email = requestContact.Email;
-            contact.Subject = requestContact.Subject;
-            contact.Message = requestContact.Message;
+            contact = _mapper.Map<Contact>(requestContact);
             contact.UpdatedAt = DateTime.UtcNow;
             await _contactWriteRepository.UpdateAsync(contact);
             return new SuccessResult(Messages.Contact.ContactUpdated);

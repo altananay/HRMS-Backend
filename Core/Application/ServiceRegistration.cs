@@ -10,6 +10,7 @@ namespace Application
         {
             services.AddMediatR(mr => mr.RegisterServicesFromAssemblies(Assembly.GetExecutingAssembly()));
             services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddAutoMapper(typeof(ServiceRegistration));
         }
     }
 }

@@ -6,6 +6,7 @@ using Application.Features.JobAdvertisements.Commands;
 using Application.Repositories;
 using Application.Results;
 using Application.Utilities.Constants;
+using AutoMapper;
 using Domain.Entities;
 using Persistence.Rules;
 
@@ -19,8 +20,9 @@ namespace Persistence.Concretes
         private readonly IEmployerService _employerService;
         private readonly IJobPositionService _jobPositionService;
         private readonly JobAdvertisementBusinessRules _jobAdvertisementBusinessRules;
+        private readonly IMapper _mapper;
 
-        public JobAdvertisementManager(IJobAdvertisementDeleteRepository jobAdvertisementDeleteRepository, IJobAdvertisementReadRepository jobAdvertisementReadRepository, IJobAdvertisementWriteRepository jobAdvertisementWriteRepository, IEmployerService employerService, IJobPositionService jobPositionService, JobAdvertisementBusinessRules jobAdvertisementBusinessRules)
+        public JobAdvertisementManager(IJobAdvertisementDeleteRepository jobAdvertisementDeleteRepository, IJobAdvertisementReadRepository jobAdvertisementReadRepository, IJobAdvertisementWriteRepository jobAdvertisementWriteRepository, IEmployerService employerService, IJobPositionService jobPositionService, JobAdvertisementBusinessRules jobAdvertisementBusinessRules, IMapper mapper)
         {
             _jobAdvertisementDeleteRepository = jobAdvertisementDeleteRepository;
             _jobAdvertisementReadRepository = jobAdvertisementReadRepository;
@@ -28,6 +30,7 @@ namespace Persistence.Concretes
             _employerService = employerService;
             _jobPositionService = jobPositionService;
             _jobAdvertisementBusinessRules = jobAdvertisementBusinessRules;
+            _mapper = mapper;
         }
 
         //[SecuredOperation("employer")]
@@ -41,29 +44,15 @@ namespace Persistence.Concretes
 
             await _jobPositionService.Add(jobPosition);
 
-            JobAdvertisement jobAdv = new();
+            JobAdvertisement jobAdv = _mapper.Map<JobAdvertisement>(jobAdvertisement);
             jobAdv.CreatedAt = DateTime.UtcNow;
-            jobAdv.City = jobAdvertisement.City;
-            jobAdv.Deadline = jobAdvertisement.Deadline;
-            jobAdv.Description = jobAdvertisement.Description;
-            jobAdv.JobPosition = jobAdvertisement.JobPositionName;
-            jobAdv.OpenPosition = jobAdvertisement.OpenPosition;
             jobAdv.CompanyName = employer.Data.CompanyName;
             jobAdv.CompanyPhone = employer.Data.CompanyPhone;
             jobAdv.WebSite = employer.Data.WebSite;
             jobAdv.EmployerId = employer.Data.Id;
             jobAdv.JobPositionId = jobPosition.Id;
-            jobAdv.Skills = jobAdvertisement.Skills;
-            jobAdv.Experience = jobAdvertisement.Experience;
-            jobAdv.Title = jobAdvertisement.Title;
             jobAdv.Email = employer.Data.Email;
-            jobAdv.MaxSalary = jobAdvertisement.MaxSalary;
-            jobAdv.MinSalary = jobAdvertisement.MinSalary;
-            jobAdv.JobType = jobAdvertisement.JobType;
-            jobAdv.Status = true;
-            jobAdv.Currency = jobAdvertisement.Currency;
-            
-            
+            jobAdv.Status = true;      
             await _jobAdvertisementWriteRepository.AddAsync(jobAdv);
             return new SuccessResult(Messages.JobAdvertisement.JobAdvertisementAdded);
         }
@@ -127,30 +116,16 @@ namespace Persistence.Concretes
 
             await _jobPositionService.Update(jobPosition.Data);
 
-            JobAdvertisement jobAdv = new();
+            JobAdvertisement jobAdv = _mapper.Map<JobAdvertisement>(jobAdvertisement);
 
-            jobAdv.Id = jobAdvertisement.Id;
             jobAdv.CreatedAt = oldJobAdv.Data.CreatedAt;
-            jobAdv.City = jobAdvertisement.City;
-            jobAdv.Status = jobAdvertisement.Status;
-            jobAdv.Deadline = jobAdvertisement.Deadline;
-            jobAdv.Description = jobAdvertisement.Description;
-            jobAdv.Experience = jobAdvertisement.Experience;
-            jobAdv.Title = jobAdvertisement.Title;
-            jobAdv.JobPosition = jobAdvertisement.JobPositionName;
-            jobAdv.JobPositionId = jobAdvertisement.JobPositionId;
-            jobAdv.OpenPosition = jobAdvertisement.OpenPosition;
             jobAdv.EmployerId = oldJobAdv.Data.EmployerId;
-            jobAdv.MaxSalary = jobAdvertisement.MaxSalary;
-            jobAdv.MinSalary = jobAdvertisement.MinSalary;
             jobAdv.JobType = jobAdvertisement.JobType;
             jobAdv.UpdatedAt = DateTime.UtcNow;
-            jobAdv.Skills = jobAdvertisement.Skills;
             jobAdv.CompanyName = oldJobAdv.Data.CompanyName;
             jobAdv.CompanyPhone = oldJobAdv.Data.CompanyPhone;
             jobAdv.WebSite = oldJobAdv.Data.WebSite;
             jobAdv.Email = oldJobAdv.Data.Email;
-            jobAdv.Currency = jobAdvertisement.Currency;
             
 
             await _jobAdvertisementWriteRepository.UpdateAsync(jobAdv);

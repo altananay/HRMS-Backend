@@ -6,6 +6,7 @@ using Application.Features.SystemStaffs.Commands;
 using Application.Repositories;
 using Application.Results;
 using Application.Utilities.Constants;
+using AutoMapper;
 using Domain.Entities;
 using Persistence.Rules;
 
@@ -18,14 +19,16 @@ namespace Persistence.Concretes
         private readonly ISystemStaffWriteRepository _systemStaffWriteRepository;
         private readonly IUserService _userService;
         private readonly SystemStaffBusinessRules _systemStaffBusinessRules;
+        private IMapper _mapper;
 
-        public SystemStaffManager(ISystemStaffDeleteRepository systemStaffDeleteRepository, ISystemStaffReadRepository systemStaffReadRepository, ISystemStaffWriteRepository systemStaffWriteRepository, IUserService userService, SystemStaffBusinessRules systemStaffBusinessRules)
+        public SystemStaffManager(ISystemStaffDeleteRepository systemStaffDeleteRepository, ISystemStaffReadRepository systemStaffReadRepository, ISystemStaffWriteRepository systemStaffWriteRepository, IUserService userService, SystemStaffBusinessRules systemStaffBusinessRules, IMapper mapper)
         {
             _systemStaffDeleteRepository = systemStaffDeleteRepository;
             _systemStaffReadRepository = systemStaffReadRepository;
             _systemStaffWriteRepository = systemStaffWriteRepository;
             _userService = userService;
             _systemStaffBusinessRules = systemStaffBusinessRules;
+            _mapper = mapper;
         }
 
         [SecuredOperation("admin")]
@@ -76,20 +79,12 @@ namespace Persistence.Concretes
         {
             _systemStaffBusinessRules.CheckIfSystemStaffExists(systemStaff.Id);
             var result = _systemStaffReadRepository.GetById(systemStaff.Id);
-            var entity = new SystemStaff
-            {
-                Email = systemStaff.Email,
-                Claims = systemStaff.Claims,
-                FirstName = systemStaff.FirstName,
-                LastName = systemStaff.LastName,
-                Status = systemStaff.Status,
-                CreatedAt = result.CreatedAt,
-                UpdatedAt = DateTime.UtcNow,
-                PasswordHash = result.PasswordHash,
-                PasswordSalt = result.PasswordSalt,
-                Id = result.Id,
-            };
-            await _systemStaffWriteRepository.UpdateAsync(entity);
+            var systemStaffEntity = _mapper.Map<SystemStaff>(systemStaff);
+            systemStaffEntity.PasswordHash = result.PasswordHash;
+            systemStaffEntity.PasswordSalt = result.PasswordSalt;
+            systemStaffEntity.UpdatedAt = DateTime.UtcNow;
+            systemStaffEntity.CreatedAt = result.CreatedAt;
+            await _systemStaffWriteRepository.UpdateAsync(systemStaffEntity);
             return new SuccessResult(Messages.SystemStaff.SystemStaffUpdated);
         }
     }

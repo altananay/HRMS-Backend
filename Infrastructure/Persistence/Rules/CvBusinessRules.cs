@@ -1,8 +1,6 @@
 ﻿using Application.Repositories;
-using Application.Results;
 using Application.Utilities.Constants;
 using Application.Utilities.Exceptions;
-using Persistence.Repositories;
 
 namespace Persistence.Rules
 {
@@ -30,7 +28,6 @@ namespace Persistence.Rules
             {
                 throw new BusinessException(Messages.Cv.CvExists);
             }
-            throw new BusinessException(Messages.Cv.JobSeekerCvNotExists);
         }
     }
 }

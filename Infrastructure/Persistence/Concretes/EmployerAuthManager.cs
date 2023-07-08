@@ -8,6 +8,7 @@ using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using AutoMapper;
 using Domain.Entities;
 
 namespace Persistence.Concretes
@@ -16,11 +17,13 @@ namespace Persistence.Concretes
     {
         private IEmployerService _employerService;
         private ITokenHelper _tokenHelper;
+        private IMapper _mapper;
 
-        public EmployerAuthManager(IEmployerService employerService, ITokenHelper tokenHelper)
+        public EmployerAuthManager(IEmployerService employerService, ITokenHelper tokenHelper, IMapper mapper)
         {
             _employerService = employerService;
             _tokenHelper = tokenHelper;
+            _mapper = mapper;
         }
 
         public IDataResult<AccessToken> CreateAccessToken(Employer user)
@@ -48,24 +51,18 @@ namespace Persistence.Concretes
         }
 
         [ValidationAspect(typeof(EmployerValidator))]
-        public async Task<IResult> Register(EmployerRegisterCommand userForRegisterDto, string password)
+        public async Task<IResult> Register(EmployerRegisterCommand employerRegister, string password)
         {
             string[] claims = { "employer" };
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
-            var user = new Employer
-            {
-                CompanyName = userForRegisterDto.CompanyName,
-                CompanyPhone = userForRegisterDto.CompanyPhone,
-                WebSite = userForRegisterDto.WebSite,
-                Email = userForRegisterDto.Email,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Status = true,
-                Claims = claims,
-                CreatedAt = DateTime.UtcNow,
-            };
-            await _employerService.Add(user);
+            Employer employer = _mapper.Map<Employer>(employerRegister);
+            employer.Claims = claims;
+            employer.PasswordHash = passwordHash;
+            employer.PasswordSalt = passwordSalt;
+            employer.Status = true;
+            employer.CreatedAt = DateTime.UtcNow;
+            await _employerService.Add(employer);
             return new SuccessResult(Messages.User.UserRegistered);
         }
 

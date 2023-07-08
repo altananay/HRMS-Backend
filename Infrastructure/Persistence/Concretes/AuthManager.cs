@@ -8,7 +8,9 @@ using Application.Utilities.Constants;
 using Application.Utilities.Helpers;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Hashing;
+using AutoMapper;
 using Domain.Entities;
+using Persistence.Rules;
 
 namespace Persistence.Concretes
 {
@@ -17,40 +19,30 @@ namespace Persistence.Concretes
         private IJobSeekerService _jobSeekerService;
         private ITokenHelper _tokenHelper;
         private IUserService _userService;
-        public AuthManager(IJobSeekerService jobSeekerService, ITokenHelper tokenHelper, IUserService userService)
+        private IMapper _mapper;
+        private JobSeekerAuthBusinessRules _authBusinessRules;
+        public AuthManager(IJobSeekerService jobSeekerService, ITokenHelper tokenHelper, IUserService userService, IMapper mapper, JobSeekerAuthBusinessRules jobSeekerAuthBusinessRules)
         {
             _jobSeekerService = jobSeekerService;
             _tokenHelper = tokenHelper;
             _userService = userService;
+            _authBusinessRules = jobSeekerAuthBusinessRules;
+            _mapper = mapper;
         }
 
         [ValidationAspect(typeof(RegisterValidator))]
-        public async Task<IResult> Register(CreateJobSeekerCommand userForRegisterDto, string password)
+        public async Task<IResult> Register(CreateJobSeekerCommand jobSeekerCommand, string password)
         {
-            var userExists = UserExists(userForRegisterDto.Email);
-            if (!userExists.IsSuccess)
-            {
-                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
-            }
-            var user = new User();
-            await _userService.Add(user);
+            _authBusinessRules.UserExists(jobSeekerCommand.Email);
             string[] claims = { "jobseeker" };
             byte[] passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
-            var jobSeeker = new JobSeeker
-            {
-                Id = user.Id,
-                Email = userForRegisterDto.Email,
-                FirstName = userForRegisterDto.FirstName,
-                LastName = userForRegisterDto.LastName,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Status = true,
-                Claims = claims,
-                CreatedAt = DateTime.UtcNow,
-                DateOfBirth = null,
-                NationalityId = null
-            };
+            JobSeeker jobSeeker = _mapper.Map<JobSeeker>(jobSeekerCommand);
+            jobSeeker.Claims = claims;
+            jobSeeker.PasswordHash = passwordHash;
+            jobSeeker.PasswordSalt = passwordSalt;
+            jobSeeker.Status = true;
+            jobSeeker.CreatedAt = DateTime.UtcNow;
             var result = await _jobSeekerService.Add(jobSeeker);
             if (result.IsSuccess)
             {
@@ -75,15 +67,6 @@ namespace Persistence.Concretes
             }
 
             return new SuccessDataResult<JobSeeker>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
-        }
-
-        public IResult UserExists(string email)
-        {
-            if (_jobSeekerService.GetByMail(email).Data != null)
-            {
-                return new ErrorResult(Messages.Authentication.UserAlreadyExists);
-            }
-            return new SuccessResult();
         }
 
         public IDataResult<AccessToken> CreateAccessToken(JobSeeker user)

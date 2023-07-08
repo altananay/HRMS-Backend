@@ -30,6 +30,7 @@ namespace Persistence
 
             //Auth dependencies
             builder.RegisterType<AuthManager>().As<IAuthService>().SingleInstance();
+            builder.RegisterType<JobSeekerAuthBusinessRules>().SingleInstance();
 
             //Employer Auth dependencies
             builder.RegisterType<EmployerAuthManager>().As<IEmployerAuthService>().SingleInstance();
