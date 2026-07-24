@@ -360,6 +360,15 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# appsettings.json and appsettings.Development.json ARE committed and must stay committed — they
+# hold structure and local-only development defaults, never secrets. Ignoring appsettings.json is
+# what made this repo impossible to clone-and-run: TokenOptions bound to null and Program.cs threw
+# a NullReferenceException at startup.
+#
+# Secrets go in user-secrets (Development) or environment variables (Production) — never in a file.
+# appsettings.Production.json stays ignored as a safety net in case someone creates one locally.
 /Presentation/WebAPI/appsettings.Production.json
-/Presentation/WebAPI/appsettings.json
-/Presentation/WebAPI/appsettings.json
+
+# Local Docker overrides
+docker-compose.override.yml
+.env

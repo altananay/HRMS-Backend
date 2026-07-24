@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
+  <!--
+    TRANSITIONAL: Domain must not reference a database driver. The BSON attributes on BaseEntity and
+    the Domain/Objects value types are removed in Phase 3, and this PackageReference goes with them,
+    leaving Domain with zero package dependencies as the Onion layering requires.
+  -->
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
+    <PackageReference Include="MongoDB.Driver" />
   </ItemGroup>
 
 </Project>

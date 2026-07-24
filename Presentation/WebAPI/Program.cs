@@ -11,7 +11,7 @@ using Infrastructure;
 using Infrastructure.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using MongoDB.Driver;
 using Persistence;
 using Serilog;
@@ -65,7 +65,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var connectionString = builder.Configuration.GetConnectionString("MongoDb");
 
 
-Logger log = new LoggerConfiguration().WriteTo.Seq(builder.Configuration["Seq:SeqUrl"]).WriteTo.MongoDBBson(conf =>
+// Seq is optional in local development: if no URL is configured, skip the sink rather than throwing
+// ArgumentNullException at startup. Console output is always on so logs are never silently lost.
+var seqUrl = builder.Configuration["Serilog:Seq:ServerUrl"];
+
+var loggerConfiguration = new LoggerConfiguration().WriteTo.Console();
+
+if (!string.IsNullOrWhiteSpace(seqUrl))
+{
+    loggerConfiguration = loggerConfiguration.WriteTo.Seq(seqUrl);
+}
+
+Logger log = loggerConfiguration.WriteTo.MongoDBBson(conf =>
     {
         var mongoDbInstance = new MongoClient(connectionString).GetDatabase("humanresource");
         conf.SetMongoDatabase(mongoDbInstance);

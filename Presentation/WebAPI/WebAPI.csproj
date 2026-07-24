@@ -1,23 +1,33 @@
-
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Enables `dotnet user-secrets set "TokenOptions:SecurityKey" "..."` for local secrets,
+         so nothing sensitive ever needs to live in a committed appsettings file. -->
+    <UserSecretsId>hrms-backend-9f3c1a2e-6b47-4d88-b0d5-7e1a4c92f5b3</UserSecretsId>
   </PropertyGroup>
 
+  <!--
+    Microsoft.AspNetCore.Cors 2.2.0 and Microsoft.OpenApi were removed: CORS ships in the
+    Microsoft.AspNetCore.App shared framework, and Microsoft.OpenApi comes in transitively via
+    Swashbuckle. Neither needs an explicit reference on net10.0.
+  -->
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="7.0.0" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.3" />
-    <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
-    <PackageReference Include="Serilog.Sinks.MongoDB" Version="5.3.1" />
-    <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <!-- Transitional: Autofac removed in Phase 2, Serilog.Sinks.MongoDB in Phase 3. -->
+  <ItemGroup>
+    <PackageReference Include="Autofac" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" />
+    <PackageReference Include="FluentValidation.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.MongoDB" />
+    <!-- Serilog.Sinks.MongoDB 5.3.1 was compiled against driver 2.17.1; Program.cs passes an
+         IMongoDatabase to SetMongoDatabase, so WebAPI needs the driver referenced directly to bind
+         against 2.30.0 rather than the sink's older assembly reference. -->
+    <PackageReference Include="MongoDB.Driver" />
   </ItemGroup>
 
   <ItemGroup>

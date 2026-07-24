@@ -1,0 +1,27 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!--
+    Strict warnings are introduced in stages, not all at once.
+
+    The pre-migration code has ~30 `async` methods with no `await` (CS1998) and widespread
+    nullable-reference violations. Promoting those to errors here would make Phase 0 unable to
+    reach a green build, which defeats the purpose of Phase 0 as a checkpoint that isolates
+    "the framework upgrade broke it" from "the rewrite broke it".
+
+    Phase 3 turns the following on once the offending code has been rewritten:
+      <WarningsAsErrors>CS1998;CS4014;CS8600;CS8602;CS8618;RMG012;RMG020</WarningsAsErrors>
+    RMG012/RMG020 are Mapperly's unmapped-member diagnostics — promoting them is what makes
+    Mapperly a real safety upgrade over AutoMapper rather than just a licensing change.
+  -->
+
+</Project>

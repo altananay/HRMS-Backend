@@ -1,0 +1,85 @@
+# Local development infrastructure for HRMS-Backend.
+#
+#   docker compose up -d                  # postgres + seq + mongo (the everyday dev loop)
+#   docker compose --profile api up -d    # the above plus the API in a container
+#
+# The API is behind a profile deliberately: the normal loop is infra in Docker and
+# `dotnet run` / `dotnet test` on the host, so you keep hot reload and the debugger.
+
+name: hrms
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: hrms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hrms
+      POSTGRES_USER: hrms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hrms}
+    ports:
+      - "5432:5432"
+    volumes:
+      - hrms-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hrms -d hrms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  seq:
+    image: datalust/seq:latest
+    container_name: hrms-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:5341"   # ingestion
+      - "8081:80"     # UI -> http://localhost:8081
+    volumes:
+      - hrms-seqdata:/data
+
+  # TRANSITIONAL — deleted in Phase 3 together with MongoDB.Driver and Serilog.Sinks.MongoDB.
+  # Present only so the app is actually runnable during Phases 1-2, which lets the cross-cutting
+  # rewrite be verified against a live API before the database swap begins.
+  mongo:
+    image: mongo:7
+    container_name: hrms-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - hrms-mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    profiles: ["api"]
+    build:
+      context: .
+      dockerfile: Presentation/WebAPI/Dockerfile
+    container_name: hrms-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=hrms;Username=hrms;Password=${POSTGRES_PASSWORD:-hrms}
+      Serilog__Seq__ServerUrl: http://seq:5341
+      # Left defaultable rather than `${VAR:?...}` because Compose interpolates every service,
+      # including profiled ones, so a required-variable marker here would break a plain
+      # `docker compose up`. The app validates these itself at startup (ValidateOnStart) and
+      # refuses to boot with an empty signing key outside Development.
+      TokenOptions__SecurityKey: ${TOKEN_SECURITY_KEY:-}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-}
+    ports:
+      - "8080:8080"
+
+volumes:
+  hrms-pgdata:
+  hrms-seqdata:
+  hrms-mongodata:
