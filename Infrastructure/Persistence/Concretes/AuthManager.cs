@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.JobSeekers.Auth;
 using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
@@ -30,7 +29,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        [ValidationAspect(typeof(RegisterValidator))]
         public async Task<IResult> Register(CreateJobSeekerCommand jobSeekerCommand, string password)
         {
             _authBusinessRules.UserExists(jobSeekerCommand.Email);
@@ -51,8 +49,6 @@ namespace Persistence.Concretes
             return new ErrorResult(Messages.Mernis.CitizenError);
         }
 
-        [ValidationAspect(typeof(JobSeekerLoginAuthValidator))]
-        [LogAspect()]
         public IDataResult<JobSeeker> Login(JobSeekerLoginQuery userForLoginDto)
         {
             var userToCheck = _jobSeekerService.GetByMail(userForLoginDto.Email);

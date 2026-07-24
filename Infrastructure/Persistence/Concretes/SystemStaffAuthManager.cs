@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.SystemStaffs.Auth;
 using Application.Features.SystemStaffAuth.Queries;
 using Application.Features.SystemStaffs.Commands;
@@ -32,7 +31,6 @@ namespace Persistence.Concretes
             return new SuccessDataResult<AccessToken>(accessToken, Messages.Authentication.SuccessfulLogin);
         }
 
-        [ValidationAspect(typeof(SystemStaffLoginAuthValidator))]
         public IDataResult<SystemStaff> Login(SystemStaffLoginQuery userForLoginDto)
         {
             var userToCheck = _systemStaffService.GetByEmail(userForLoginDto.Email);
@@ -49,7 +47,6 @@ namespace Persistence.Concretes
             return new SuccessDataResult<SystemStaff>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
         }
 
-        [ValidationAspect(typeof(CreateSystemStaffCommand))]
         public async Task<IResult> Register(CreateSystemStaffCommand createSystemStaffCommand, string password)
         {
             byte[] passwordHash, passwordSalt;

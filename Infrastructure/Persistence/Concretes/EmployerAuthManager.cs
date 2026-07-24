@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Employers.Auth;
 using Application.Features.EmployerAuth.Commands;
 using Application.Features.EmployerAuth.Queries;
@@ -32,8 +31,6 @@ namespace Persistence.Concretes
             return new SuccessDataResult<AccessToken>(accessToken, Messages.Authentication.SuccessfulLogin);
         }
 
-        [ValidationAspect(typeof(EmployerLoginAuthValidator))]
-        [LogAspect()]
         public IDataResult<Employer> Login(EmployerLoginQuery loginRequest)
         {
             var userToCheck = _employerService.GetByEmail(loginRequest.Email);
@@ -50,7 +47,6 @@ namespace Persistence.Concretes
             return new SuccessDataResult<Employer>(userToCheck.Data, Messages.Authentication.SuccessfulLogin);
         }
 
-        [ValidationAspect(typeof(EmployerValidator))]
         public async Task<IResult> Register(EmployerRegisterCommand employerRegister, string password)
         {
             string[] claims = { "employer" };

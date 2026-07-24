@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.SystemStaffs;
 using Application.Features.SystemStaffs.Commands;
@@ -31,8 +30,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        [SecuredOperation("admin")]
-        [ValidationAspect(typeof(SystemStaffValidator))]
         public async Task<IResult> Add(SystemStaff systemStaff)
         {
             var user = new User();
@@ -42,8 +39,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.SystemStaff.SystemStaffAdded);
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
-        [SecuredOperation("admin")]
         public async Task<IResult> Delete(string id)
         {
             _systemStaffBusinessRules.CheckIfSystemStaffExists(id);
@@ -52,29 +47,23 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.SystemStaff.SystemStaffDeleted);
         }
 
-        [SecuredOperation("admin")]
         public IDataResult<IQueryable<SystemStaff>> GetAll()
         {
             return new SuccessDataResult<IQueryable<SystemStaff>>(_systemStaffReadRepository.GetAll());
         }
 
-        [SecuredOperation("admin")]
         public IDataResult<SystemStaff> GetByEmail(string email)
         {
             _systemStaffBusinessRules.CheckIfSystemStaffExistsByEmail(email);
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(ss => ss.Email == email));
         }
 
-        [SecuredOperation("admin")]
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<SystemStaff> GetById(string id)
         {
             _systemStaffBusinessRules.CheckIfSystemStaffExists(id);
             return new SuccessDataResult<SystemStaff>(_systemStaffReadRepository.Get(e => e.Id == id));
         }
 
-        [SecuredOperation("admin")]
-        [ValidationAspect(typeof(UpdateSystemStaffValidator))]
         public async Task<IResult> UpdateAsync(UpdateSystemStaffCommand systemStaff)
         {
             _systemStaffBusinessRules.CheckIfSystemStaffExists(systemStaff.Id);

@@ -2,6 +2,8 @@
 using Application.Features.Contacts.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Contacts.Queries.GetAllContactsQuery;
 using static Application.Features.Contacts.Queries.GetByIdContactQuery;
@@ -10,6 +12,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = Roles.Admin)]
     public class ContactsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -40,6 +43,8 @@ namespace WebAPI.Controllers
             }
             return BadRequest(response.Contact);
         }
+
+        [AllowAnonymous]
 
         [HttpPost]
         public async Task<IActionResult> Add(CreateContactCommand request)

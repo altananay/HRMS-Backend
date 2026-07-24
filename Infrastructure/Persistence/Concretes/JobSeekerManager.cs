@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.JobSeekers;
 using Application.Features.JobSeekers.Commands;
@@ -31,7 +30,6 @@ namespace Persistence.Concretes
             _rules = rules;
         }
 
-        [ValidationAspect(typeof(JobSeekerValidator))]
         public async Task<IResult> Add(JobSeeker jobSeeker)
         {
             if (_checkPersonService.CheckPerson())
@@ -47,7 +45,6 @@ namespace Persistence.Concretes
 
         
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _rules.CheckIfJobSeekerExists(id);
@@ -63,7 +60,6 @@ namespace Persistence.Concretes
             }
         }
 
-        //[SecuredOperation("admin")]
         public IDataResult<IQueryable<JobSeeker>> GetAll()
         {
             return new SuccessDataResult<IQueryable<JobSeeker>>(_jobSeekerReadRepository.GetAll());
@@ -76,7 +72,6 @@ namespace Persistence.Concretes
             return new SuccessDataResult<JobSeeker>(_jobSeekerReadRepository.Get(u => u.Email == email));
         }
 
-        [ValidationAspect(typeof(UpdateJobSeekerValidator))]
         public async Task<IResult> Update(UpdateJobSeekerCommand jobSeeker)
         {
             _rules.CheckIfJobSeekerExists(jobSeeker.Id);
@@ -95,7 +90,6 @@ namespace Persistence.Concretes
             }
         }
 
-        [ValidationAspect(typeof(UpdateJobSeekerValidator))]
         public async Task<IResult> UpdateCvById(string id, Cv cv)
         {
             _rules.CheckIfJobSeekerExists(id);

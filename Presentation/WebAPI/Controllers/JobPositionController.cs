@@ -1,6 +1,8 @@
 ﻿using Application.Features.JobPositions.Commands;
 using Application.Features.JobPositions.Queries;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobPositions.Commands.CreateJobPositionCommand;
 using static Application.Features.JobPositions.Commands.DeleteJobPositionCommand;
@@ -12,6 +14,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class JobPositionController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -21,6 +24,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpPost("addjobposition")]
         public async Task<IActionResult> Add(CreateJobPositionCommand jobPosition)
         {
@@ -28,6 +32,7 @@ namespace WebAPI.Controllers
             return Ok(response.Result);
         }
 
+        [AllowAnonymous]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
@@ -35,6 +40,7 @@ namespace WebAPI.Controllers
             return Ok(response.jobPositions);
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -42,6 +48,7 @@ namespace WebAPI.Controllers
             return Ok(response.Result);
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateJobPositionCommand jobPosition)
         {
@@ -49,6 +56,7 @@ namespace WebAPI.Controllers
             return Ok(response.Result);
         }
 
+        [AllowAnonymous]
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(string id)
         {

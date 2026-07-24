@@ -1,7 +1,9 @@
 ﻿using Application.Features.EmployerAuth.Commands;
 using Application.Features.EmployerAuth.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using static Application.Features.EmployerAuth.Commands.EmployerRegisterCommand;
 using static Application.Features.EmployerAuth.Queries.EmployerLoginQuery;
 
@@ -9,6 +11,8 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public class EmployerAuthController : ControllerBase
     {
         private IMediator _mediator;

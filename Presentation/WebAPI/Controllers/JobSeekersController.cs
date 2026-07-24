@@ -1,6 +1,8 @@
 ﻿using Application.Features.JobSeekers.Commands;
 using Application.Features.JobSeekers.Queries;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobSeekers.Commands.DeleteJobSeekerCommand;
 using static Application.Features.JobSeekers.Commands.UpdateJobSeekerCommand;
@@ -12,6 +14,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class JobSeekersController : ControllerBase
     {
         
@@ -22,6 +25,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {

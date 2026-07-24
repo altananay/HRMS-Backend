@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Contacts;
 using Application.Features.Contacts.Commands;
@@ -29,7 +28,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        [ValidationAspect(typeof(ContactValidator))]
         public async Task<IResult> AddAsync(CreateContactCommand requestContact)
         {
             Contact contact = _mapper.Map<Contact>(requestContact);
@@ -38,8 +36,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.Contact.ContactAdded);
         }
 
-        [SecuredOperation("admin")]
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> DeleteAsync(string id)
         {
             _rules.CheckIfContactExists(id);
@@ -47,22 +43,17 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.Contact.ContactDeleted);
         }
         
-        //[SecuredOperation("admin")]
         public IDataResult<IQueryable<Contact>> GetAll()
         {
             return new SuccessDataResult<IQueryable<Contact>>(_contactReadRepository.GetAll());
         }
 
-        [SecuredOperation("admin")]
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Contact> GetById(string id)
         {
             _rules.CheckIfContactExists(id);
             return new SuccessDataResult<Contact>(_contactReadRepository.GetById(id));
         }
 
-        //[SecuredOperation("admin")]
-        [ValidationAspect(typeof(UpdateContactValidator))]
         public async Task<IResult> UpdateAsync(UpdateContactCommand requestContact)
         {
             _rules.CheckIfContactExists(requestContact.Id);

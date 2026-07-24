@@ -2,6 +2,8 @@
 using Application.Features.JobAdvertisements.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobAdvertisements.Commands.CreateJobAdvertisementCommand;
 using static Application.Features.JobAdvertisements.Commands.DeleteJobAdvertisementCommand;
@@ -17,6 +19,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class JobAdvertisementsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -26,6 +29,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
+        [AllowAnonymous]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {
@@ -37,6 +41,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.JobAdvertisements);
         }
 
+        [AllowAnonymous]
         [HttpGet("getallorderbysalary")]
         public async Task<IActionResult> GetAllByHighestSalary()
         {
@@ -48,6 +53,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.JobAdvertisements);
         }
 
+        [AllowAnonymous]
         [HttpGet("getallbystatus")]
         public async Task<IActionResult> GetAllByStatus(bool status)
         {
@@ -59,6 +65,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.JobAdvertisements);
         }
 
+        [Authorize(Roles = Roles.Employer)]
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] CreateJobAdvertisementCommand jobAdvertisement)
         {
@@ -70,6 +77,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.Result);
         }
 
+        [Authorize(Roles = Roles.Employer)]
         [HttpDelete("deletebyid/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -81,6 +89,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.Result);
         }
 
+        [AllowAnonymous]
         [HttpGet("getbyemployerid/{id}")]
         public async Task<IActionResult> GetByEmployerId(string id)
         {
@@ -92,6 +101,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.JobAdvertisement);
         }
 
+        [AllowAnonymous]
         [HttpGet("getbyemployerid/{id}/{status}")]
         public async Task<IActionResult> GetByEmployerIdWithStatus(string id, bool status)
         {
@@ -103,6 +113,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.JobAdvertisement);
         }
 
+        [Authorize(Roles = Roles.Employer)]
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateJobAdvertisementCommand jobAdvertisement)
         {
@@ -114,6 +125,7 @@ namespace WebAPI.Controllers
             return BadRequest(response.Result);
         }
 
+        [AllowAnonymous]
         [HttpGet("getbyid/{id}")]
         public async Task<IActionResult> GetById(string id)
         {

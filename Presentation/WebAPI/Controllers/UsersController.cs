@@ -2,6 +2,8 @@
 using Application.Features.Users.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Users.Queries.GetAllUserQuery;
 
@@ -9,6 +11,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = Roles.Admin)]
     public class UsersController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -18,17 +18,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
-  <!-- Transitional: Autofac removed in Phase 2, Serilog.Sinks.MongoDB in Phase 3. -->
-  <ItemGroup>
-    <PackageReference Include="Autofac" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" />
-    <PackageReference Include="FluentValidation.AspNetCore" />
-    <PackageReference Include="Serilog.Sinks.MongoDB" />
-    <!-- Serilog.Sinks.MongoDB 5.3.1 was compiled against driver 2.17.1; Program.cs passes an
-         IMongoDatabase to SetMongoDatabase, so WebAPI needs the driver referenced directly to bind
-         against 2.30.0 rather than the sink's older assembly reference. -->
-    <PackageReference Include="MongoDB.Driver" />
-  </ItemGroup>
+  <!-- Autofac, FluentValidation.AspNetCore, Serilog.Sinks.MongoDB and the direct MongoDB.Driver
+       reference are all gone: DI is the built-in container, validation is ValidationBehavior, and
+       Serilog writes to Console + Seq instead of a capped collection in the domain database. -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Application\Application.csproj" />

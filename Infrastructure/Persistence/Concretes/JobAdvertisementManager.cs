@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.JobAdvertisements;
 using Application.Features.JobAdvertisements.Commands;
@@ -33,8 +32,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        //[SecuredOperation("employer")]
-        [ValidationAspect(typeof(CreateJobAdvertisementValidator))]
         public async Task<IResult> Add(CreateJobAdvertisementCommand jobAdvertisement)
         {
             JobPosition jobPosition = new();
@@ -57,7 +54,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.JobAdvertisement.JobAdvertisementAdded);
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
@@ -82,21 +78,18 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.Status == status));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerId(string id)
         {
             _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(j => j.EmployerId == id));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<IQueryable<JobAdvertisement>> GetByEmployerIdWithStatus(string id, bool status)
         {
             _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
             return new SuccessDataResult<IQueryable<JobAdvertisement>>(_jobAdvertisementReadRepository.GetAll(ja => ja.EmployerId == id && ja.Status == status));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobAdvertisement> GetById(string id)
         {
             _jobAdvertisementBusinessRules.JobAdvertisementExists(id);
@@ -105,7 +98,6 @@ namespace Persistence.Concretes
 
         
 
-        [ValidationAspect(typeof(UpdateJobAdvertisementValidator))]
         public async Task<IResult> Update(UpdateJobAdvertisementCommand jobAdvertisement)
         {
             _jobAdvertisementBusinessRules.JobAdvertisementExists(jobAdvertisement.Id);

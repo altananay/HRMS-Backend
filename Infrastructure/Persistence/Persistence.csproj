@@ -1,12 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Transitional: Autofac/Castle removed in Phase 2, MongoDB.Driver in Phase 3 (replaced by EF Core + Npgsql). -->
+  <!-- Transitional: MongoDB.Driver removed in Phase 3 (replaced by EF Core + Npgsql). -->
   <ItemGroup>
-    <PackageReference Include="Autofac" />
-    <PackageReference Include="Autofac.Extras.DynamicProxy" />
-    <PackageReference Include="Castle.Core" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="MongoDB.Driver" />
   </ItemGroup>
 

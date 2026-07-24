@@ -1,6 +1,8 @@
 ﻿using Application.Features.Logs.Queries;
 using Application.Features.Logs.Query;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Logs.Queries.GetAllErrorLogsQuery;
 using static Application.Features.Logs.Queries.GetAllInfosLogsQuery;
@@ -10,6 +12,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = Roles.Admin)]
     public class LogsController : ControllerBase
     {
         private readonly IMediator _mediator;

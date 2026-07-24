@@ -1,12 +1,14 @@
 ﻿using Application.Abstractions;
 using Application.Utilities.Constants;
 using Application.Utilities.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class MernisController : ControllerBase
     {
         private readonly ICheckPersonService _checkRealPersonService;

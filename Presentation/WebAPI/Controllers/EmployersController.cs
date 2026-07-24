@@ -2,6 +2,8 @@
 using Application.Features.Employers.Commands;
 using Application.Features.Employers.Queries;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Employers.Commands.DeleteEmployerCommand;
 using static Application.Features.Employers.Commands.UpdateEmployerCommand;
@@ -14,6 +16,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EmployersController : ControllerBase
     {
 
@@ -24,6 +27,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {

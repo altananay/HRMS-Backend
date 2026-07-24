@@ -2,6 +2,7 @@
 using Application.Features.JobApplications.Commands;
 using Application.Features.JobApplications.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.JobApplications.Commands.CreateJobApplicationCommand;
 using static Application.Features.JobApplications.Commands.DeleteJobApplicationCommand;
@@ -15,6 +16,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class JobApplicationsController : ControllerBase
     {
         IMediator _mediator;

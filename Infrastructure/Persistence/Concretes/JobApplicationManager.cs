@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.JobApplications;
 using Application.Features.JobApplications.Commands;
@@ -29,7 +28,6 @@ namespace Persistence.Concretes
             _jobApplicationBusinessRules = jobApplicationBusinessRules;
         }
 
-        [ValidationAspect(typeof(CreateJobApplicationValidator))]
         public async Task<IResult> Add(CreateJobApplicationCommand jobApplication)
         {
             _jobApplicationBusinessRules.CheckIfJobAdvertisementExists(jobApplication.JobAdvertisementId);
@@ -54,7 +52,6 @@ namespace Persistence.Concretes
         }
 
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _jobApplicationBusinessRules.CheckIfJobApplicationExists(id);
@@ -67,14 +64,12 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll());
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<IQueryable<JobApplication>> GetAllByEmployerId(string id)
         {
             _jobApplicationBusinessRules.CheckIfEmployerExists(id);
             return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll(jobApp => jobApp.EmployerId == id));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
 
         public IDataResult<IQueryable<JobApplication>> GetAllByJobSeekerId(string id)
         {
@@ -82,21 +77,18 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobApplication>>(_jobApplicationReadRepository.GetAll(jobApp => jobApp.JobSeekerId == id));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobApplication> GetById(string id)
         {
             _jobApplicationBusinessRules.CheckIfJobApplicationExists(id);
             return new SuccessDataResult<JobApplication>(_jobApplicationReadRepository.GetById(id));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<GetJobApplicationResultDto> GetResultById(string id)
         {
             _jobApplicationBusinessRules.CheckIfJobApplicationExists(id);
             return new SuccessDataResult<GetJobApplicationResultDto>(_jobApplicationReadRepository.GetResultById(id));
         }
 
-        [ValidationAspect(typeof(UpdateJobApplicationValidator))]
         public async Task<IResult> Update(UpdateJobApplicationCommand jobApplication)
         {
             _jobApplicationBusinessRules.CheckIfJobApplicationExists(jobApplication.JobApplicationId);

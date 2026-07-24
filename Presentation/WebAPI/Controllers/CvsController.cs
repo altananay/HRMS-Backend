@@ -1,6 +1,8 @@
 ﻿using Application.Features.Cvs.Commands;
 using Application.Features.Cvs.Queries;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.Cvs.Commands.CreateCvCommand;
 using static Application.Features.Cvs.Commands.DeleteCvCommand;
@@ -12,6 +14,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CvsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -21,6 +24,7 @@ namespace WebAPI.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll()
         {

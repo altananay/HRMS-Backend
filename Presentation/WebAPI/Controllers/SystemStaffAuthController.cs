@@ -1,12 +1,16 @@
 ﻿using Application.Features.SystemStaffAuth.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using static Application.Features.SystemStaffAuth.Queries.SystemStaffLoginQuery;
 
 namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public class SystemStaffAuthController : ControllerBase
     {
         private IMediator _mediator;

@@ -26,11 +26,10 @@
     <PackageReference Include="Serilog.Extensions.Logging" />
   </ItemGroup>
 
-  <!-- Transitional: all removed in Phase 2 (Castle) / Phase 3 (AutoMapper, MongoDB). -->
+  <!-- Transitional: removed in Phase 3 (AutoMapper -> Mapperly, MongoDB -> EF Core). -->
   <ItemGroup>
     <PackageReference Include="AutoMapper" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" />
-    <PackageReference Include="Castle.Core" />
     <PackageReference Include="MongoDB.Driver" />
   </ItemGroup>
 

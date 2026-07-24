@@ -2,6 +2,8 @@
 using Application.Features.SystemStaffs.Commands;
 using Application.Features.SystemStaffs.Queries;
 using MediatR;
+using Application.Utilities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Application.Features.SystemStaffs.Commands.CreateSystemStaffCommand;
 using static Application.Features.SystemStaffs.Commands.DeleteSystemStaffCommand;
@@ -13,6 +15,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = Roles.Admin)]
     public class SystemStaffsController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -1,7 +1,9 @@
 ﻿using Application.Features.Auth.Queries;
 using Application.Features.JobSeekers.Commands;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using static Application.Features.Auth.Queries.JobSeekerLoginQuery;
 using static Application.Features.JobSeekers.Commands.CreateJobSeekerCommand;
 
@@ -9,6 +11,8 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public class AuthController : ControllerBase
     {
         private readonly IMediator _mediator;

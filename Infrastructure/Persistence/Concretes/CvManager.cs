@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Cvs;
 using Application.Features.Cvs.Commands;
@@ -33,8 +32,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        [ValidationAspect(typeof(CvValidator))]
-        [LogAspect("Cv ekleme fonksiyonu başlangıç", true)]
         public async Task<IResult> Add(CreateCvCommand requestCv)
         {
             _rules.CheckIfCvExistsByJobSeekerId(requestCv.JobSeekerId);
@@ -83,7 +80,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.Cv.CvAdded);
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _rules.CheckIfCvExists(id);
@@ -91,20 +87,17 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.Cv.CvDeleted);
         }
 
-        [LogAspect(true)]
         public IDataResult<IQueryable<Cv>> GetAll()
         {
             return new SuccessDataResult<IQueryable<Cv>>(_cvReadRepository.GetAll());
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Cv> GetByJobSeekerId(string id)
         {
             _rules.CheckIfCvExists(id);
             return new SuccessDataResult<Cv>(_cvReadRepository.Get(cv => cv.JobSeekerId == id));
         }
 
-        [ValidationAspect(typeof(UpdateCvValidator))]
         public async Task<IResult> Update(UpdateCvCommand requestCv)
         {
             _rules.CheckIfCvExists(requestCv.Id);

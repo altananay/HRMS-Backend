@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.JobPositions;
 using Application.Repositories;
@@ -26,9 +25,6 @@ namespace Persistence.Concretes
         }
 
 
-        [ValidationAspect(typeof(JobPositionValidator))]
-        //[SecuredOperation("employer")]
-        [LogAspect()]
         public async Task<IResult> Add(JobPosition jobPosition)
         {
             _jobPositionBusinessRules.CheckIfJobPositionExistsByName(jobPosition.PositionName);
@@ -36,7 +32,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.JobPosition.JobPositionAdded);
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _jobPositionBusinessRules.CheckIfJobPositionExists(id);
@@ -49,14 +44,12 @@ namespace Persistence.Concretes
             return new SuccessDataResult<IQueryable<JobPosition>>(_jobPositionReadRepository.GetAll());
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<JobPosition> GetById(string id)
         {
             _jobPositionBusinessRules.CheckIfJobPositionExists(id);
             return new SuccessDataResult<JobPosition>(_jobPositionReadRepository.GetById(id));
         }
 
-        [ValidationAspect(typeof(JobPositionValidator))]
         public async Task<IResult> Update(JobPosition jobPosition)
         {
             _jobPositionBusinessRules.CheckIfJobPositionExists(jobPosition.Id);

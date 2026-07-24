@@ -1,5 +1,4 @@
 ﻿using Application.Abstractions;
-using Application.Aspects;
 using Application.CrossCuttingConcerns.Validation.Validators.Common;
 using Application.CrossCuttingConcerns.Validation.Validators.Employers.Auth;
 using Application.Features.Employers.Commands;
@@ -32,7 +31,6 @@ namespace Persistence.Concretes
             _mapper = mapper;
         }
 
-        [ValidationAspect(typeof(EmployerValidator))]
         public async Task<IResult> Add(Employer employer)
         {
             var user = new User();
@@ -42,7 +40,6 @@ namespace Persistence.Concretes
             return new SuccessResult(Messages.Employer.EmployerAdded);
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public async Task<IResult> Delete(string id)
         {
             _rules.CheckIfEmployerExists(id);
@@ -73,21 +70,18 @@ namespace Persistence.Concretes
 
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<GetEmployerDto> GetByEmployerIdWithFields(string id)
         {
             _rules.CheckIfEmployerExists(id);
             return new SuccessDataResult<GetEmployerDto>(_employerReadRepository.GetByEmployerIdWithFields(id));
         }
 
-        [ValidationAspect(typeof(ObjectIdValidator))]
         public IDataResult<Employer> GetById(string id)
         {
             _rules.CheckIfEmployerExists(id);
             return new SuccessDataResult<Employer>(_employerReadRepository.Get(e => e.Id == id));
         }
 
-        [ValidationAspect(typeof(EmployerValidator))]
         public async Task<IResult> Update(UpdateEmployerCommand employer)
         {
             _rules.CheckIfEmployerExistsByEmail(employer.Email);
