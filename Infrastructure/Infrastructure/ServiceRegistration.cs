@@ -1,8 +1,9 @@
-using Application.Abstractions;
+﻿using Application.Abstractions;
 using Application.Abstractions.Storage;
 using Domain.Enums;
 using Infrastructure.Services.Identity;
 using Infrastructure.Services.JWT;
+using Infrastructure.Services.Security;
 using Infrastructure.Services.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,10 +39,14 @@ namespace Infrastructure
             // Until then the null implementation is registered, and it fails closed.
             services.AddSingleton<IIdentityVerificationService, NullIdentityVerificationService>();
 
-            // Stateless and therefore safe as a singleton — unlike the scoped TokenHandler it
+            // Stateless and therefore safe as a singleton â€” unlike the scoped TokenHandler it
             // replaces, which held the expiry in a mutable field while being injected into
             // singleton managers.
             services.AddSingleton<ITokenService, JwtTokenService>();
+            services.AddSingleton<IPasswordHasher, IdentityPasswordHasher>();
+
+            // Scoped: wraps IUserRepository, which wraps the DbContext.
+            services.AddScoped<IUserSecurityStateProvider, CachedUserSecurityStateProvider>();
 
             return services;
         }

@@ -1,5 +1,6 @@
 using Application.Common.Dtos;
 using Application.Common.Models;
+using Application.Features.Auth.Commands;
 using Application.Features.Contacts.Commands;
 using Application.Features.Cvs.Commands;
 using Application.Features.Employers.Commands;
@@ -13,6 +14,44 @@ using Domain.Enums;
 
 namespace Application.Abstractions.Services
 {
+    /// <summary>
+    /// Registration, sign-in, token lifecycle and password management for all three actor types.
+    /// </summary>
+    /// <remarks>
+    /// One service replacing <c>AuthManager</c>, <c>EmployerAuthManager</c> and
+    /// <c>SystemStaffAuthManager</c>. Those three duplicated the same flow with slightly different
+    /// bugs each: the SystemStaff one alone null-checked the result wrapper instead of its
+    /// <c>.Data</c>, passed a MediatR command where an <c>IValidator</c> was expected, and called a
+    /// method guarded by <c>[SecuredOperation("admin")]</c> — so signing in as an administrator
+    /// required already being one.
+    /// </remarks>
+    public interface IAuthService
+    {
+        Task<IDataResult<AuthResponse>> LoginAsync(LoginCommand command, CancellationToken cancellationToken = default);
+
+        Task<IDataResult<AuthResponse>> RegisterJobSeekerAsync(
+            RegisterJobSeekerCommand command, CancellationToken cancellationToken = default);
+
+        Task<IDataResult<AuthResponse>> RegisterEmployerAsync(
+            RegisterEmployerCommand command, CancellationToken cancellationToken = default);
+
+        Task<IResult> RegisterSystemStaffAsync(
+            RegisterSystemStaffCommand command, CancellationToken cancellationToken = default);
+
+        Task<IDataResult<AuthResponse>> RefreshAsync(
+            RefreshTokenCommand command, CancellationToken cancellationToken = default);
+
+        Task<IResult> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
+
+        Task<IResult> LogoutAllAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        Task<IResult> ChangePasswordAsync(
+            ChangePasswordCommand command, CancellationToken cancellationToken = default);
+
+        Task<IDataResult<AuthenticatedUserDto>> GetCurrentUserAsync(
+            Guid userId, CancellationToken cancellationToken = default);
+    }
+
     /// <summary>
     /// Business-logic contracts, implemented by the managers in <c>Application/Services</c>.
     /// </summary>

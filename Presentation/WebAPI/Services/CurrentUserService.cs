@@ -25,6 +25,9 @@ namespace WebAPI.Services
         public IReadOnlyCollection<string> Roles =>
             Principal?.FindAll(ClaimTypes.Role).Select(claim => claim.Value).ToArray() ?? [];
 
+        public string? IpAddress =>
+            _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
         public bool IsInRole(string role) => Principal?.IsInRole(role) ?? false;
     }
 }

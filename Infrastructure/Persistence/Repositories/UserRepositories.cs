@@ -1,3 +1,4 @@
+using Application.Abstractions;
 using Application.Abstractions.Repositories;
 using Application.Common.Models;
 using Domain.Entities;
@@ -39,6 +40,49 @@ namespace Persistence.Repositories
 
         // Rewritten to a soft delete by AuditingSaveChangesInterceptor.
         public void Remove(User user) => _context.Users.Remove(user);
+
+        /// <remarks>
+        /// Two scalar columns, deliberately. Materializing a <c>User</c> here would make EF LEFT JOIN
+        /// all three TPT derived tables to resolve the concrete type — on the hottest query in the
+        /// application, since it runs for every authenticated request.
+        /// </remarks>
+        public Task<UserSecurityState?> GetSecurityStateAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+            => _context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new UserSecurityState(user.SecurityStamp, user.IsActive))
+                .FirstOrDefaultAsync(cancellationToken);
+
+        /// <remarks>
+        /// Role names come from the join table in the same round trip, so the token can be minted
+        /// without a second query. Returns the tracked entity because login may need to write to it
+        /// (password rehash, security stamp bump on reuse detection).
+        /// </remarks>
+        public Task<(User User, IReadOnlyList<string> Roles)?> GetForAuthenticationAsync(
+            string email,
+            CancellationToken cancellationToken = default)
+            => LoadWithRolesAsync(user => user.Email == email, cancellationToken);
+
+        public Task<(User User, IReadOnlyList<string> Roles)?> GetForAuthenticationByIdAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+            => LoadWithRolesAsync(user => user.Id == userId, cancellationToken);
+
+        private async Task<(User User, IReadOnlyList<string> Roles)?> LoadWithRolesAsync(
+            System.Linq.Expressions.Expression<Func<User, bool>> predicate,
+            CancellationToken cancellationToken)
+        {
+            var user = await _context.Users
+                .Include(candidate => candidate.UserRoles)
+                .ThenInclude(userRole => userRole.Role)
+                .FirstOrDefaultAsync(predicate, cancellationToken);
+
+            return user is null
+                ? null
+                : (user, user.UserRoles.Select(userRole => userRole.Role.Name).ToList());
+        }
     }
 
     public sealed class JobSeekerRepository : IJobSeekerRepository

@@ -27,6 +27,9 @@ namespace Application.Abstractions
 
         bool IsAuthenticated { get; }
 
+        /// <summary>Caller's IP, recorded on issued and revoked refresh tokens for audit.</summary>
+        string? IpAddress { get; }
+
         bool IsInRole(string role);
     }
 }

@@ -1,6 +1,7 @@
 using Application.Abstractions.Storage;
 using Domain.Enums;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Storage
@@ -21,17 +22,60 @@ namespace Infrastructure.Services.Storage
     /// </remarks>
     public sealed class LocalStorage : IStorage
     {
+        /// <summary>Outside wwwroot, deliberately — see <see cref="GuardAgainstPubliclyServedRoot"/>.</summary>
+        private const string DefaultRelativeRoot = "App_Data/uploads";
+
         private readonly string _rootPath;
         private readonly ILogger<LocalStorage> _logger;
 
-        public LocalStorage(IConfiguration configuration, ILogger<LocalStorage> logger)
+        public LocalStorage(IConfiguration configuration, IHostEnvironment environment, ILogger<LocalStorage> logger)
         {
             _logger = logger;
+
             var configured = configuration["Storage:Local:RootPath"];
 
-            _rootPath = string.IsNullOrWhiteSpace(configured)
-                ? Path.Combine(AppContext.BaseDirectory, "uploads")
-                : Path.IsPathRooted(configured) ? configured : Path.Combine(AppContext.BaseDirectory, configured);
+            var contentRoot = string.IsNullOrWhiteSpace(environment.ContentRootPath)
+                ? AppContext.BaseDirectory
+                : environment.ContentRootPath;
+
+            _rootPath = Path.GetFullPath(string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(contentRoot, DefaultRelativeRoot)
+                : Path.IsPathRooted(configured) ? configured : Path.Combine(contentRoot, configured));
+
+            GuardAgainstPubliclyServedRoot(contentRoot);
+        }
+
+        /// <summary>
+        /// Refuses to start if uploads would land inside the statically-served web root.
+        /// </summary>
+        /// <remarks>
+        /// This is not hypothetical. The configured default was <c>wwwroot/uploads</c> while
+        /// <c>Program.cs</c> calls <c>UseStaticFiles()</c>, and in a published application the
+        /// content root and the base directory are the same folder — so every uploaded CV would have
+        /// been anonymously downloadable by anyone who could guess its URL. That is the same class of
+        /// mistake as the <c>PublicAccessType.BlobContainer</c> the Azure adapter used to set.
+        ///
+        /// A comment warning against it would not have prevented the next person reinstating it, so
+        /// this fails loudly at startup instead. CVs are personal data and are served only through
+        /// the authorized download endpoint.
+        /// </remarks>
+        private void GuardAgainstPubliclyServedRoot(string contentRoot)
+        {
+            var webRoot = Path.GetFullPath(Path.Combine(contentRoot, "wwwroot"));
+
+            var isUnderWebRoot = _rootPath.Equals(webRoot, StringComparison.OrdinalIgnoreCase)
+                || _rootPath.StartsWith(webRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+            if (isUnderWebRoot)
+            {
+                throw new InvalidOperationException(
+                    $"Storage:Local:RootPath resolves to '{_rootPath}', which is inside the web root " +
+                    $"('{webRoot}') and therefore served publicly by UseStaticFiles(). Uploaded CVs are " +
+                    "personal data and must not be reachable without authorization. Point it at a " +
+                    $"directory outside wwwroot, e.g. '{DefaultRelativeRoot}'.");
+            }
+
+            _logger.LogInformation("Local storage root: {RootPath}", _rootPath);
         }
 
         public async Task<IReadOnlyList<StoredFile>> UploadAsync(

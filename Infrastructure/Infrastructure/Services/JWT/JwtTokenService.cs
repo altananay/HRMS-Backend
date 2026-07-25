@@ -21,6 +21,11 @@ namespace Infrastructure.Services.JWT
     /// </remarks>
     public sealed class JwtTokenService : ITokenService
     {
+        public const string TokenSchemaVersionClaim = "ver";
+
+        /// <summary>Bump when the claim set changes shape, to reject tokens using the old layout.</summary>
+        public const string CurrentTokenSchemaVersion = "1";
+
         private readonly TokenOptions _options;
         private readonly TimeProvider _timeProvider;
         private readonly SigningCredentials _signingCredentials;
@@ -49,7 +54,12 @@ namespace Infrastructure.Services.JWT
                 new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
                 new(ClaimTypes.Email, user.Email),
                 new("user_type", user.UserType.ToString()),
-                new("security_stamp", user.SecurityStamp.ToString())
+                new("security_stamp", user.SecurityStamp.ToString()),
+
+                // Claim-schema version. If the set of claims ever changes shape, bump this and
+                // tokens minted against the old layout stop validating instead of being silently
+                // misread. Validated in OnTokenValidated — an unchecked claim is worse than none.
+                new(TokenSchemaVersionClaim, CurrentTokenSchemaVersion)
             };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

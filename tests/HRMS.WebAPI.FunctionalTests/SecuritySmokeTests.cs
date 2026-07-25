@@ -45,12 +45,20 @@ public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
 
         // Company profile behind a listing. Returns EmployerDetailDto, which carries no password
         // material and no national ID.
-        "api/Employers/getbyemployerid/{id:guid}"
+        "api/Employers/getbyemployerid/{id:guid}",
 
-        // The auth endpoints are absent because the three legacy auth controllers were deleted in
-        // Phase 3; Phase 4 adds a single AuthController and its routes get reviewed onto this list
-        // then. Until then the API has no way to authenticate, which this suite asserts by
-        // expecting 401 rather than by skipping.
+        // Authentication. Note that /me, /logout-all, /change-password and /register/system-staff
+        // are deliberately NOT here — they require a token. An earlier version of AuthController
+        // carried [AllowAnonymous] at class level, which in ASP.NET Core overrides [Authorize] on
+        // individual actions and silently made all four anonymous. This list is what catches that.
+        "api/auth/login",
+        "api/auth/register/jobseeker",
+        "api/auth/register/employer",
+        "api/auth/refresh",
+
+        // The refresh token is itself the credential here, and a client whose access token has
+        // already expired must still be able to end its session.
+        "api/auth/logout"
     ];
 
     private IReadOnlyList<(string Route, bool AllowsAnonymous)> GetEndpoints()
@@ -102,8 +110,7 @@ public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
             "/api/Users/getall",
             "/api/Cvs/getall",
             "/api/SystemStaffs/getall",
-            "/api/Logs/errors",
-            "/api/Logs/infos"
+            "/api/auth/me"
         ];
 
         foreach (var route in mustBeProtected)

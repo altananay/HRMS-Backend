@@ -33,6 +33,7 @@ namespace Application
             // The managers live here now rather than in Persistence, so Application owns both the
             // I*Service contracts and their implementations, and the database provider stays behind
             // the repository interfaces.
+            services.AddScoped<IAuthService, AuthManager>();
             services.AddScoped<IContactService, ContactManager>();
             services.AddScoped<IJobPositionService, JobPositionManager>();
             services.AddScoped<IEmployerService, EmployerManager>();

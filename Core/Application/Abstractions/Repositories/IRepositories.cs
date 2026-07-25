@@ -1,6 +1,7 @@
 using Application.Common.Models;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Abstractions;
 
 namespace Application.Abstractions.Repositories
 {
@@ -42,6 +43,25 @@ namespace Application.Abstractions.Repositories
         Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
         Task<PagedResult<User>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
         void Remove(User user);
+
+        /// <summary>
+        /// Reads just the security stamp and active flag, for per-request token validation.
+        /// </summary>
+        /// <remarks>
+        /// Projected to two scalar columns rather than materializing a <c>User</c>. Under
+        /// table-per-type, loading the entity makes EF LEFT JOIN <c>job_seekers</c>,
+        /// <c>employers</c> and <c>system_staff</c> to work out the concrete type — on a query that
+        /// runs for every authenticated request. Projecting keeps it a single-table read.
+        /// </remarks>
+        Task<UserSecurityState?> GetSecurityStateAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        /// <summary>Loads a user together with the role names needed to mint a token.</summary>
+        Task<(User User, IReadOnlyList<string> Roles)?> GetForAuthenticationAsync(
+            string email, CancellationToken cancellationToken = default);
+
+        /// <inheritdoc cref="GetForAuthenticationAsync(string, CancellationToken)"/>
+        Task<(User User, IReadOnlyList<string> Roles)?> GetForAuthenticationByIdAsync(
+            Guid userId, CancellationToken cancellationToken = default);
     }
 
     public interface IJobSeekerRepository

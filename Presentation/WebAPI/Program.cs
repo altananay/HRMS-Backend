@@ -1,15 +1,19 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Application;
+using Application.Abstractions;
 using Application.Utilities.JWT;
 using Application.Utilities.Security.Encryption;
 using Infrastructure;
+using Infrastructure.Services.JWT;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Persistence;
+using Persistence.Seeding;
 using Serilog;
 using Serilog.Context;
 using Serilog.Events;
@@ -19,7 +23,7 @@ using WebAPI.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------------------------------------------------------------------------------------
-// Configuration — fail fast rather than NullReferenceException at first use.
+// Configuration â€” fail fast rather than NullReferenceException at first use.
 // ---------------------------------------------------------------------------------------------
 builder.Services
     .AddOptions<TokenOptions>()
@@ -37,7 +41,7 @@ var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOpt
         "signing key via user-secrets in Development or TokenOptions__SecurityKey in Production.");
 
 // ---------------------------------------------------------------------------------------------
-// Logging — Console always, Seq when configured. The MongoDB sink is gone: it wrote domain data
+// Logging â€” Console always, Seq when configured. The MongoDB sink is gone: it wrote domain data
 // and logs into the same database, and the capped `logs` collection is replaced by Seq.
 // ---------------------------------------------------------------------------------------------
 var seqUrl = builder.Configuration["Serilog:Seq:ServerUrl"];
@@ -57,7 +61,7 @@ if (!string.IsNullOrWhiteSpace(seqUrl))
 builder.Host.UseSerilog(loggerConfiguration.CreateLogger());
 
 // ---------------------------------------------------------------------------------------------
-// Services — built-in DI only. Autofac, Castle DynamicProxy and the ServiceTool locator are gone;
+// Services â€” built-in DI only. Autofac, Castle DynamicProxy and the ServiceTool locator are gone;
 // cross-cutting concerns are MediatR pipeline behaviors registered in AddApplicationServices.
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddHttpContextAccessor();
@@ -70,7 +74,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddMemoryCache();
 
 // ---------------------------------------------------------------------------------------------
-// CORS — the previous policy chained .WithOrigins(...) and then .AllowAnyOrigin(), and the
+// CORS â€” the previous policy chained .WithOrigins(...) and then .AllowAnyOrigin(), and the
 // wildcard won, so the named origin list was decorative and the policy was effectively open.
 // ---------------------------------------------------------------------------------------------
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
@@ -84,7 +88,7 @@ builder.Services.AddCors(options =>
 });
 
 // ---------------------------------------------------------------------------------------------
-// Controllers. The global ValidationFilter and FluentValidation auto-validation are both gone —
+// Controllers. The global ValidationFilter and FluentValidation auto-validation are both gone â€”
 // ValidationBehavior in the MediatR pipeline is now the single validation stack, so the default
 // model-state 400 is wanted again and SuppressModelStateInvalidFilter is no longer set.
 // ---------------------------------------------------------------------------------------------
@@ -111,8 +115,51 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role,
 
             // Tokens are minted and validated by this same service, so there is no reason to
-            // tolerate clock drift — and zero skew makes expiry assertions deterministic in tests.
+            // tolerate clock drift â€” and zero skew makes expiry assertions deterministic in tests.
             ClockSkew = TimeSpan.Zero
+        };
+
+        // Signature and lifetime are not enough. A JWT is self-validating, so without this hook an
+        // access token stays valid until it expires no matter what happens server-side â€” meaning
+        // "log out everywhere", a password change, an account deactivation, a role revocation and
+        // even refresh-token theft detection all silently do nothing for up to fifteen minutes.
+        //
+        // The security_stamp claim was already being written by JwtTokenService; nothing read it.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal;
+
+                // Reject any token minted against a previous claim layout.
+                if (principal?.FindFirstValue(JwtTokenService.TokenSchemaVersionClaim)
+                    != JwtTokenService.CurrentTokenSchemaVersion)
+                {
+                    context.Fail("Token was issued against an unsupported claim schema.");
+                    return;
+                }
+
+                var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var tokenStamp = principal.FindFirstValue("security_stamp");
+
+                if (!Guid.TryParse(userId, out var id) || !Guid.TryParse(tokenStamp, out var stamp))
+                {
+                    context.Fail("Token is missing the subject or security stamp claim.");
+                    return;
+                }
+
+                var provider = context.HttpContext.RequestServices
+                    .GetRequiredService<IUserSecurityStateProvider>();
+
+                var state = await provider.GetAsync(id, context.HttpContext.RequestAborted);
+
+                if (state is null || !state.IsActive || state.SecurityStamp != stamp)
+                {
+                    // Same failure for a deleted user, a disabled account and a rotated stamp â€” the
+                    // client only needs to know the session is over.
+                    context.Fail("The session is no longer valid.");
+                }
+            }
         };
     });
 
@@ -129,7 +176,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 // ---------------------------------------------------------------------------------------------
-// Rate limiting — the only real defence against credential stuffing on the auth endpoints.
+// Rate limiting â€” the only real defence against credential stuffing on the auth endpoints.
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddRateLimiter(options =>
 {
@@ -146,7 +193,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // ---------------------------------------------------------------------------------------------
-// Swagger — with a Bearer definition, which the previous setup lacked entirely, making it
+// Swagger â€” with a Bearer definition, which the previous setup lacked entirely, making it
 // impossible to exercise an authenticated endpoint from the Swagger UI.
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
@@ -161,7 +208,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Paste the access token only — Swagger adds the \"Bearer \" prefix."
+        Description = "Paste the access token only â€” Swagger adds the \"Bearer \" prefix."
     };
 
     options.AddSecurityDefinition("Bearer", scheme);
@@ -175,6 +222,16 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Development/Testing only. In Production migrations are applied deliberately â€” by a migration
+// bundle or an init container â€” not as a side effect of a web process starting up, where two
+// instances booting at once would race each other.
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<HrmsDbContext>().Database.MigrateAsync();
+    await DatabaseSeeder.SeedAsync(app.Services);
+}
 
 // ---------------------------------------------------------------------------------------------
 // Pipeline.

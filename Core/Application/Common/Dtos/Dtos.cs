@@ -66,6 +66,14 @@ namespace Application.Common.Dtos
         bool IsActive,
         DateTime CreatedAt);
 
+    /// <summary>The caller's own identity, returned by login/refresh and by <c>GET /api/auth/me</c>.</summary>
+    public sealed record AuthenticatedUserDto(
+        Guid Id,
+        string Email,
+        string DisplayName,
+        UserType UserType,
+        IReadOnlyList<string> Roles);
+
     /// <summary>
     /// An advertisement as the client sees it.
     /// </summary>
