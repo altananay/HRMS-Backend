@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HRMS-Backend — Application Audit</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
+    nav { position: sticky; top: 0; background: #161b22; border-bottom: 1px solid #30363d; padding: 0.75rem 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; z-index: 100; }
+    nav a { color: #58a6ff; text-decoration: none; font-size: 0.875rem; }
+    nav a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.25rem; margin-top: 2.5rem; border-left: 3px solid #58a6ff; padding-left: 0.75rem; }
+    h3 { font-size: 1rem; color: #8b949e; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+    th { background: #161b22; color: #8b949e; text-align: left; padding: 0.5rem 0.75rem; border: 1px solid #30363d; }
+    td { padding: 0.5rem 0.75rem; border: 1px solid #30363d; vertical-align: top; }
+    tr:nth-child(even) { background: #161b22; }
+    code { background: #161b22; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .high   { background: #3d1c1c; color: #f85149; }
+    .medium { background: #2d2008; color: #e3b341; }
+    .low    { background: #0d2216; color: #3fb950; }
+    .none   { background: #21262d; color: #8b949e; }
+    .authed { background: #12213d; color: #58a6ff; }
+    .role   { background: #2d1a3d; color: #bc8cff; }
+    .open   { background: #3d1c1c; color: #f85149; }
+    .public { background: #0d2216; color: #3fb950; }
+    pre.mermaid { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    details summary { cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: #58a6ff; }
+    details[open] summary { margin-bottom: 0.5rem; }
+    .callout { background: #2d2008; border-left: 4px solid #e3b341; padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin: 1.5rem 0; }
+    .callout strong { color: #e3b341; }
+    .scroll { overflow-x: auto; }
+    :focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <nav aria-label="Report sections">
+    <a href="#summary">Summary</a>
+    <a href="#stack">Tech Stack</a>
+    <a href="#controllers">Endpoints</a>
+    <a href="#features">Features &amp; Layers</a>
+    <a href="#data">Data Layer</a>
+    <a href="#auth">Auth &amp; Wiring</a>
+    <a href="#dependencies">External Dependencies</a>
+    <a href="#risks">Risk Matrix</a>
+    <a href="#handoff">Handoff Notes</a>
+  </nav>
+
+  <main>
+    <h1>HRMS-Backend — Application Audit</h1>
+    <p><strong>Generated:</strong> 2026-07-26 &nbsp;|&nbsp; <strong>Branch:</strong> <code>feat/net10-postgres</code>
+       &nbsp;|&nbsp; <strong>Commit state:</strong> uncommitted working tree</p>
+
+    <div class="callout">
+      <strong>⚠ The analyst definition is out of date.</strong>
+      <p>The <code>HRMS-Backend-analyst</code> skill's <em>Project Context</em> describes a
+      <strong>.NET 7 / MongoDB / Autofac</strong> codebase with no test projects,
+      <code>[SecuredOperation]</code> aspects and a gitignored <code>appsettings.json</code>.
+      <strong>None of that is true any more</strong> — the migration it calls "planned but not started"
+      has been completed.</p>
+      <p>Per the skill's own Evidence Rules (<em>"validate by reading file content"</em>,
+      <em>"confirm absence/presence from the filesystem, never from memory"</em>), this audit reports
+      the <strong>actual</strong> current state. Rewriting the skill is logged as finding&nbsp;#1.</p>
+    </div>
+
+    <section id="summary">
+      <h2>1. Executive Summary</h2>
+      <p>HRMS-Backend is the REST API for a job board: employers publish advertisements, job seekers
+      register, build a CV and apply, system staff moderate. It runs on <strong>.NET 10</strong>,
+      <strong>PostgreSQL 17 via EF Core 10</strong>, Onion architecture with <strong>MediatR 12.5.0</strong>
+      CQRS, and JWT bearer authentication with rotating refresh tokens.</p>
+
+      <p><strong>Overall posture: healthy.</strong> The build is clean (0 errors, 0 warnings, with
+      <code>CS1998</code>, <code>CS4014</code>, nullable violations and Mapperly <code>RMG012</code>
+      promoted to errors), 56 automated tests pass, and authorization is deny-by-default with a smoke
+      test that enumerates the real endpoint table. The severe issues that characterised the previous
+      architecture — anonymous endpoints returning password hashes, an inert authorization aspect, no
+      tests — are gone and covered by regression tests.</p>
+
+      <p>The remaining findings are <strong>hygiene and verification gaps, not defects</strong>:</p>
+      <ol>
+        <li><strong>The analyst skill itself is stale</strong> and will misinform future sessions
+            (<span class="badge high">High</span> impact, <span class="badge low">Low</span> effort).</li>
+        <li><strong>25 of 58 central package declarations are unused</strong> — including Autofac,
+            AutoMapper and MongoDB.Driver, which read as though the old stack were still present.</li>
+        <li><strong>Two integrations are implemented but never exercised against a real endpoint</strong>:
+            Cloudflare R2 storage and the Mernis SOAP client.</li>
+      </ol>
+      <p>No secrets are committed. No PII appears in any DTO.</p>
+    </section>
+
+    <section id="stack">
+      <h2>2. Tech Stack</h2>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Component</th><th>Version</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>.NET</td><td>10.0</td><td><code>Directory.Build.props:5</code>; SDK pinned to 10.0.301 by <code>global.json</code></td></tr>
+          <tr><td>ASP.NET Core Web API</td><td>10.0</td><td><code>AddControllers()</code>, attribute routing, no MVC/Razor</td></tr>
+          <tr><td>PostgreSQL</td><td>17-alpine</td><td><code>docker-compose.yml</code>; host port <strong>5433</strong> to avoid a local install</td></tr>
+          <tr><td>EF Core / Npgsql</td><td>10.0.10 / 10.0.3</td><td>+ EFCore.NamingConventions 10.0.0 (snake_case)</td></tr>
+          <tr><td>MediatR</td><td><strong>[12.5.0]</strong></td><td>Bracket-pinned — last Apache-2.0 release; 13+ is commercial</td></tr>
+          <tr><td>Riok.Mapperly</td><td>4.3.1</td><td>Source generator; replaced AutoMapper</td></tr>
+          <tr><td>FluentValidation</td><td>11.12.0</td><td>Single stack, via <code>ValidationBehavior</code></td></tr>
+          <tr><td>JwtBearer / IdentityModel</td><td>10.0.10 / 8.19.2</td><td>+ Microsoft.Extensions.Identity.Core for <code>PasswordHasher&lt;T&gt;</code></td></tr>
+          <tr><td>AWSSDK.S3</td><td>4.0.101.4</td><td>Cloudflare R2 over the S3 API</td></tr>
+          <tr><td>Serilog (+ Seq sink)</td><td>4.4.0 / 9.1.0</td><td>Console always; Seq optional</td></tr>
+          <tr><td>Swashbuckle.AspNetCore</td><td>10.2.3</td><td>With a Bearer security definition</td></tr>
+          <tr><td>System.ServiceModel.*</td><td>6.0.0</td><td>Mernis SOAP only; legacy on .NET 10</td></tr>
+          <tr><td>Test stack</td><td>xunit.v3 3.2.2</td><td>+ NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Versions are declared centrally in <code>Directory.Packages.props</code>
+      (<code>ManagePackageVersionsCentrally=true</code>). No <code>.csproj</code> carries a
+      <code>Version</code> attribute. <strong>Confirmed.</strong></p>
+
+      <h3>Solution layout — 7 projects (5 source + 2 test)</h3>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Project</th><th>.cs files</th><th>Package references</th></tr></thead>
+        <tbody>
+          <tr><td><code>Core/Domain</code></td><td>26</td><td><strong>0 — zero dependencies</strong></td></tr>
+          <tr><td><code>Core/Application</code></td><td>49</td><td>9</td></tr>
+          <tr><td><code>Infrastructure/Persistence</code></td><td>15</td><td>7</td></tr>
+          <tr><td><code>Infrastructure/Infrastructure</code></td><td>11</td><td>13</td></tr>
+          <tr><td><code>Presentation/WebAPI</code></td><td>14</td><td>4</td></tr>
+          <tr><td><code>tests/</code></td><td>11</td><td>4 (shared props)</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Present at the root: <code>global.json</code>, <code>Directory.Build.props</code>,
+      <code>Directory.Packages.props</code>, <code>.editorconfig</code>, <code>docker-compose.yml</code>,
+      <code>.github/workflows/ci.yml</code>, <code>Presentation/WebAPI/Dockerfile</code>.
+      <strong>Confirmed from filesystem.</strong></p>
+    </section>
+
+    <section id="controllers">
+      <h2>3. Controller / Endpoint Inventory</h2>
+      <p><strong>10 controllers, 52 endpoints</strong>, all deriving from <code>ApiControllerBase</code>,
+      which supplies <code>Mediator</code> and <code>CurrentUserId</code>.</p>
+      <p>Authorization is <strong>deny-by-default</strong>: <code>Program.cs:184</code> sets an
+      authorization <code>FallbackPolicy</code> requiring an authenticated user, so an endpoint is
+      protected unless it explicitly opts out. The Auth column states the <em>effective</em> requirement.</p>
+
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Verb</th><th>Route</th><th>Action</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>api/auth/login</code></td><td>Login</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/register/jobseeker</code></td><td>RegisterJobSeeker</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/register/employer</code></td><td>RegisterEmployer</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/register/system-staff</code></td><td>RegisterSystemStaff</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/refresh</code></td><td>Refresh</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/logout</code></td><td>Logout</td><td><span class="badge public">Anonymous</span> — refresh token is the credential</td></tr>
+          <tr><td>POST</td><td><code>api/auth/logout-all</code></td><td>LogoutAll</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>POST</td><td><code>api/auth/change-password</code></td><td>ChangePassword</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>GET</td><td><code>api/auth/me</code></td><td>Me</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>GET</td><td><code>api/Contacts</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/Contacts/{id:guid}</code></td><td>GetById</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>POST</td><td><code>api/Contacts</code></td><td>Add</td><td><span class="badge public">Anonymous</span> — public contact form</td></tr>
+          <tr><td>PUT</td><td><code>api/Contacts/{id:guid}</code></td><td>Update</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/Contacts/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/Cvs/getall</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/Cvs/getbyjobseekerid/{id:guid}</code></td><td>GetByJobSeekerId</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>POST</td><td><code>api/Cvs/add</code></td><td>Add</td><td><span class="badge role">JobSeeker</span></td></tr>
+          <tr><td>PUT</td><td><code>api/Cvs/update</code></td><td>Update</td><td><span class="badge role">JobSeeker</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/Cvs/deletecv/{id:guid}</code></td><td>Delete</td><td><span class="badge role">JobSeeker</span></td></tr>
+          <tr><td>POST</td><td><code>api/Cvs/uploadfile</code></td><td>UploadFile</td><td><span class="badge role">JobSeeker</span></td></tr>
+          <tr><td>GET</td><td><code>api/Cvs/files/{id:guid}</code></td><td>DownloadFile</td><td><span class="badge authed">Authenticated</span> + <strong>resource check</strong></td></tr>
+          <tr><td>DELETE</td><td><code>api/Cvs/files/{id:guid}</code></td><td>DeleteFile</td><td><span class="badge authed">Authenticated</span> + <strong>resource check</strong></td></tr>
+          <tr><td>GET</td><td><code>api/Employers/getall</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/Employers/getbyemployerid/{id:guid}</code></td><td>GetById</td><td><span class="badge public">Anonymous</span> — company profile</td></tr>
+          <tr><td>GET</td><td><code>api/Employers/getbyemail</code></td><td>GetByEmail</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>PUT</td><td><code>api/Employers/update</code></td><td>Update</td><td><span class="badge authed">Self, or Admin</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/Employers/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobAdvertisements/getall</code></td><td>GetAll</td><td><span class="badge public">Anonymous</span> — the job board</td></tr>
+          <tr><td>GET</td><td><code>api/JobAdvertisements/getbyid/{id:guid}</code></td><td>GetById</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/JobAdvertisements/add</code></td><td>Add</td><td><span class="badge role">Employer</span></td></tr>
+          <tr><td>PUT</td><td><code>api/JobAdvertisements/update</code></td><td>Update</td><td><span class="badge role">Employer</span> + <strong>ownership</strong></td></tr>
+          <tr><td>DELETE</td><td><code>api/JobAdvertisements/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Employer</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobApplications/getall</code></td><td>GetAll</td><td><span class="badge authed">Authenticated</span>, <strong>scoped by role</strong></td></tr>
+          <tr><td>GET</td><td><code>api/JobApplications/getbyid/{id:guid}</code></td><td>GetById</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>POST</td><td><code>api/JobApplications/add</code></td><td>Add</td><td><span class="badge role">JobSeeker</span></td></tr>
+          <tr><td>PUT</td><td><code>api/JobApplications/update</code></td><td>Update</td><td><span class="badge role">Employer</span> + <strong>ownership</strong></td></tr>
+          <tr><td>DELETE</td><td><code>api/JobApplications/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobPosition/getall</code></td><td>GetAll</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobPosition/getbyid/{id:guid}</code></td><td>GetById</td><td><span class="badge public">Anonymous</span></td></tr>
+          <tr><td>POST</td><td><code>api/JobPosition/addjobposition</code></td><td>Add</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>PUT</td><td><code>api/JobPosition/update</code></td><td>Update</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/JobPosition/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobSeekers/getall</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobSeekers/getbyid/{id:guid}</code></td><td>GetById</td><td><span class="badge authed">Authenticated</span></td></tr>
+          <tr><td>GET</td><td><code>api/JobSeekers/getbyemail</code></td><td>GetByEmail</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>PUT</td><td><code>api/JobSeekers/update</code></td><td>Update</td><td><span class="badge authed">Self, or Admin</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/JobSeekers/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/SystemStaffs/getall</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/SystemStaffs/{id:guid}</code></td><td>GetById</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>PUT</td><td><code>api/SystemStaffs/update</code></td><td>Update</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>DELETE</td><td><code>api/SystemStaffs/deletebyid/{id:guid}</code></td><td>Delete</td><td><span class="badge role">Admin</span></td></tr>
+          <tr><td>GET</td><td><code>api/Users/getall</code></td><td>GetAll</td><td><span class="badge role">Admin</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <p><strong>11 endpoints are anonymous</strong>, all deliberately: the auth surface, the public job
+      board, the position lookup and the contact form. Each is listed in <code>PublicEndpoints</code> in
+      <code>SecuritySmokeTests.cs</code>; a route that becomes anonymous without being added there
+      <strong>fails the build</strong>.</p>
+
+      <details>
+        <summary>Ownership checks that go beyond role membership</summary>
+        <p>Three endpoints verify the caller owns the resource, because holding a role is not ownership:</p>
+        <ul>
+          <li><code>JobAdvertisementManager.UpdateAsync</code> compares the advertisement's
+              <code>EmployerId</code> against the token.</li>
+          <li><code>JobApplicationManager.UpdateAsync</code> reaches the employer through
+              <code>JobAdvertisement.EmployerId</code>.</li>
+          <li><code>CvFileManager.EnsureCanReadAsync</code> allows the owning seeker, <strong>an employer
+              who has actually received an application from that seeker</strong>, or an admin.</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Route constraints and the 401-vs-404 nuance</summary>
+        <p>All <code>{id}</code> parameters carry a <code>:guid</code> constraint. A malformed id matches
+        <strong>no</strong> endpoint, so <code>[AllowAnonymous]</code> — which is endpoint metadata —
+        cannot apply, and the fallback policy challenges the request: an anonymous caller receives
+        <strong>401</strong>, not 404. A well-formed but non-existent id returns a proper 404
+        ProblemDetails from the handler.</p>
+      </details>
+    </section>
+
+    <section id="features">
+      <h2>4. CQRS &amp; Layer Catalogue</h2>
+      <p><strong>52 MediatR requests</strong> across 9 feature modules. Each request class is
+      <code>partial</code>, implements <code>IRequest&lt;T.Response&gt;</code>, and nests its
+      <code>Response</code> and <code>Handler</code>. Handlers only delegate. Response members are
+      uniformly a property named <code>Result</code>.</p>
+
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Manager</th><th>Responsibility</th><th>Key dependencies</th></tr></thead>
+        <tbody>
+          <tr><td><code>AuthManager</code></td><td>Registration, login, refresh rotation, logout, password change</td><td>6 repositories, <code>IPasswordHasher</code>, <code>ITokenService</code>, <code>IUserSecurityStateProvider</code></td></tr>
+          <tr><td><code>ContactManager</code></td><td>Public contact messages</td><td><code>IContactRepository</code>, <code>BusinessRules</code></td></tr>
+          <tr><td><code>JobPositionManager</code></td><td>Shared position lookup, resolve-or-create</td><td><code>IJobPositionRepository</code></td></tr>
+          <tr><td><code>EmployerManager</code></td><td>Employer profile + departments</td><td><code>IEmployerRepository</code></td></tr>
+          <tr><td><code>JobSeekerManager</code></td><td>Seeker profile</td><td><code>IJobSeekerRepository</code></td></tr>
+          <tr><td><code>SystemStaffManager</code></td><td>Staff administration</td><td><code>ISystemStaffRepository</code></td></tr>
+          <tr><td><code>UserManager</code></td><td>Admin user listing</td><td><code>IUserRepository</code></td></tr>
+          <tr><td><code>CvManager</code></td><td>CV aggregate (educations, experiences, languages, projects)</td><td><code>ICvRepository</code></td></tr>
+          <tr><td><code>CvFileManager</code></td><td>Attachment upload/download/delete + access rule</td><td><code>ICvFileRepository</code>, <code>IJobApplicationRepository</code>, <code>IStorageService</code></td></tr>
+          <tr><td><code>JobAdvertisementManager</code></td><td>Advertisement lifecycle</td><td><code>IJobAdvertisementRepository</code>, <code>IJobPositionRepository</code></td></tr>
+          <tr><td><code>JobApplicationManager</code></td><td>Application lifecycle + status</td><td><code>IJobApplicationRepository</code>, <code>TimeProvider</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <p>Managers live in <strong>Application</strong>, not Persistence. They depend only on repository
+      interfaces, so the compiler prevents them from reaching the database provider.</p>
+
+      <h3>Layer Dependency Direction</h3>
+      <pre class="mermaid">
+graph LR
+  Domain --> Application
+  Application --> Persistence
+  Application --> Infrastructure
+  Persistence --> WebAPI
+  Infrastructure --> WebAPI
+      </pre>
+
+      <h3>Request Chain</h3>
+      <pre class="mermaid">
+graph TD
+  C["Controller (IMediator.Send)"]
+  L["LoggingBehavior"]
+  P["PerformanceBehavior"]
+  V["ValidationBehavior"]
+  H["Command/Query Handler"]
+  S["I*Service (Manager)"]
+  R["BusinessRules"]
+  Repo["I*Repository + IUnitOfWork"]
+  Db["HrmsDbContext"]
+  Pg["PostgreSQL"]
+  C --> L
+  L --> P
+  P --> V
+  V --> H
+  H --> S
+  S --> R
+  S --> Repo
+  Repo --> Db
+  Db --> Pg
+      </pre>
+      <p>Cross-cutting concerns are MediatR pipeline behaviors. There is <strong>no AOP interception and
+      no service locator</strong>. <code>Core/Domain/Domain.csproj</code> declares zero
+      PackageReferences — <strong>Confirmed</strong>.</p>
+    </section>
+
+    <section id="data">
+      <h2>5. Data Layer</h2>
+      <p>PostgreSQL, EF Core 10, snake_case, one migration:
+      <code>Migrations/20260725130413_InitialPostgresSchema.cs</code>. The schema is versioned by
+      migrations, not by entity classes.</p>
+
+      <details open>
+        <summary>18 tables</summary>
+        <div class="scroll">
+        <table>
+          <thead><tr><th>Table</th><th>Entity</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>users</code></td><td><code>User</code> (abstract)</td><td>TPT base; soft-deletable; <code>xmin</code> concurrency</td></tr>
+            <tr><td><code>job_seekers</code></td><td><code>JobSeeker : User</code></td><td>TPT; PK = FK to <code>users</code></td></tr>
+            <tr><td><code>employers</code></td><td><code>Employer : User</code></td><td>TPT; <code>sectors text[]</code></td></tr>
+            <tr><td><code>system_staff</code></td><td><code>SystemStaff : User</code></td><td>TPT</td></tr>
+            <tr><td><code>roles</code> / <code>user_roles</code></td><td><code>Role</code>, <code>UserRole</code></td><td>Seeded reference data; composite PK</td></tr>
+            <tr><td><code>refresh_tokens</code></td><td><code>RefreshToken</code></td><td>Stores SHA-256 hash only</td></tr>
+            <tr><td><code>employer_departments</code></td><td><code>Department</code></td><td></td></tr>
+            <tr><td><code>cvs</code></td><td><code>Cv</code></td><td>Owned <code>SocialMedia</code>; <code>skills text[]</code> + GIN</td></tr>
+            <tr><td><code>cv_educations</code></td><td><code>Education</code></td><td></td></tr>
+            <tr><td><code>cv_job_experiences</code></td><td><code>JobExperience</code></td><td></td></tr>
+            <tr><td><code>cv_languages</code></td><td><code>CvLanguage</code></td><td></td></tr>
+            <tr><td><code>cv_projects</code></td><td><code>CvProject</code></td><td></td></tr>
+            <tr><td><code>cv_files</code></td><td><code>CvFile</code></td><td><code>cv_id</code> FK</td></tr>
+            <tr><td><code>job_positions</code></td><td><code>JobPosition</code></td><td><code>name</code> unique — shared lookup</td></tr>
+            <tr><td><code>job_advertisements</code></td><td><code>JobAdvertisement</code></td><td>Soft-deletable; <code>skills text[]</code> + GIN; <code>xmin</code></td></tr>
+            <tr><td><code>job_applications</code></td><td><code>JobApplication</code></td><td>Unique (seeker, advertisement); <code>xmin</code></td></tr>
+            <tr><td><code>contacts</code></td><td><code>Contact</code></td><td>Standalone</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </details>
+
+      <details>
+        <summary>Constraints enforced by the database</summary>
+<pre><code>ix_users_email                                          UNIQUE WHERE deleted_at IS NULL
+ix_job_seekers_national_id                              UNIQUE WHERE national_id IS NOT NULL
+ix_job_applications_job_seeker_id_job_advertisement_id  UNIQUE
+ix_cvs_job_seeker_id                                    UNIQUE
+ix_job_positions_name                                   UNIQUE
+ix_roles_name, ix_refresh_tokens_token_hash             UNIQUE
+ix_cvs_skills, ix_job_advertisements_skills             GIN
+ck_job_advertisements_salary_range                      max_salary &gt;= min_salary
+ck_job_advertisements_open_positions                    open_positions &gt; 0</code></pre>
+        <p><code>citext</code> columns: <code>users.email</code>, <code>roles.name</code>,
+        <code>job_positions.name</code> — case-insensitive at the database level. Enums are stored
+        <strong>as text</strong>, so inserting a new member cannot reinterpret existing rows.</p>
+      </details>
+
+      <details>
+        <summary>Modelling notes</summary>
+        <ul>
+          <li>Keys are <strong><code>Guid</code> (UUID v7)</strong>, generated in <code>BaseEntity</code> —
+              time-ordered, so inserts append rather than fragment the index.</li>
+          <li><strong>Soft delete is selective</strong>, applied only to <code>User</code> and
+              <code>JobAdvertisement</code>. Every dependent carries a matching query filter;
+              <strong>zero EF query-filter warnings remain</strong>.</li>
+          <li>Auditing is applied by <code>AuditingSaveChangesInterceptor</code> from an injected
+              <code>TimeProvider</code>, not by hand in each manager.</li>
+          <li>List endpoints return <code>PagedResult&lt;TDto&gt;</code> built by projection. No
+              <code>IQueryable</code> reaches the serializer, and <strong>no DTO exposes
+              <code>PasswordHash</code>, <code>SecurityStamp</code>, <code>DeletedAt</code> or
+              <code>NationalId</code> — Confirmed.</strong></li>
+        </ul>
+      </details>
+    </section>
+
+    <section id="auth">
+      <h2>6. Auth &amp; Wiring Model</h2>
+      <p><strong>One identity table, one auth flow.</strong> <code>AuthController</code>
+      (<code>api/auth</code>) is the sole surface; <code>AuthManager</code> the sole implementation.</p>
+
+      <h3>Sign-in Flow</h3>
+      <pre class="mermaid">
+sequenceDiagram
+  participant Client
+  participant AuthController
+  participant AuthManager
+  participant IPasswordHasher
+  participant ITokenService
+  Client->>AuthController: POST /api/auth/login
+  AuthController->>AuthManager: Send(LoginCommand)
+  AuthManager->>AuthManager: GetForAuthenticationAsync (user + roles)
+  AuthManager->>IPasswordHasher: Verify (PBKDF2-HMAC-SHA512)
+  IPasswordHasher-->>AuthManager: Success / RehashNeeded / Failed
+  AuthManager->>AuthManager: IsActive check
+  AuthManager->>ITokenService: CreateAccessToken + CreateRefreshToken
+  ITokenService-->>AuthManager: access + refresh
+  AuthManager-->>Client: 200 AuthResponse
+      </pre>
+      <p>An unknown email, a wrong password and a disabled account all return the <strong>same 401 with
+      the same body</strong>; the unknown-email path additionally verifies against a constant dummy hash
+      so response timing does not leak account existence.</p>
+
+      <h3>Token lifecycle</h3>
+      <ul>
+        <li>Access token 15 min, refresh token 7 days; <code>TokenOptions</code> validated at startup
+            with <code>ValidateDataAnnotations().ValidateOnStart()</code>.</li>
+        <li><strong>Rotation</strong>: each refresh revokes the presented token and links the replacement
+            via <code>ReplacedById</code>.</li>
+        <li><strong>Reuse detection</strong>: presenting an already-revoked token revokes the entire chain
+            <em>and</em> rotates the user's <code>SecurityStamp</code>.</li>
+        <li><strong>Security stamp validated on every request</strong> — <code>Program.cs:141</code>,
+            <code>OnTokenValidated</code> compares the token's <code>security_stamp</code> and the user's
+            <code>IsActive</code> against the database (60-second cache, invalidated on bump). This makes
+            password change, logout-all, deactivation and theft detection effective
+            <strong>immediately</strong> rather than when the access token expires.</li>
+        <li>A <code>ver</code> claim carries the claim-schema version and <strong>is checked</strong>.</li>
+      </ul>
+
+      <h3>Container Wiring</h3>
+      <pre class="mermaid">
+graph LR
+  P[Program.cs] --> MSDI["Built-in DI (no Autofac)"]
+  MSDI --> App["AddApplicationServices — MediatR + behaviors + managers"]
+  MSDI --> Per["AddPersistenceServices — DbContext + repositories"]
+  MSDI --> Inf["AddInfrastructureServices — token, hasher, storage, identity"]
+  P --> Fb["FallbackPolicy: RequireAuthenticatedUser"]
+  P --> Ex["IExceptionHandler + ProblemDetails"]
+  P --> RL["RateLimiter on api/auth/*"]
+      </pre>
+      <p>Lifetimes: <code>DbContext</code>, managers, rules, repositories and
+      <code>IUserSecurityStateProvider</code> are <strong>scoped</strong>; <code>ITokenService</code>,
+      <code>IPasswordHasher</code>, <code>IStorage</code> and <code>TimeProvider</code> are
+      <strong>singletons</strong> and stateless.</p>
+    </section>
+
+    <section id="dependencies">
+      <h2>7. External Dependencies</h2>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Purpose</th><th>Package</th><th>Version</th><th>Referenced by</th></tr></thead>
+        <tbody>
+          <tr><td>Database</td><td><code>Npgsql.EntityFrameworkCore.PostgreSQL</code></td><td>10.0.3</td><td>Persistence</td></tr>
+          <tr><td>Naming</td><td><code>EFCore.NamingConventions</code></td><td>10.0.0</td><td>Persistence</td></tr>
+          <tr><td>CQRS</td><td><code>MediatR</code></td><td><strong>[12.5.0]</strong></td><td>Application</td></tr>
+          <tr><td>Mapping</td><td><code>Riok.Mapperly</code></td><td>4.3.1</td><td>Application</td></tr>
+          <tr><td>Validation</td><td><code>FluentValidation</code></td><td>11.12.0</td><td>Application</td></tr>
+          <tr><td>Auth</td><td><code>Microsoft.AspNetCore.Authentication.JwtBearer</code></td><td>10.0.10</td><td>WebAPI</td></tr>
+          <tr><td>Hashing</td><td><code>Microsoft.Extensions.Identity.Core</code></td><td>10.0.10</td><td>Infrastructure</td></tr>
+          <tr><td>Object storage</td><td><code>AWSSDK.S3</code></td><td>4.0.101.4</td><td>Infrastructure</td></tr>
+          <tr><td>SOAP</td><td><code>System.ServiceModel.*</code></td><td>6.0.0</td><td>Infrastructure</td></tr>
+          <tr><td>Logging</td><td><code>Serilog.AspNetCore</code>, <code>Serilog.Sinks.Seq</code></td><td>10.0.0 / 9.1.0</td><td>WebAPI</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>External services</h3>
+      <ul>
+        <li><strong>PostgreSQL</strong> — <code>docker-compose.yml</code>, host port 5433.</li>
+        <li><strong>Seq</strong> — optional; an unset <code>Serilog:Seq:ServerUrl</code> skips the sink.</li>
+        <li><strong>Cloudflare R2</strong> — <code>Services/Storage/R2Storage.cs</code>, active when
+            <code>Storage:Provider=R2</code>. Requires <code>DisablePayloadSigning</code> and
+            <code>DisableDefaultChecksumValidation</code> on every request; R2 does not implement the
+            Streaming SigV4 the SDK uses by default.</li>
+        <li><strong>Mernis (KPS) SOAP</strong> — <code>Services/Identity/MernisIdentityVerificationService.cs</code>,
+            active when <code>IdentityVerification:Provider=Mernis</code>, 10-second timeout,
+            <strong>fails closed</strong>. Default is the null implementation, which also fails closed.</li>
+      </ul>
+
+      <h3>Licensing &amp; vulnerability posture</h3>
+      <p>MediatR is bracket-pinned to the last Apache-2.0 release. AutoMapper (15+) and FluentAssertions
+      (8+) are commercial and <strong>not used</strong>. No package in the graph requires a commercial
+      licence. <strong>Confirmed.</strong></p>
+      <p><code>System.Security.Cryptography.Pkcs</code>, <code>System.Drawing.Common</code> and
+      <code>Azure.Identity</code> arrive transitively at versions carrying published advisories (one
+      <strong>critical</strong>, two high). All three are pinned forward under
+      <em>Security — transitive pins</em>. The vulnerable-package scan is clean, and CI fails the build
+      if it stops being clean.</p>
+    </section>
+
+    <section id="risks">
+      <h2>8. Risk Matrix</h2>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Finding</th><th>Evidence</th><th>Tag</th><th>Impact</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>The analyst skill describes a codebase that no longer exists</strong> — .NET 7, MongoDB, Autofac, <code>[SecuredOperation]</code>, "no test project". Every future audit or onboarding session starting from it will be wrong.</td>
+            <td><code>.claude/skills/HRMS-Backend-analyst/SKILL.md</code>, <code>STANDARDS.md</code></td>
+            <td>Confirmed</td><td><span class="badge high">High</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>25 of 58 central package declarations are unused.</strong> Autofac ×3, Castle.Core, AutoMapper ×2, MongoDB.Driver, Serilog.Sinks.MongoDB, FluentValidation.AspNetCore and Dapper are declared but referenced by no project.</td>
+            <td><code>Directory.Packages.props</code> (<em>Transitional</em> group); no <code>using MongoDB/Autofac/Castle/AutoMapper</code> in any <code>.cs</code></td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>No Persistence integration test project.</strong> Repository queries, cascade behaviour and constraint enforcement are covered only indirectly, through the functional suite.</td>
+            <td><code>HRMS.sln</code> lists 2 test projects</td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>R2 storage has never run against a real bucket.</strong> The adapter follows Cloudflare's documented requirements but is unverified.</td>
+            <td><code>Services/Storage/R2Storage.cs</code>; <code>Storage:Provider</code> defaults to <code>Local</code></td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>Mernis verification is unverified.</strong> Requires a government agreement; no test can exercise it. Mitigated by failing closed.</td>
+            <td><code>Services/Identity/MernisIdentityVerificationService.cs</code></td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><strong>Rate limiting partitions on <code>RemoteIpAddress</code> with no forwarded-headers middleware.</strong> Behind a reverse proxy every client collapses into one partition, so one user could exhaust the limit for everyone.</td>
+            <td><code>Program.cs:204</code>; <code>UseForwardedHeaders</code> <em>not found in scanned files</em></td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><strong>No health check endpoint.</strong> Compose declares a healthcheck for Postgres but the API exposes none, so an orchestrator cannot tell a booting instance from a broken one.</td>
+            <td><code>AddHealthChecks</code>/<code>MapHealthChecks</code> <em>not found</em> in <code>Program.cs</code></td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><strong>Security-stamp revocation is only immediate on a single instance.</strong> Scaling out leaves other nodes serving a revoked token for up to the 60-second cache TTL.</td>
+            <td><code>Services/Security/CachedUserSecurityStateProvider.cs</code> (<code>CacheLifetime</code>)</td>
+            <td>Confirmed</td><td><span class="badge medium">Medium</span></td><td><span class="badge medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><strong>Migrations are applied automatically at startup</strong> in Development and Testing. Correctly gated, but two instances booting together in a future non-production environment would race.</td>
+            <td><code>Program.cs:249</code> <code>MigrateAsync</code></td>
+            <td>Confirmed</td><td><span class="badge low">Low</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><strong><code>System.ServiceModel.*</code> 6.0.0 is legacy on .NET 10</strong>, carried solely for the Mernis client, and drags in <code>System.Security.Cryptography.Pkcs</code> (pinned forward to close a high-severity advisory).</td>
+            <td><code>Infrastructure.csproj</code>; <code>Directory.Packages.props</code> security pins</td>
+            <td>Confirmed</td><td><span class="badge low">Low</span></td><td><span class="badge medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td><strong>A development JWT signing key is committed.</strong> Intentional and clearly labelled — it only signs tokens this machine accepts — but it is a pattern that invites copying into a real environment.</td>
+            <td><code>Presentation/WebAPI/appsettings.Development.json</code></td>
+            <td>Confirmed</td><td><span class="badge low">Low</span></td><td><span class="badge low">Low</span></td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td><strong>Swagger has no response-type annotations or XML docs.</strong> The generated contract does not describe status codes or ProblemDetails shapes, so clients must infer them.</td>
+            <td><code>Program.cs</code> <code>AddSwaggerGen</code>; no <code>[ProducesResponseType]</code> in any controller</td>
+            <td>Confirmed</td><td><span class="badge low">Low</span></td><td><span class="badge medium">Medium</span></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p><strong>No High-impact defect was found in the running application.</strong> Finding #1 is High
+      because of its effect on future work, not on runtime behaviour.</p>
+    </section>
+
+    <section id="handoff">
+      <h2>9. Handoff Notes</h2>
+
+      <h3>Immediate, cheap wins</h3>
+      <ol>
+        <li>Rewrite <code>.claude/skills/HRMS-Backend-analyst/SKILL.md</code> and <code>STANDARDS.md</code>
+            against the current stack (finding #1). <code>CLAUDE.md</code> and <code>README.md</code> are
+            already accurate and can serve as the source.</li>
+        <li>Delete the <em>Transitional</em> group and the unused entries from
+            <code>Directory.Packages.props</code> (finding #2). Keep the
+            <em>Security — transitive pins</em> group.</li>
+        <li>Add <code>UseForwardedHeaders</code> and a health check endpoint (findings #6, #7) — both a
+            few lines.</li>
+      </ol>
+
+      <h3>Before any production deployment</h3>
+      <ul>
+        <li>Verify a real R2 upload/download round trip (#4).</li>
+        <li>Decide the rate-limiter partition strategy behind a proxy (#6).</li>
+        <li>Move migrations out of startup into a bundle or init container (#9).</li>
+        <li>Provide <code>TokenOptions:SecurityKey</code> and <code>Seed:AdminPassword</code> as
+            environment variables; startup fails fast without them.</li>
+      </ul>
+
+      <h3>Out of scope for this audit</h3>
+      <p>Proposed but not evaluated here: the Persistence integration test project (#3), a distributed
+      cache for multi-instance stamp revocation (#8), and Swagger response annotations (#12).</p>
+
+      <h3>Test coverage baseline</h3>
+      <div class="scroll">
+      <table>
+        <thead><tr><th>Suite</th><th>Tests</th><th>Scope</th></tr></thead>
+        <tbody>
+          <tr><td><code>HRMS.Application.UnitTests</code></td><td>37</td><td>Pipeline behaviors, exceptions, CV file validation and access rules, local storage</td></tr>
+          <tr><td><code>HRMS.WebAPI.FunctionalTests</code></td><td>19</td><td>Real HTTP against a Testcontainers PostgreSQL: hiring lifecycle, token lifecycle, security smoke, rate limiting</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>56</strong></td><td><code>dotnet test</code> green; build clean with warnings-as-errors</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>The most load-bearing test is
+      <code>SecuritySmokeTests.EveryAnonymousEndpoint_Should_BeOnThePublicAllowList</code>: it enumerates
+      the live <code>EndpointDataSource</code>, so a newly-added anonymous endpoint fails the build until
+      somebody records the decision.</p>
+    </section>
+  </main>
+
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+</body>
+</html>

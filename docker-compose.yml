@@ -36,11 +36,27 @@ services:
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
+      # Required since Seq 2024.3: on first run the server refuses to start unless it is given an
+      # admin password or told explicitly to run without authentication. Without one of the two it
+      # crashes in its own bootstrapper and `restart: unless-stopped` hides that as a restart loop.
+      # Open access is fine here and only here: this is a throwaway local log viewer. Do not copy
+      # this into anything reachable from another machine — use SEQ_FIRSTRUN_ADMINPASSWORD there.
+      # Note the value is "True", not "Y": ACCEPT_EULA is a flag Seq reads loosely, but the firstRun
+      # overrides are typed and parsed with Convert.ChangeType, so "Y" throws a FormatException.
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
     ports:
       - "5341:5341"   # ingestion
       - "8081:80"     # UI -> http://localhost:8081
     volumes:
       - hrms-seqdata:/data
+    # Seq is optional for the app (an unset ServerUrl just skips the sink), so a broken Seq must not
+    # be silently ignored the way it was before this healthcheck existed.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # TRANSITIONAL — deleted in Phase 3 together with MongoDB.Driver and Serilog.Sinks.MongoDB.
   # Present only so the app is actually runnable during Phases 1-2, which lets the cross-cutting

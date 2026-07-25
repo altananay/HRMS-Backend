@@ -17,7 +17,7 @@ docker compose up -d
 dotnet run --project Presentation/WebAPI
 ```
 
-Swagger: `https://localhost:xxxx/swagger` · Seq (loglar): `http://localhost:8081`
+Swagger: `https://localhost:7129/swagger` (tarayıcı otomatik açılır) · Seq (loglar): `http://localhost:8081`
 
 Migration'lar ve seed verisi Development'ta **otomatik** uygulanır. Seed edilen yönetici hesabı
 `appsettings.Development.json` içindedir.

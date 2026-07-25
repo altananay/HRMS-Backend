@@ -9,7 +9,7 @@ This is a standard Claude Code project skill living at `.claude/skills/HRMS-Back
 handles discovery and invocation natively — there is no separate orchestration layer to maintain:
 
 - **Automatic**: Claude loads it when a prompt matches `SKILL.md`'s `description`/`when_to_use` (e.g. "audit
-  the app", "map the endpoints", "baseline before the .NET 10 migration").
+  the app", "map the endpoints", "check the auth model").
 - **Manual**: type `/HRMS-Backend-analyst` (the command name comes from the directory name, not the
   frontmatter `name` field — keep the two in sync anyway).
 - **Via the subagent**: `.claude/agents/HRMS-Backend-analyst.md` is a thin subagent whose whole job is to
@@ -26,49 +26,96 @@ handles discovery and invocation natively — there is no separate orchestration
 | `STANDARDS.md` | Output templates (HTML/MD scaffolds), syntax rules, and the File Creation Validation Checklist. Loaded when generating/validating output. |
 | `INSTRUCTIONS.md` (this file) | Maintenance notes only — not part of the audit procedure. |
 
-## Keeping the skill, agent, and CLAUDE.md in sync
+---
 
-Three artifacts describe this codebase and can drift apart:
+## The drift problem — read this before editing anything
+
+**This skill has already gone stale once, badly.** It was written against a .NET 7 / MongoDB / Autofac
+codebase. That codebase was then migrated to .NET 10 / PostgreSQL / EF Core, the aspects and the service
+locator were deleted, the managers moved from `Persistence` into `Application`, tests appeared, and the
+skill kept asserting the old world as fact — including the line *"a .NET 10 modernization is planned but
+not started"*, long after it had landed.
+
+An audit run against that skill would have produced a confident, thoroughly-formatted, **completely wrong**
+report. What saved it was the Evidence Rules: *validate by reading file content*, *confirm from the
+filesystem, never from memory*. The auditor read the code, saw the contradiction, and reported the skill
+itself as finding #1.
+
+Two things follow, and both are now baked into `SKILL.md`:
+
+1. **The Project Context is labelled a map, not evidence.** Step 1 re-confirms it and treats any
+   contradiction as finding #1. Do not remove that framing — it is the safety net.
+2. **Step 7 checks documentation drift as a standing audit area**, alongside security and dependencies.
+   The skill audits itself every run.
+
+When you change the architecture, update the docs in the same change. There are **four** artifacts and
+they drift apart quietly:
+
 - `.claude/skills/HRMS-Backend-analyst/SKILL.md` + `STANDARDS.md` (this skill)
 - `.claude/agents/HRMS-Backend-analyst.md` (the subagent that runs it)
-- root `CLAUDE.md` (the always-loaded project standards)
+- root `CLAUDE.md` (always-loaded project standards)
+- root `README.md` (the human-facing entry point)
 
-When the architecture changes, update all three in the same change. The agent's `Approach`, `Output File`,
-and `Constraints` mirror the skill's Procedure and Output Location — a change to one usually implies the other.
+---
 
 ## Repo-specific caveats to keep in sync with SKILL.md
 
-- **This is a backend-only Web API** (`[ApiController]` + attribute routing), *not* an MVC/Razor app and
-  *not* a backend-with-companion-frontend split in this repo. The only frontend reference is the Netlify
-  origin in the CORS policy. There is nothing to inventory beyond Swagger.
-- **The database is MongoDB, not a relational store.** There is no EF Core, no `DbContext`, and **no
-  migrations** — the `Domain/Entities` classes are the schema record. Step 4 must read the entity classes
-  and repositories, not look for a migrations folder. If the project ever adopts EF/SQL, Step 4 needs rewriting.
-- **Business logic lives in `Persistence/Concretes/*Manager`, not in `Application`.** This is an unusual
-  Onion variant. Step 3 must read the managers in the Persistence project. If managers ever move into
-  Application (a likely modernization cleanup), update Steps 3 and 5.
-- **Wiring is a hybrid: Autofac is the root, MS-DI supplements it, and `ServiceTool` is a service locator
-  used by aspects.** If the project drops Autofac (e.g. moves aspects to MediatR pipeline behaviors during
-  the .NET 10 migration), Step 5 and the wiring diagram in STANDARDS.md need updating.
-- **Authorization is enforced by the `[SecuredOperation]` aspect on manager methods, and several are
-  commented out.** Step 2's "effective auth" resolution and Step 7's authorization finding exist precisely
-  because of this. Do not report auth from the controller — read the manager. If the project switches to
-  `[Authorize]`/policy-based auth, update Rule 5 in STANDARDS.md.
-- **There is no test project.** Step 6 headlines its absence. If a test project is ever added, Step 6 becomes
-  a real coverage-gap audit (list untested managers/rules/validators) rather than an absence finding.
-- **Baseline Versions must move with the codebase.** They currently sit at .NET 7 / MongoDB.Driver 2.19.0 /
-  MediatR 12.0.1 / AutoMapper 12.0.1 / FluentValidation 11.5.1 / Autofac 7.0.0, matching the `.csproj` files.
-  **When the .NET 10 migration lands, update the Baseline Versions table and remove the "net7.0 EOL"
-  finding** — otherwise the skill will keep reporting the migrated state against a stale baseline.
-- **No Central Package Management.** Versions are inline in each `.csproj`. The "no `Version` attribute"
-  check that some analyst skills use does **not** apply here — instead the skill checks for version drift
-  between projects. If a `Directory.Packages.props` is introduced, flip Step 1 to the CPM check.
-- **Secrets are gitignored, not committed.** `appsettings.json` / `appsettings.Production.json` hold the
-  Mongo connection string, `TokenOptions:SecurityKey`, and Azure/Seq/Mernis settings; only
-  `appsettings.Development.json` (logging only) is committed. Step 1 confirms this from `.gitignore` and must
-  never read the gitignored files.
-- **Only the app is here — no Dockerfile, no CI.** Step 7's operational-readiness finding asserts this from
-  the filesystem; if a `Dockerfile` or `.github/workflows` is added, that finding changes.
+These are the points where a generic .NET audit would get this codebase wrong.
+
+- **This is a backend-only Web API** (`[ApiController]` + attribute routing), not MVC/Razor and not a
+  repo with a companion frontend. The only frontend reference is an origin in the CORS allow-list.
+  Nothing to inventory beyond Swagger.
+- **The database is PostgreSQL via EF Core, and migrations are the schema record.** Step 4 must read
+  `Persistence/Migrations` and `Persistence/Configurations`, not infer schema from entity classes —
+  the configurations carry the constraints, indexes and query filters that the entities do not.
+- **Business logic lives in `Core/Application/Services/*Manager`, not in Persistence.** Managers depend
+  only on repository interfaces, which is what keeps the database provider out of Application. If a
+  manager ever gains an EF Core `using`, that is a layering finding, not a style nit.
+- **Repositories are per-aggregate with intention-revealing methods — deliberately not generic CRUD.**
+  That choice exists so handlers and managers can be unit-tested by substituting a small interface;
+  a generic `IRepository<T>` or an exposed `DbSet` would undo it. No `IQueryable` crosses a layer
+  boundary; list endpoints return `PagedResult<TDto>` built by projection.
+- **Wiring is the built-in container only.** No Autofac, no Castle DynamicProxy, no service locator.
+  Cross-cutting concerns are MediatR `IPipelineBehavior`s. If AOP interception reappears, Step 5 and
+  the wiring diagram in `STANDARDS.md` need rewriting.
+- **Authorization is deny-by-default and multi-layered.** A global `FallbackPolicy` requires an
+  authenticated user; `[AllowAnonymous]` opts out; role attributes narrow further; and *ownership* is
+  checked inside the managers because "is this my advertisement?" is a data question. Step 2 must
+  resolve the whole chain. **Rule 5 in `STANDARDS.md` carries the class-level-`[AllowAnonymous]`
+  trap — do not delete it.**
+- **The security stamp is validated on every request.** This is what makes revocation immediate rather
+  than eventual. A previous version wrote the `security_stamp` claim into every token and validated it
+  nowhere, which made "log out everywhere", password change, deactivation and refresh-token theft
+  detection all silently no-ops for the life of the access token. Step 5 verifies the check still
+  exists; treat its removal as High.
+- **`SecuritySmokeTests` is load-bearing.** It enumerates the live `EndpointDataSource`, so a newly
+  anonymous endpoint fails the build unless it is added to a reviewed allow-list. That turns "this is
+  deliberately public" into a decision somebody signs off on. If it is ever weakened, the deny-by-default
+  posture quietly stops being enforced.
+- **Central Package Management is in force.** Versions live only in `Directory.Packages.props`. The
+  "version drift between projects" check does **not** apply — the useful checks are orphaned
+  declarations and vulnerable transitives. Note the file also carries deliberate **transitive security
+  pins**; those are not orphans and must not be pruned.
+- **MediatR is bracket-pinned to `[12.5.0]`** because 13+ is commercially licensed. Widening that range
+  is a licensing finding, not a version bump. The same applies to AutoMapper (15+) and FluentAssertions
+  (8+), which is why neither is used.
+- **`appsettings.json` and `appsettings.Development.json` are committed and secret-free.** They used to
+  be gitignored, which is exactly why the project could not be cloned and run. Reading them is fine;
+  copying a signing key or seed password into an output file is not.
+- **Tests, Docker and CI all exist now.** Step 6 is a coverage-*gap* analysis, not an absence finding.
+  Step 7's operational-readiness check looks for what is missing *within* that setup — a health check
+  endpoint, forwarded-headers handling — not for the absence of a pipeline.
+- **Two integrations are implemented but unverified against a real endpoint**: Cloudflare R2 storage and
+  the Mernis SOAP client. Both fail closed and both default to off. Report them as verification gaps,
+  not as defects, until somebody exercises them.
+
+---
+
+## Baseline versions
+
+`SKILL.md` carries the expected version table. **Update it whenever `Directory.Packages.props` moves**,
+or the skill will report the current state against a stale baseline — the failure mode this whole file
+exists to prevent.
 
 ## Adding another skill to this project
 
