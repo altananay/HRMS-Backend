@@ -1,118 +1,68 @@
-﻿using Application.Abstractions;
 using Application.Features.JobApplications.Commands;
 using Application.Features.JobApplications.Queries;
-using MediatR;
+using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.JobApplications.Commands.CreateJobApplicationCommand;
-using static Application.Features.JobApplications.Commands.DeleteJobApplicationCommand;
-using static Application.Features.JobApplications.Commands.UpdateJobApplicationCommand;
-using static Application.Features.JobApplications.Queries.GetAllByEmployerIdJobApplicationQuery;
-using static Application.Features.JobApplications.Queries.GetAllByJobSeekerIdJobApplicationQuery;
-using static Application.Features.JobApplications.Queries.GetAllJobApplicationQuery;
-using static Application.Features.JobApplications.Queries.GetByIdJobApplicationQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize]
-    public class JobApplicationsController : ControllerBase
+    public class JobApplicationsController : ApiControllerBase
     {
-        IMediator _mediator;
-
-        public JobApplicationsController(IMediator mediator, IJobApplicationService jobApplicationService)
-        {
-            _mediator = mediator;
-        }
-
+        /// <summary>
+        /// Applications, scoped to whoever is asking.
+        /// </summary>
+        /// <remarks>
+        /// A job seeker sees only their own and an employer only those against their own
+        /// advertisements — the filter is derived from the token rather than from a route parameter.
+        /// Previously <c>getallbyemployerid/{id}</c> and <c>getallbyjobseekerid/{id}</c> took the id
+        /// from the URL with no ownership check and no authentication at all, so anyone could read
+        /// anyone's applications by iterating ids.
+        /// </remarks>
         [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] GetAllJobApplicationQuery query)
         {
-            GetAllJobApplicationQueryResponse response = await _mediator.Send(new GetAllJobApplicationQuery { });
-            if (response.JobApplications.IsSuccess)
+            if (User.IsInRole(Roles.Employer))
             {
-                return Ok(response.JobApplications);
+                query.EmployerId = CurrentUserId;
+                query.JobSeekerId = null;
             }
-            return BadRequest(response.JobApplications);
+            else if (User.IsInRole(Roles.JobSeeker))
+            {
+                query.JobSeekerId = CurrentUserId;
+                query.EmployerId = null;
+            }
+
+            // Admins see everything, so their filters are left as supplied.
+            return Ok((await Mediator.Send(query)).Result);
         }
 
-        [HttpGet("getallbyemployerid/{id}")]
-        public async Task<IActionResult> GetAllByEmployerId(string id)
-        {
-            GetAllByEmployerIdJobApplicationQueryResponse response = await _mediator.Send(new GetAllByEmployerIdJobApplicationQuery { Id = id });
-            if (response.JobApplications.IsSuccess)
-            {
-                return Ok(response.JobApplications);
-            }
-            return BadRequest(response.JobApplications);
-        }
+        [HttpGet("getbyid/{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+            => Ok((await Mediator.Send(new GetByIdJobApplicationQuery { Id = id })).Result);
 
-        [HttpGet("getallbyjobseekerid/{id}")]
-        public async Task<IActionResult> GetAllByJobSeekerId(string id)
-        {
-            GetAllByJobSeekerIdJobApplicationQueryResponse response = await _mediator.Send(new GetAllByJobSeekerIdJobApplicationQuery { Id= id });
-            if (response.JobApplications.IsSuccess)
-            {
-                return Ok(response.JobApplications);
-            }
-            return BadRequest(response.JobApplications);
-        }
-
-        [HttpGet("getbyid/{id}")]
-        public async Task<IActionResult> GetById(string id)
-        {
-            GetByIdJobApplicationQueryResponse response = await _mediator.Send(new GetByIdJobApplicationQuery { Id = id });
-            if (response.JobApplication.IsSuccess)
-            {
-                return Ok(response.JobApplication);
-            }
-            return BadRequest(response.JobApplication);
-        }
-
-        [HttpGet("getresultbyid/{id}")]
-        public async Task<IActionResult> GetResultById(string id)
-        {
-            var result = await _mediator.Send(new GetResultByIdJobApplicationQuery { Id= id });
-            if (result.Result.IsSuccess)
-            {
-                return Ok(result.Result);
-            }
-            return BadRequest(result);
-        }
-
+        [Authorize(Roles = Roles.JobSeeker)]
         [HttpPost("add")]
-        public async Task<IActionResult> Add(CreateJobApplicationCommand jobApplication)
+        public async Task<IActionResult> Add(CreateJobApplicationCommand command)
         {
-            CreateJobApplicationCommandResponse response = await _mediator.Send(jobApplication);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
+            command.JobSeekerId = CurrentUserId;
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
-        [HttpDelete("deletebyid/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteJobApplicationCommandResponse response = await _mediator.Send(new DeleteJobApplicationCommand { Id = id });
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
+        /// <summary>Employer-side moderation: set the status and leave a note.</summary>
+        [Authorize(Roles = Roles.Employer)]
         [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateJobApplicationCommand jobApplication)
+        public async Task<IActionResult> Update(UpdateJobApplicationCommand command)
         {
-            
-            UpdateJobApplicationCommandResponse response = await _mediator.Send(jobApplication);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
+            command.EmployerId = CurrentUserId;
+
+            return Ok((await Mediator.Send(command)).Result);
         }
+
+        [Authorize(Roles = Roles.Admin)]
+        [HttpDelete("deletebyid/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteJobApplicationCommand { Id = id })).Result);
     }
 }

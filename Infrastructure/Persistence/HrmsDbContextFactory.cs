@@ -17,8 +17,10 @@ namespace Persistence
     /// </remarks>
     public sealed class HrmsDbContextFactory : IDesignTimeDbContextFactory<HrmsDbContext>
     {
+        // Port 5433 matches docker-compose.yml, which deliberately avoids 5432 so it cannot collide
+        // with a natively-installed PostgreSQL service.
         private const string DefaultConnectionString =
-            "Host=localhost;Port=5432;Database=hrms;Username=hrms;Password=hrms";
+            "Host=localhost;Port=5433;Database=hrms;Username=hrms;Password=hrms";
 
         public HrmsDbContext CreateDbContext(string[] args)
         {

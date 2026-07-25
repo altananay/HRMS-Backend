@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -35,7 +35,7 @@ namespace Persistence.Configurations
             // xmin is a PostgreSQL system column, so optimistic concurrency costs no extra storage.
             // A stale update now raises DbUpdateConcurrencyException (mapped to 409) instead of
             // silently winning, which is what the old read-then-replace-whole-document flow did.
-            builder.UseXminAsConcurrencyToken();
+            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
 
             builder.HasQueryFilter(user => user.DeletedAt == null);
 

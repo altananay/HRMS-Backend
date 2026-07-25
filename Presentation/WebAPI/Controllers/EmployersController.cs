@@ -1,97 +1,50 @@
-﻿using Application.Abstractions;
 using Application.Features.Employers.Commands;
 using Application.Features.Employers.Queries;
-using MediatR;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.Employers.Commands.DeleteEmployerCommand;
-using static Application.Features.Employers.Commands.UpdateEmployerCommand;
-using static Application.Features.Employers.Queries.GetAllEmployerOrderByNumberOfEmployeesQuery;
-using static Application.Features.Employers.Queries.GetAllEmployerQuery;
-using static Application.Features.Employers.Queries.GetByEmailEmployerQuery;
-using static Application.Features.Employers.Queries.GetByIdEmployerQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize]
-    public class EmployersController : ControllerBase
+    public class EmployersController : ApiControllerBase
     {
+        /// <remarks>
+        /// Returns <c>EmployerDto</c>. This endpoint used to serialize the entity directly to
+        /// anonymous callers, so <c>PasswordHash</c> and <c>PasswordSalt</c> went out with every
+        /// record.
+        /// </remarks>
+        [Authorize(Roles = Roles.Admin)]
+        [HttpGet("getall")]
+        public async Task<IActionResult> GetAll([FromQuery] GetAllEmployerQuery query)
+            => Ok((await Mediator.Send(query)).Result);
 
-        private readonly IMediator _mediator;
+        [AllowAnonymous]
+        [HttpGet("getbyemployerid/{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+            => Ok((await Mediator.Send(new GetByIdEmployerQuery { Id = id })).Result);
 
-        public EmployersController(IMediator mediator)
+        /// <remarks>Was <c>POST getbyemail</c> — a read modelled as a POST.</remarks>
+        [Authorize(Roles = Roles.Admin)]
+        [HttpGet("getbyemail")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+            => Ok((await Mediator.Send(new GetByEmailEmployerQuery { Email = email })).Result);
+
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateEmployerCommand command)
         {
-            _mediator = mediator;
+            // An employer may only edit itself; an admin may edit anyone.
+            if (!User.IsInRole(Roles.Admin))
+            {
+                command.Id = CurrentUserId;
+            }
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
         [Authorize(Roles = Roles.Admin)]
-        [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllEmployerQueryResponse response = await _mediator.Send(new GetAllEmployerQuery { });
-            if (response.Employers.IsSuccess)
-            {
-                return Ok(response.Employers);
-            }
-            return BadRequest(response.Employers);
-        }
-
-        [HttpGet("getallorderbynumberofemployees")]
-        public async Task<IActionResult> GetAllByHighestNumberOfEmployees()
-        {
-            GetAllEmployerOrderByNumberOfEmployeesQueryResponse response = await _mediator.Send(new GetAllEmployerOrderByNumberOfEmployeesQuery { });
-            if (response.Employers.IsSuccess)
-            {
-                return Ok(response.Employers);
-            }
-            return BadRequest(response.Employers);
-        }
-
-        [HttpDelete("deletebyid/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteEmployerCommandResponse response = await _mediator.Send(new DeleteEmployerCommand { Id = id});
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
-        [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateEmployerCommand employer)
-        {
-            UpdateEmployerCommandResponse response = await _mediator.Send(employer);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
-        [HttpGet("getbyemployerid/{id}")]
-        public async Task<IActionResult> GetById(string id)
-        {
-            GetByIdEmployerQueryResponse response = await _mediator.Send(new GetByIdEmployerQuery { Id = id});
-            if (response.Employer.IsSuccess)
-            {
-                return Ok(response.Employer);
-            }
-            return BadRequest(response.Employer);
-        }
-
-        [HttpPost("getbyemail")]
-        public async Task<IActionResult> GetByEmail(GetByEmailEmployerQuery email)
-        {
-            GetByEmailEmployerQueryResponse response = await _mediator.Send(email);
-            if (response.Employer.IsSuccess)
-            {
-                return Ok(response.Employer);
-            }
-            return BadRequest(response.Employer);
-        }
+        [HttpDelete("deletebyid/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteEmployerCommand { Id = id })).Result);
     }
 }

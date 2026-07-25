@@ -1,35 +1,20 @@
-﻿using Application.Abstractions;
 using Application.Features.Users.Queries;
-using MediatR;
-using Microsoft.AspNetCore.Http;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.Users.Queries.GetAllUserQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize(Roles = Roles.Admin)]
-    public class UsersController : ControllerBase
+    public class UsersController : ApiControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public UsersController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
+        /// <remarks>
+        /// Admin-only and projected to <c>UserSummaryDto</c>. It was anonymous before, and under the
+        /// old model returned bare ObjectIds — <c>User</c> was an empty marker entity whose only
+        /// purpose was to mint an id for the three actor collections.
+        /// </remarks>
         [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllUserQueryResponse response = await _mediator.Send(new GetAllUserQuery { });
-            if (response.Users.IsSuccess)
-            {
-                return Ok(response.Users);
-            }
-            return BadRequest(response.Users);
-        }
+        public async Task<IActionResult> GetAll([FromQuery] GetAllUserQuery query)
+            => Ok((await Mediator.Send(query)).Result);
     }
 }

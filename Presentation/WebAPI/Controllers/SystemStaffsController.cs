@@ -1,83 +1,36 @@
-﻿using Application.Features.JobSeekers.Queries;
 using Application.Features.SystemStaffs.Commands;
 using Application.Features.SystemStaffs.Queries;
-using MediatR;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.SystemStaffs.Commands.CreateSystemStaffCommand;
-using static Application.Features.SystemStaffs.Commands.DeleteSystemStaffCommand;
-using static Application.Features.SystemStaffs.Commands.UpdateSystemStaffCommand;
-using static Application.Features.SystemStaffs.Queries.GetAllSystemStaffQuery;
-using static Application.Features.SystemStaffs.Queries.GetByIdSystemStaffQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize(Roles = Roles.Admin)]
-    public class SystemStaffsController : ControllerBase
+    public class SystemStaffsController : ApiControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public SystemStaffsController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
         [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllSystemStaffQueryResponse response = await _mediator.Send(new GetAllSystemStaffQuery { });
-            if (response.SystemStaffs.IsSuccess)
-            {
-                return Ok(response.SystemStaffs);
-            }
-            return BadRequest(response.SystemStaffs);
-        }
+        public async Task<IActionResult> GetAll([FromQuery] GetAllSystemStaffQuery query)
+            => Ok((await Mediator.Send(query)).Result);
 
-        [HttpPost("add")]
-        public async Task<IActionResult> Add(CreateSystemStaffCommand systemStaff)
-        {
-            CreateSystemStaffCommandResponse response = await _mediator.Send(systemStaff);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
-        [HttpDelete("deletebyid/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteSystemStaffCommandResponse response = await _mediator.Send(new DeleteSystemStaffCommand { Id = id});
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+            => Ok((await Mediator.Send(new GetByIdSystemStaffQuery { Id = id })).Result);
 
         [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateSystemStaffCommand systemStaff)
-        {
-            UpdateSystemStaffCommandResponse response = await _mediator.Send(systemStaff);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
+        public async Task<IActionResult> Update(UpdateSystemStaffCommand command)
+            => Ok((await Mediator.Send(command)).Result);
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
-        {
-            GetByIdSystemStaffQueryResponse response = await _mediator.Send(new GetByIdSystemStaffQuery { Id = id});
-            if (response.SystemStaff.IsSuccess)
-            {
-                return Ok(response.SystemStaff);
-            }
-            return BadRequest(response.SystemStaff);
-        }
+        [HttpDelete("deletebyid/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteSystemStaffCommand { Id = id })).Result);
+
+        // Staff creation moves to POST /api/auth/register/system-staff in Phase 4.
+        //
+        // It cannot live here as a plain CRUD add: creating a staff member means creating a User
+        // with a password hash and a role assignment. The old POST add went through
+        // SystemStaffAuthManager.Register, which carried [ValidationAspect(typeof(
+        // CreateSystemStaffCommand))] — a MediatR command passed where an IValidator was expected,
+        // so ValidationAspect's constructor threw before the method could run at all.
     }
 }

@@ -31,21 +31,26 @@ public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
     /// <summary>Routes that are intentionally reachable without a token.</summary>
     private static readonly string[] PublicEndpoints =
     [
-        "api/Auth/login",
-        "api/Auth/register",
-        "api/EmployerAuth/login",
-        "api/EmployerAuth/register",
-        "api/SystemStaffAuth/login",
-        "api/Mernis/checkperson",
-        "api/Contacts",                       // public contact form (POST)
+        // Public contact form.
+        "api/Contacts",
+
+        // The job board itself. Browsing listings must not require an account — this is the
+        // product's entire front page.
         "api/JobAdvertisements/getall",
-        "api/JobAdvertisements/getallorderbysalary",
-        "api/JobAdvertisements/getallbystatus",
-        "api/JobAdvertisements/getbyid/{id}",
-        "api/JobAdvertisements/getbyemployerid/{id}",
-        "api/JobAdvertisements/getbyemployerid/{id}/{status}",
+        "api/JobAdvertisements/getbyid/{id:guid}",
+
+        // Position lookup, needed to render the board's filters.
         "api/JobPosition/getall",
-        "api/JobPosition/getbyid/{id}"
+        "api/JobPosition/getbyid/{id:guid}",
+
+        // Company profile behind a listing. Returns EmployerDetailDto, which carries no password
+        // material and no national ID.
+        "api/Employers/getbyemployerid/{id:guid}"
+
+        // The auth endpoints are absent because the three legacy auth controllers were deleted in
+        // Phase 3; Phase 4 adds a single AuthController and its routes get reviewed onto this list
+        // then. Until then the API has no way to authenticate, which this suite asserts by
+        // expecting 401 rather than by skipping.
     ];
 
     private IReadOnlyList<(string Route, bool AllowsAnonymous)> GetEndpoints()

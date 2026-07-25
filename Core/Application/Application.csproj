@@ -1,36 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    TRANSITIONAL: replaces PackageReference Microsoft.AspNetCore.Http 2.2.2 (an ASP.NET Core 2.2-era
-    package that has no business in a net10.0 app). Application currently needs ASP.NET types because
-    UploadCvFileCommand takes IFormFileCollection and SecuredOperation resolves IHttpContextAccessor.
-    Phase 2 removes the aspect and Phase 3 moves file upload behind an abstraction; this
-    FrameworkReference is deleted at that point.
+    No FrameworkReference and no MongoDB.Driver any more.
+
+    Microsoft.AspNetCore.App was a transitional reference needed because UploadCvFileCommand took an
+    IFormFileCollection and SecuredOperation resolved IHttpContextAccessor. Both are gone: the
+    aspect was deleted in Phase 2, and file upload now crosses the boundary as a plain
+    FileUploadRequest defined in Application, with the ASP.NET binding staying in the controller.
+
+    Application therefore knows nothing about ASP.NET, EF Core, Npgsql or any database driver — it
+    depends only on Domain plus mediation, validation and mapping libraries.
   -->
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" />
-    <PackageReference Include="FluentValidation.AspNetCore" />
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="MediatR" />
-    <!-- The Microsoft.Extensions.* packages that used to be listed here are provided by the
-         Microsoft.AspNetCore.App shared framework above (NU1510). Once the FrameworkReference is
-         dropped in Phase 3, Configuration/DependencyInjection/Logging Abstractions come back as
-         explicit references. -->
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Extensions.Logging" />
-  </ItemGroup>
 
-  <!-- Transitional: removed in Phase 3 (AutoMapper -> Mapperly, MongoDB -> EF Core). -->
-  <ItemGroup>
-    <PackageReference Include="AutoMapper" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" />
-    <PackageReference Include="MongoDB.Driver" />
+    <!-- Source generator: compile-time mapping, no runtime reflection, unmapped members are errors.
+         Referenced without asset restrictions: Mapperly ships the [Mapper] attributes alongside the
+         generator, so excluding compile assets makes the attributes themselves unresolvable. -->
+    <PackageReference Include="Riok.Mapperly" />
   </ItemGroup>
 
   <ItemGroup>

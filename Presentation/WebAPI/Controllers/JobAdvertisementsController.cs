@@ -1,140 +1,55 @@
-﻿using Application.Features.JobAdvertisements.Commands;
+using Application.Features.JobAdvertisements.Commands;
 using Application.Features.JobAdvertisements.Queries;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.JobAdvertisements.Commands.CreateJobAdvertisementCommand;
-using static Application.Features.JobAdvertisements.Commands.DeleteJobAdvertisementCommand;
-using static Application.Features.JobAdvertisements.Commands.UpdateJobAdvertisementCommand;
-using static Application.Features.JobAdvertisements.Queries.GetAllByStatusJobAdvertisementQuery;
-using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementQuery;
-using static Application.Features.JobAdvertisements.Queries.GetAllJobAdvertisementsOrderByHighestSalaryQuery;
-using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdJobAdvertisementQuery;
-using static Application.Features.JobAdvertisements.Queries.GetByEmployerIdWithStatusJobAdvertisementQuery;
-using static Application.Features.JobAdvertisements.Queries.GetByIdJobAdvertisementQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
+    /// <remarks>
+    /// The six near-identical GET endpoints (getall, getallbystatus, getallorderbysalary,
+    /// getbyemployerid, getbyemployerid/{id}/{status}) collapse into one parameterised query. Two of
+    /// the originals also passed an employer id to <c>JobAdvertisementExists</c>, which validates
+    /// advertisement ids — so they threw for every caller.
+    /// </remarks>
     [Authorize]
-    public class JobAdvertisementsController : ControllerBase
+    public class JobAdvertisementsController : ApiControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public JobAdvertisementsController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
         [AllowAnonymous]
         [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllJobAdvertisementQueryResponse response = await _mediator.Send(new GetAllJobAdvertisementQuery { });
-            if (response.JobAdvertisements.IsSuccess)
-            {
-                return Ok(response.JobAdvertisements);
-            }
-            return BadRequest(response.JobAdvertisements);
-        }
+        public async Task<IActionResult> GetAll([FromQuery] GetAllJobAdvertisementQuery query)
+            => Ok((await Mediator.Send(query)).Result);
 
         [AllowAnonymous]
-        [HttpGet("getallorderbysalary")]
-        public async Task<IActionResult> GetAllByHighestSalary()
-        {
-            GetAllJobAdvertisementsOrderByHighestSalaryQueryResponse response = await _mediator.Send(new GetAllJobAdvertisementsOrderByHighestSalaryQuery { });
-            if (response.JobAdvertisements.IsSuccess)
-            {
-                return Ok(response.JobAdvertisements);
-            }
-            return BadRequest(response.JobAdvertisements);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("getallbystatus")]
-        public async Task<IActionResult> GetAllByStatus(bool status)
-        {
-            GetAllByStatusJobAdvertisementQueryResponse response = await _mediator.Send(new GetAllByStatusJobAdvertisementQuery { Status = status });
-            if (response.JobAdvertisements.IsSuccess)
-            {
-                return Ok(response.JobAdvertisements);
-            }
-            return BadRequest(response.JobAdvertisements);
-        }
+        [HttpGet("getbyid/{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+            => Ok((await Mediator.Send(new GetByIdJobAdvertisementQuery { Id = id })).Result);
 
         [Authorize(Roles = Roles.Employer)]
         [HttpPost("add")]
-        public async Task<IActionResult> Add([FromBody] CreateJobAdvertisementCommand jobAdvertisement)
+        public async Task<IActionResult> Add(CreateJobAdvertisementCommand command)
         {
-            CreateJobAdvertisementCommandResponse response = await _mediator.Send(jobAdvertisement);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
+            // Taken from the token, never the body. It used to be a client-supplied field, so any
+            // caller could publish an advertisement in any employer's name.
+            command.EmployerId = CurrentUserId;
 
-        [Authorize(Roles = Roles.Employer)]
-        [HttpDelete("deletebyid/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteJobAdvertisementCommandResponse response = await _mediator.Send(new DeleteJobAdvertisementCommand { Id = id });
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("getbyemployerid/{id}")]
-        public async Task<IActionResult> GetByEmployerId(string id)
-        {
-            GetByEmployerIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByEmployerIdJobAdvertisementQuery { Id = id });
-            if (response.JobAdvertisement.IsSuccess)
-            {
-                return Ok(response.JobAdvertisement);
-            }
-            return BadRequest(response.JobAdvertisement);
-        }
-
-        [AllowAnonymous]
-        [HttpGet("getbyemployerid/{id}/{status}")]
-        public async Task<IActionResult> GetByEmployerIdWithStatus(string id, bool status)
-        {
-            GetByEmployerIdWithStatusJobAdvertisementQueryResponse response = await _mediator.Send(new GetByEmployerIdWithStatusJobAdvertisementQuery { Id = id, Status = status });
-            if (response.JobAdvertisement.IsSuccess)
-            {
-                return Ok(response.JobAdvertisement);
-            }
-            return BadRequest(response.JobAdvertisement);
+            return Ok((await Mediator.Send(command)).Result);
         }
 
         [Authorize(Roles = Roles.Employer)]
         [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateJobAdvertisementCommand jobAdvertisement)
+        public async Task<IActionResult> Update(UpdateJobAdvertisementCommand command)
         {
-            UpdateJobAdvertisementCommandResponse response = await _mediator.Send(jobAdvertisement);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
+            // The service compares this against the advertisement's owner and throws Forbidden on a
+            // mismatch, so an employer cannot edit someone else's listing.
+            command.EmployerId = CurrentUserId;
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
-        [AllowAnonymous]
-        [HttpGet("getbyid/{id}")]
-        public async Task<IActionResult> GetById(string id)
-        {
-            GetByIdJobAdvertisementQueryResponse response = await _mediator.Send(new GetByIdJobAdvertisementQuery { Id = id });
-            if (response.JobAdvertisement.IsSuccess)
-            {
-                return Ok(response.JobAdvertisement);
-            }
-            return BadRequest(response.JobAdvertisement);
-        }
+        [Authorize(Roles = Roles.Employer)]
+        [HttpDelete("deletebyid/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteJobAdvertisementCommand { Id = id })).Result);
     }
 }

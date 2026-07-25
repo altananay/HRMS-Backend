@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -31,7 +31,12 @@ namespace Persistence.Configurations
                 socialMedia.Property(media => media.WebSite).HasMaxLength(256).HasColumnName("social_website");
             });
 
-            builder.UseXminAsConcurrencyToken();
+            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
+
+            // Matches the soft-delete filter on JobSeeker. Without it EF warns that a filtered
+            // principal has an unfiltered required dependent — concretely, a CV belonging to a
+            // soft-deleted seeker would still surface in queries while its owner does not.
+            builder.HasQueryFilter(cv => cv.JobSeeker.DeletedAt == null);
 
             builder.HasMany(cv => cv.Educations).WithOne(education => education.Cv)
                 .HasForeignKey(education => education.CvId).OnDelete(DeleteBehavior.Cascade);
@@ -125,6 +130,9 @@ namespace Persistence.Configurations
             builder.HasKey(department => department.Id);
             builder.Property(department => department.Name).HasMaxLength(200).IsRequired();
             builder.HasIndex(department => department.EmployerId);
+
+            // Mirrors the Employer soft-delete filter, as above.
+            builder.HasQueryFilter(department => department.Employer.DeletedAt == null);
         }
     }
 }

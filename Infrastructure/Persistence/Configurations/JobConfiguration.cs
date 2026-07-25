@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -58,7 +58,7 @@ namespace Persistence.Configurations
                     "open_positions > 0");
             });
 
-            builder.UseXminAsConcurrencyToken();
+            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
 
             builder.HasQueryFilter(advertisement => advertisement.DeletedAt == null);
 
@@ -96,7 +96,12 @@ namespace Persistence.Configurations
 
             builder.HasIndex(application => application.JobAdvertisementId);
 
-            builder.UseXminAsConcurrencyToken();
+            // Both principals are soft-deletable, so the filter has to cover both — otherwise an
+            // application would outlive the advertisement or the seeker it belongs to in queries.
+            builder.HasQueryFilter(application =>
+                application.JobAdvertisement.DeletedAt == null && application.JobSeeker.DeletedAt == null);
+
+            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
         }
     }
 

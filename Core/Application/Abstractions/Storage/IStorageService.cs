@@ -1,7 +1,10 @@
-﻿namespace Application.Abstractions.Storage
+using Domain.Enums;
+
+namespace Application.Abstractions.Storage
 {
     public interface IStorageService : IStorage
     {
-        public string StorageName { get; }
+        /// <summary>Which provider is active, recorded on each stored CvFile row.</summary>
+        StorageProvider Provider { get; }
     }
 }

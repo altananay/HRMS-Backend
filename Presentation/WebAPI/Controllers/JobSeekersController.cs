@@ -1,84 +1,47 @@
-﻿using Application.Features.JobSeekers.Commands;
+using Application.Features.JobSeekers.Commands;
 using Application.Features.JobSeekers.Queries;
-using MediatR;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.JobSeekers.Commands.DeleteJobSeekerCommand;
-using static Application.Features.JobSeekers.Commands.UpdateJobSeekerCommand;
-using static Application.Features.JobSeekers.Queries.GetAllJobSeekerQuery;
-using static Application.Features.JobSeekers.Queries.GetByEmailJobSeekerQuery;
-using static Application.Features.JobSeekers.Queries.GetByIdJobSeekerQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize]
-    public class JobSeekersController : ControllerBase
+    public class JobSeekersController : ApiControllerBase
     {
-        
-        IMediator _mediator;
+        /// <remarks>
+        /// Admin-only, and returns <c>JobSeekerDto</c>. This was the worst leak in the API: fully
+        /// anonymous, serializing raw entities, so every job seeker's <c>PasswordHash</c>,
+        /// <c>PasswordSalt</c> and national ID were available to anyone who called it.
+        /// </remarks>
+        [Authorize(Roles = Roles.Admin)]
+        [HttpGet("getall")]
+        public async Task<IActionResult> GetAll([FromQuery] GetAllJobSeekerQuery query)
+            => Ok((await Mediator.Send(query)).Result);
 
-        public JobSeekersController(IMediator mediator)
+        [HttpGet("getbyid/{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+            => Ok((await Mediator.Send(new GetByIdJobSeekerQuery { Id = id })).Result);
+
+        [Authorize(Roles = Roles.Admin)]
+        [HttpGet("getbyemail")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+            => Ok((await Mediator.Send(new GetByEmailJobSeekerQuery { Email = email })).Result);
+
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateJobSeekerCommand command)
         {
-            _mediator = mediator;
+            if (!User.IsInRole(Roles.Admin))
+            {
+                command.Id = CurrentUserId;
+            }
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
         [Authorize(Roles = Roles.Admin)]
-        [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllJobSeekerCommandResponse response = await _mediator.Send(new GetAllJobSeekerQuery { });
-            if (response.JobSeekers.IsSuccess)
-            {
-                return Ok(response.JobSeekers);
-            }
-            return BadRequest(response.JobSeekers);
-        }
-
-        [HttpPost("getbyemail")]
-        public async Task<IActionResult> GetByEmail(GetByEmailJobSeekerQuery request)
-        {
-            GetByEmailJobSeekerResponse response = await _mediator.Send(request);
-            if (response.JobSeeker.IsSuccess)
-            {
-                return Ok(response.JobSeeker);
-            }
-            return BadRequest(response.JobSeeker);
-        }
-
-        [HttpGet("getbyid/{id}")]
-        public async Task<IActionResult> GetById(string id)
-        {
-            GetByIdJobSeekerQueryResponse response = await _mediator.Send(new GetByIdJobSeekerQuery { Id = id});
-            if (response.JobSeeker.IsSuccess)
-            {
-                return Ok(response.JobSeeker);
-            }
-            return BadRequest(response.JobSeeker);
-        }
-
-        [HttpDelete("deletebyid/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteJobSeekerCommandResponse response = await _mediator.Send(new DeleteJobSeekerCommand { Id = id});
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
-
-        [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateJobSeekerCommand jobSeeker)
-        {
-            UpdateJobSeekerCommandResponse result = await _mediator.Send(jobSeeker);
-            if (result.Result.IsSuccess)
-            {
-                return Ok(result.Result);
-            }
-            return BadRequest(result.Result);
-        }
+        [HttpDelete("deletebyid/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteJobSeekerCommand { Id = id })).Result);
     }
 }

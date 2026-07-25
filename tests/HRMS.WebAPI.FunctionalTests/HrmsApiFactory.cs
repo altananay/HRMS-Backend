@@ -31,7 +31,14 @@ public sealed class HrmsApiFactory : WebApplicationFactory<Program>
                 // No Seq in tests: an unset URL makes Program.cs skip the sink entirely.
                 ["Serilog:Seq:ServerUrl"] = "",
 
-                ["ConnectionStrings:MongoDb"] = "mongodb://localhost:27017"
+                // Phase 6 replaces this with a PostgreSQL Testcontainer plus migrations and seed
+                // data. The assertions in SecuritySmokeTests never reach a database — authorization
+                // short-circuits before the handler runs — so a connection string that merely parses
+                // is enough for them today.
+                ["ConnectionStrings:Postgres"] =
+                    "Host=localhost;Port=5433;Database=hrms;Username=hrms;Password=hrms",
+
+                ["Storage:Provider"] = "Local"
             });
         });
     }

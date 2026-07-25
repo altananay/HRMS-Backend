@@ -1,5 +1,8 @@
 using System.Reflection;
+using Application.Abstractions.Services;
 using Application.Common.Behaviors;
+using Application.Rules;
+using Application.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,22 +19,29 @@ namespace Application
             {
                 configuration.RegisterServicesFromAssembly(applicationAssembly);
 
-                // Order matters and is outermost-first: validate before doing any work, and keep
-                // logging outside validation so rejected requests are still recorded.
+                // Outermost first: logging wraps everything so rejected requests are still recorded,
+                // and validation runs before the handler does any work.
                 configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
                 configuration.AddOpenBehavior(typeof(PerformanceBehavior<,>));
                 configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
             });
 
-            // Picked up by ValidationBehavior. Replaces RegisterValidatorsFromAssemblyContaining
-            // being called twice in Program.cs with two validators from the same assembly.
             services.AddValidatorsFromAssembly(applicationAssembly, includeInternalTypes: true);
 
-            // Removed: services.AddScoped<IHttpContextAccessor, HttpContextAccessor>().
-            // That overrode the singleton registered by AddHttpContextAccessor() in Program.cs.
-            // Program.cs now calls AddHttpContextAccessor() once and CurrentUserService consumes it.
+            services.AddScoped<BusinessRules>();
 
-            services.AddAutoMapper(typeof(ServiceRegistration));
+            // The managers live here now rather than in Persistence, so Application owns both the
+            // I*Service contracts and their implementations, and the database provider stays behind
+            // the repository interfaces.
+            services.AddScoped<IContactService, ContactManager>();
+            services.AddScoped<IJobPositionService, JobPositionManager>();
+            services.AddScoped<IEmployerService, EmployerManager>();
+            services.AddScoped<IJobSeekerService, JobSeekerManager>();
+            services.AddScoped<ISystemStaffService, SystemStaffManager>();
+            services.AddScoped<IUserService, UserManager>();
+            services.AddScoped<ICvService, CvManager>();
+            services.AddScoped<IJobAdvertisementService, JobAdvertisementManager>();
+            services.AddScoped<IJobApplicationService, JobApplicationManager>();
 
             return services;
         }

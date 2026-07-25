@@ -18,7 +18,10 @@ services:
       POSTGRES_USER: hrms
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hrms}
     ports:
-      - "5432:5432"
+      # Host 5433, not 5432: a natively-installed PostgreSQL service commonly already owns 5432 on
+      # a developer machine, and binding over it silently connects the app to the wrong server —
+      # which shows up as an authentication failure against a database you did not intend to use.
+      - "5433:5432"
     volumes:
       - hrms-pgdata:/var/lib/postgresql/data
     healthcheck:

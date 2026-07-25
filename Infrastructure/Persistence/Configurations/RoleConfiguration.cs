@@ -57,6 +57,10 @@ namespace Persistence.Configurations
             builder.Property(token => token.RevokedByIp).HasMaxLength(45);
 
             builder.Ignore(token => token.IsRevoked);
+
+            // A soft-deleted user's tokens must stop resolving, or a deleted account could keep
+            // refreshing its session indefinitely.
+            builder.HasQueryFilter(token => token.User.DeletedAt == null);
         }
     }
 }

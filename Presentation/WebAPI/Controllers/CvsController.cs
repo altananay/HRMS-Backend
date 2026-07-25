@@ -1,90 +1,56 @@
-﻿using Application.Features.Cvs.Commands;
+using Application.Features.Cvs.Commands;
 using Application.Features.Cvs.Queries;
-using MediatR;
 using Application.Utilities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Application.Features.Cvs.Commands.CreateCvCommand;
-using static Application.Features.Cvs.Commands.DeleteCvCommand;
-using static Application.Features.Cvs.Commands.UpdateCvCommand;
-using static Application.Features.Cvs.Queries.GetAllCvQuery;
-using static Application.Features.Cvs.Queries.GetByJobSeekerIdCvQuery;
 
 namespace WebAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     [Authorize]
-    public class CvsController : ControllerBase
+    public class CvsController : ApiControllerBase
     {
-        private readonly IMediator _mediator;
-
-        public CvsController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
         [Authorize(Roles = Roles.Admin)]
         [HttpGet("getall")]
-        public async Task<IActionResult> GetAll()
-        {
-            GetAllCvQueryResponse response = await _mediator.Send(new GetAllCvQuery { });
-            if (response.Cvs.IsSuccess)
-            {
-                return Ok(response.Cvs);
-            }
-            return BadRequest(response.Cvs);
-        }
+        public async Task<IActionResult> GetAll([FromQuery] GetAllCvQuery query)
+            => Ok((await Mediator.Send(query)).Result);
 
+        [HttpGet("getbyjobseekerid/{jobSeekerId:guid}")]
+        public async Task<IActionResult> GetByJobSeekerId(Guid jobSeekerId)
+            => Ok((await Mediator.Send(new GetByJobSeekerIdCvQuery { JobSeekerId = jobSeekerId })).Result);
+
+        [Authorize(Roles = Roles.JobSeeker)]
         [HttpPost("add")]
-        public async Task<IActionResult> Add(CreateCvCommand cv)
+        public async Task<IActionResult> Add(CreateCvCommand command)
         {
-            CreateCvCommandResponse response = await _mediator.Send(cv);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
+            command.JobSeekerId = CurrentUserId;
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
+        /// <remarks>
+        /// This endpoint returned HTTP 500 unconditionally before: <c>CvManager.Update</c> called a
+        /// guard that throws when a CV exists, on an operation that by definition requires one.
+        /// </remarks>
+        [Authorize(Roles = Roles.JobSeeker)]
         [HttpPut("update")]
-        public async Task<IActionResult> Update(UpdateCvCommand cv)
+        public async Task<IActionResult> Update(UpdateCvCommand command)
         {
-            UpdateCvCommandResponse response = await _mediator.Send(cv);
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
+            command.JobSeekerId = CurrentUserId;
+
+            return Ok((await Mediator.Send(command)).Result);
         }
 
-        [HttpDelete("deletecv/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            DeleteCvCommandResponse response = await _mediator.Send(new DeleteCvCommand { Id = id});
-            if (response.Result.IsSuccess)
-            {
-                return Ok(response.Result);
-            }
-            return BadRequest(response.Result);
-        }
+        [Authorize(Roles = Roles.JobSeeker)]
+        [HttpDelete("deletecv/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+            => Ok((await Mediator.Send(new DeleteCvCommand { Id = id })).Result);
 
-        [HttpGet("getbyjobseekerid/{JobSeekerId}")]
-        public async Task<IActionResult> GetById([FromRoute] GetByJobSeekerIdCvQuery id)
-        {
-            GetByJobSeekerIdCvQueryResponse response = await _mediator.Send(id);
-            if (response.Cv.IsSuccess)
-            {
-                return Ok(response.Cv);
-            }
-            return BadRequest(response.Cv);
-        }
-
-        [HttpPost("uploadfile")]
-        public async Task<IActionResult> UploadFile([FromQuery] UploadCvFileCommand cvFile)
-        {
-            await _mediator.Send(cvFile);
-            return Ok();
-        }
+        // NOTE: the file-upload endpoint is intentionally absent for now.
+        //
+        // UploadCvFileCommand bypassed the manager layer entirely, wrote CvFile rows with no link to
+        // any CV or seeker (the entity had no foreign key at all), returned an empty response type,
+        // and its result was discarded by the controller, which always returned Ok(). CvFile now has
+        // a required CvId, so the endpoint is reinstated in Phase 5 together with the storage
+        // rewrite and content-type/size validation.
     }
 }

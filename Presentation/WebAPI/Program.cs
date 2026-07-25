@@ -64,8 +64,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Abstractions.ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddApplicationServices();
-builder.Services.AddPersistenceServices();
-builder.Services.AddInfrastructureServices();
+builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddMemoryCache();
 
