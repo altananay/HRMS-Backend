@@ -1,12 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    TRANSITIONAL: Domain must not reference a database driver. The BSON attributes on BaseEntity and
-    the Domain/Objects value types are removed in Phase 3, and this PackageReference goes with them,
-    leaving Domain with zero package dependencies as the Onion layering requires.
+    Deliberately empty.
+
+    Domain has ZERO package references, which is the point of the innermost Onion ring: it depends on
+    nothing and nothing about it changes when the database does. It previously referenced
+    MongoDB.Driver so that BaseEntity and the value objects could carry [BsonId] /
+    [BsonRepresentation] attributes — persistence concerns leaking into the domain model. Mapping now
+    lives entirely in Persistence/Configurations as IEntityTypeConfiguration classes.
+
+    If you find yourself adding a PackageReference here, the type probably belongs in Application.
   -->
-  <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" />
-  </ItemGroup>
 
 </Project>
