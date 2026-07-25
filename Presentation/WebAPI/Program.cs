@@ -189,6 +189,12 @@ builder.Services.AddAuthorization(options =>
 // ---------------------------------------------------------------------------------------------
 // Rate limiting â€” the only real defence against credential stuffing on the auth endpoints.
 // ---------------------------------------------------------------------------------------------
+// Configurable so the functional suite can raise it: every test in that suite shares one host and
+// therefore one partition key, so the production limit would reject most of the run. The limit is
+// real in every other environment.
+var authPermitLimit = builder.Configuration.GetValue("RateLimiting:Auth:PermitLimit", 10);
+var authWindowMinutes = builder.Configuration.GetValue("RateLimiting:Auth:WindowMinutes", 5);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -198,8 +204,8 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
-                Window = TimeSpan.FromMinutes(5)
+                PermitLimit = authPermitLimit,
+                Window = TimeSpan.FromMinutes(authWindowMinutes)
             }));
 });
 

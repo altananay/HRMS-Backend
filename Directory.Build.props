@@ -10,18 +10,28 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!--
-    Strict warnings are introduced in stages, not all at once.
+  <PropertyGroup>
+    <!--
+      Promoted to errors now that the rewrite is complete. These were left as warnings during the
+      migration so each phase could reach a green build; the code they guard against is gone.
 
-    The pre-migration code has ~30 `async` methods with no `await` (CS1998) and widespread
-    nullable-reference violations. Promoting those to errors here would make Phase 0 unable to
-    reach a green build, which defeats the purpose of Phase 0 as a checkpoint that isolates
-    "the framework upgrade broke it" from "the rewrite broke it".
+        CS1998  async method without await — the pre-migration code had ~30 of these, handlers
+                declared async that blocked on synchronous repository calls.
+        CS4014  unawaited task; the storage layer used to fire and forget.
+        CS8600/8602/8618  nullable violations.
+        RMG012  Mapperly: a DTO member with no source. This is the diagnostic that makes Mapperly a
+                real safety upgrade over AutoMapper — a silently-null response property becomes a
+                build failure instead of a support ticket.
+    -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS1998;CS4014;CS8600;CS8602;CS8618;RMG012</WarningsAsErrors>
 
-    Phase 3 turns the following on once the offending code has been rewritten:
-      <WarningsAsErrors>CS1998;CS4014;CS8600;CS8602;CS8618;RMG012;RMG020</WarningsAsErrors>
-    RMG012/RMG020 are Mapperly's unmapped-member diagnostics — promoting them is what makes
-    Mapperly a real safety upgrade over AutoMapper rather than just a licensing change.
-  -->
+    <!--
+      RMG020 is the opposite direction: a *source* member with no target. For entity-to-DTO mapping
+      that is the intended outcome and the whole point of projecting — PasswordHash, SecurityStamp,
+      DeletedAt and NationalId are deliberately absent from every DTO. Treating it as a warning would
+      mean 100+ lines of noise telling us the security model is working.
+    -->
+    <NoWarn>$(NoWarn);RMG020</NoWarn>
+  </PropertyGroup>
 
 </Project>

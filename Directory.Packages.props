@@ -112,10 +112,36 @@
     <PackageVersion Include="Dapper" Version="2.1.66" />
   </ItemGroup>
 
+  <!--
+    Transitive pins that close published advisories.
+
+    None of these is referenced directly — they arrive through System.ServiceModel (the Mernis SOAP
+    client) and the test tooling, at versions that carry known vulnerabilities. Because
+    CentralPackageTransitivePinningEnabled is on, a PackageVersion here lifts the resolved version
+    without any project needing a PackageReference.
+
+    The CI workflow fails on the vulnerable-package scan, so this list is what keeps it green. If an
+    entry becomes unnecessary because a direct dependency catches up, delete it: a stale pin silently
+    holds a package back.
+
+    (Note for future edits: an XML comment may not contain a double hyphen, so option flags cannot be
+    written out literally here.)
+  -->
+  <ItemGroup Label="Security — transitive pins">
+    <!-- High: GHSA-555c-2p6r-68mm, via System.ServiceModel.* 6.0.0 -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.10" />
+
+    <!-- Critical: GHSA-rxg9-xrhp-64gj, via the test tooling -->
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.10" />
+
+    <!-- High + moderate: GHSA-5mfx-4wcx-rv27, GHSA-m5vv-6r4h-3vj9, GHSA-wvxc-855f-jvrv -->
+    <PackageVersion Include="Azure.Identity" Version="1.17.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Incoming — tests">
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.1.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.7.0" />

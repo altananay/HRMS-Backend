@@ -2,6 +2,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- A real PostgreSQL per test run. The point of these tests is that the constraints, cascades
+         and query filters behave as configured; an in-memory provider would assert none of that. -->
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Respawn" />
   </ItemGroup>
 
   <ItemGroup>

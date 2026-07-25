@@ -22,7 +22,8 @@ namespace HRMS.WebAPI.FunctionalTests;
 /// fallback policy by default; opening it requires adding it to <see cref="PublicEndpoints"/> here,
 /// which makes "this is deliberately public" a reviewable decision instead of an oversight.
 /// </remarks>
-public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
+[Collection(ApiCollection.Name)]
+public class SecuritySmokeTests
 {
     private readonly HrmsApiFactory _factory;
 
@@ -59,6 +60,24 @@ public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
         // The refresh token is itself the credential here, and a client whose access token has
         // already expired must still be able to end its session.
         "api/auth/logout"
+    ];
+
+    /// <summary>
+    /// Endpoints that must never serve an anonymous caller, checked over real HTTP.
+    /// </summary>
+    /// <remarks>
+    /// The first four are the ones that used to return every user record — <c>PasswordHash</c> and
+    /// <c>PasswordSalt</c> included — to anyone who asked.
+    /// </remarks>
+    private static readonly string[] MustRequireAuthentication =
+    [
+        "/api/JobSeekers/getall",
+        "/api/Employers/getall",
+        "/api/Users/getall",
+        "/api/Cvs/getall",
+        "/api/SystemStaffs/getall",
+        "/api/Contacts",
+        "/api/auth/me"
     ];
 
     private IReadOnlyList<(string Route, bool AllowsAnonymous)> GetEndpoints()
@@ -102,18 +121,7 @@ public class SecuritySmokeTests : IClassFixture<HrmsApiFactory>
     {
         using var client = _factory.CreateClient();
 
-        // The exact endpoints that leaked password hashes to anonymous callers before the migration.
-        string[] mustBeProtected =
-        [
-            "/api/JobSeekers/getall",
-            "/api/Employers/getall",
-            "/api/Users/getall",
-            "/api/Cvs/getall",
-            "/api/SystemStaffs/getall",
-            "/api/auth/me"
-        ];
-
-        foreach (var route in mustBeProtected)
+        foreach (var route in MustRequireAuthentication)
         {
             var response = await client.GetAsync(route, TestContext.Current.CancellationToken);
 

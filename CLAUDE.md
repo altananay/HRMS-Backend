@@ -66,47 +66,40 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 # CLAUDE.md — Project Standards
 
-> This file is read automatically by Claude Code at the start of every session.
-> It is the single source of truth for how Claude should behave in this codebase.
-> Keep it honest. Keep it short. Every line should earn its place.
+> Read automatically at the start of every session. Single source of truth for how to work in this
+> codebase. Keep it honest — every line should earn its place.
 
 ---
 
 ## 1) Project Overview
 
-**HRMS-Backend** — the backend **REST API** for a Human Resources Management System: employers post job
-advertisements, job seekers register and apply, and system staff moderate. Development stalled on
-2023-08-07 and the project is half-finished; a **.NET 10 modernization is planned but has not started**.
-Describe and code against the **current** state (.NET 7) unless a task explicitly targets the migration.
+**HRMS-Backend** — the backend **REST API** for a Human Resources Management System: employers post
+job advertisements, job seekers register and apply, system staff moderate.
 
-Stack: **.NET 7.0**, ASP.NET Core **Web API** (attribute-routed `[ApiController]`s, no MVC/Razor),
-**MongoDB** via `MongoDB.Driver 2.19.0` (no EF Core, no relational DB, no migrations), **Onion
-Architecture**, **CQRS with MediatR 12**, **Autofac 7** as the root container with **Castle DynamicProxy**
-AOP interception, **AutoMapper 12**, **FluentValidation 11**, **JWT** bearer authentication, **Serilog**
-logging to **Seq + MongoDB**, **Azure Blob Storage** for CV files, and the **Mernis** (KPS) SOAP service
-for Turkish national-ID verification. Swagger is served in Development.
+Stack: **.NET 10**, ASP.NET Core Web API (attribute-routed `[ApiController]`s, no MVC/Razor),
+**PostgreSQL 17** via **EF Core 10 / Npgsql**, **Onion Architecture**, **CQRS with MediatR 12.5.0**,
+**Riok.Mapperly** for mapping, **FluentValidation**, **JWT bearer** auth with refresh tokens, and
+**Serilog** to Console + Seq. Swagger (with a Bearer definition) is served in Development.
 
-Domain modules (each roughly a controller + feature folder + manager + repositories + business rules):
-`JobAdvertisement`, `JobApplication`, `JobPosition`, `JobSeeker`, `Employer`, `SystemStaff`, `Cv`,
-`Contact`, `User`, `Log`, plus three sign-in surfaces — **JobSeeker auth**, **Employer auth**, and
-**SystemStaff auth** — and the `Mernis` identity check. Identifiers are English; some user-facing
-messages and comments are Turkish.
+Domain modules: `JobAdvertisement`, `JobApplication`, `JobPosition`, `JobSeeker`, `Employer`,
+`SystemStaff`, `Cv` (+ `CvFile`), `Contact`, `User`, plus a single unified **auth** surface.
+Identifiers are English; user-facing messages are Turkish.
+
+> **History.** This was a .NET 7 / MongoDB / Autofac codebase with zero tests. It was migrated in
+> place. If you find a comment explaining "the old code did X" — that is deliberate: several fixes
+> only make sense once you know what they replaced.
 
 ## 2) Philosophy
 
-1. **Follow the established Onion + CQRS flow.** A request travels `Controller → IMediator.Send →
-   {Command|Query}Handler → I*Service manager → I*Repository → MongoContext`. Don't collapse or bypass
-   these hops, and don't add a competing pattern (no new mediator, no service locator beyond the existing
-   `ServiceTool`).
-2. **Controllers stay thin.** A controller only builds a Command/Query, calls `_mediator.Send`, and maps
-   the `Result`/`DataResult` to `Ok(...)`/`BadRequest(...)`. No business logic in controllers.
-3. **Business logic lives in the managers** (`Persistence/Concretes/*Manager`), guarded by
-   `*BusinessRules` and validated by aspects/validators. Not in handlers, not in repositories.
-4. **Return `Result` types, never bare entities or exceptions for expected failures.** `SuccessResult`,
-   `ErrorResult`, `SuccessDataResult<T>`, `ErrorDataResult<T>`.
-5. **Small diffs.** Change only what needs to change; match the pattern of the sibling module.
-6. **Readability is king.** A junior engineer should be able to trace one feature end to end by opening
-   the matching `Features/<Module>`, `Concretes/<Module>Manager`, and `Repositories/<Module>*Repository`.
+1. **Follow the flow.** `Controller → IMediator.Send → {Command|Query}.Handler → I*Service manager →
+   I*Repository → HrmsDbContext`. Don't collapse a hop or add a competing pattern.
+2. **Controllers stay thin.** Build a request, `Send` it, return `Ok(...)`. No business logic.
+   The one thing a controller *must* do is take the caller's identity from the token
+   (`CurrentUserId`), never from the request body.
+3. **Business logic lives in `Core/Application/Services/*Manager`**, guarded by `Rules/BusinessRules`
+   and validated by FluentValidation validators.
+4. **Success returns a `Result`; failure throws.** Typed exceptions become RFC 9457 ProblemDetails.
+5. **Small diffs.** Match the sibling module.
 
 ---
 
@@ -114,273 +107,197 @@ messages and comments are Turkish.
 
 If any item below is violated, the change is invalid.
 
-1. **No secrets in code, logs, or docs.** The Mongo connection string, `TokenOptions:SecurityKey`, Azure
-   Storage keys, the Seq URL and Mernis settings live only in the **gitignored** `appsettings.json` /
-   `appsettings.Production.json`. Never commit them; never paste their values into output.
-2. **No business logic in controllers or handlers.** Handlers delegate to an `I*Service`; controllers
-   delegate to MediatR.
-3. **Respect the Onion dependency direction** (see §7). `Domain` references nothing project-local;
-   `Application` never references `Infrastructure`/`Persistence`/`WebAPI`.
-4. **Every new manager mutation validates its input** — attach `[ValidationAspect(typeof(XValidator))]`
-   and/or check the relevant `*BusinessRules` before writing. A write path with no validation is a bug.
-5. **New DI registrations must be wired in both places that matter**: managers/repositories/business
-   rules in `Persistence/AutofacServiceRegistration`; infrastructure services in
-   `Infrastructure/ServiceRegistration`; MediatR/AutoMapper stay auto-registered by assembly.
-6. No TODO placeholders in shipped code. No silent empty `catch`.
-7. No untyped escape hatches (`dynamic`, `object`) without a justification comment.
-8. No dependency additions without rationale (versions are declared **inline per-`.csproj`** — there is
-   no Central Package Management here).
-9. **Password material and raw national IDs are never returned to the client** or logged. Passwords are
-   hashed via `HashingHelper`; Mernis TCKN input is PII.
+1. **No secrets in code, logs, or docs.** `appsettings.json` *is* committed and must stay
+   secret-free. Real values come from `dotnet user-secrets` (Development) or environment variables
+   (Production).
+2. **Never return an entity from an endpoint.** Project to a DTO in `Common/Dtos`. This is what keeps
+   `PasswordHash` off the wire — the pre-migration API served every user record, hashes included, to
+   anonymous callers.
+3. **Never log PII.** National IDs (TCKN), passwords, tokens, whole request objects.
+4. **Respect the Onion direction** (§7). `Domain` has **zero package references** — keep it that way.
+   `Application` must not reference EF Core, Npgsql or ASP.NET Core.
+5. **Take the owning id from the token, not the body.** `EmployerId`/`JobSeekerId` on a command are
+   set by the controller from `CurrentUserId`. A body-supplied owner is an IDOR.
+6. **Authorization is deny-by-default.** A global fallback policy requires an authenticated user;
+   opening an endpoint means adding `[AllowAnonymous]` *and* adding the route to the allow-list in
+   `SecuritySmokeTests`. That test fails otherwise — on purpose.
+7. **A claim that is written must be validated.** Don't add a token claim without a check that reads
+   it; an unenforced claim is worse than none.
+8. No TODO placeholders. No silent empty `catch`. No `dynamic`/`object` escape hatches without a
+   justification comment.
+9. **Package versions live in `Directory.Packages.props`** (central package management), never in a
+   `.csproj`. **MediatR is bracket-pinned to `[12.5.0]`** — the last Apache-2.0 release. Do not widen
+   it; 13+ is commercially licensed.
 
 ---
 
 ## 4) Commands
 
-Single solution (`HRMS.sln`), **5 source projects, no test projects**. `net7.0`, `Nullable` and
-`ImplicitUsings` enabled. Package versions are declared inline in each `.csproj`.
+Solution `HRMS.sln`: 5 source projects + 2 test projects, all `net10.0`, SDK pinned by `global.json`.
 
 ```bash
-# Restore + build the whole solution
+# Infrastructure (postgres on 5433, seq on 8081). 5433 avoids a locally-installed PostgreSQL.
+docker compose up -d
+
+# Build / run / test
 dotnet build HRMS.sln
+dotnet run --project Presentation/WebAPI     # Swagger at /swagger
+dotnet test HRMS.sln
 
-# Run the API (Swagger UI at /swagger in Development)
-dotnet run --project Presentation/WebAPI
-
-# Watch mode
-dotnet watch run --project Presentation/WebAPI
-
-# Publish
-dotnet publish Presentation/WebAPI -c Release -o ./publish
+# Migrations
+dotnet tool restore
+dotnet ef migrations add <Name> --project Infrastructure/Persistence --startup-project Infrastructure/Persistence
+dotnet ef database update --project Infrastructure/Persistence --startup-project Infrastructure/Persistence
 ```
 
-There is **no `dotnet test`** (no test project exists) and **no `dotnet ef` / migrations** (MongoDB is
-schemaless — the C# entity classes are the only schema record). Running the app requires a local
-`Presentation/WebAPI/appsettings.json` with a `ConnectionStrings:MongoDb` value plus `TokenOptions`;
-that file is gitignored and must be created by hand (it is not checked in).
+Migrations and seeding run automatically at startup in **Development and Testing only**.
 
 ---
 
 ## 5) Working Agreement
 
-### Before changing code
+**Before changing code** — open the sibling module first. To change `JobApplication` behaviour, read
+`Features/JobApplications/`, `Services/JobManagers.cs`, `Abstractions/Repositories/IRepositories.cs`
+and `Rules/BusinessRules.cs`, then mirror the pattern.
 
-- Open the sibling module first. To add or change a `JobApplication` behaviour, read
-  `Features/JobApplications/**`, `Concretes/JobApplicationManager`, `Repositories/JobApplication*Repository`,
-  `Rules/JobApplicationBusinessRules`, and `Abstractions/IJobApplicationService` — then mirror the pattern.
-- Check `Application/Abstractions` for the service interface and `Application/Repositories` for the
-  repository interfaces before creating new ones.
-- If a Command/Query is involved, keep the **nested** `*Response` + `*Handler` layout used everywhere
-  (see `Features/JobAdvertisements/Commands/CreateJobAdvertisementCommand.cs`).
+**While changing code** — keep edits localized. Register anything new in the matching
+`ServiceRegistration`. Add a validator for every new command.
 
-### While changing code
-
-- Keep edits minimal and localized; keep `I*Service`/`I*Repository` interfaces stable unless the change
-  needs a new member.
-- Register any new manager/repository/business-rule in `AutofacServiceRegistration`, and enable aspect
-  interception the same way the surrounding registrations do.
-- Add short intent comments only where logic is genuinely non-obvious.
-
-### After changing code
-
-- Run `dotnet build HRMS.sln` and keep it warning-clean.
-- Manually exercise the affected endpoint through Swagger (there is no automated test suite to lean on).
-- Ensure commit-ready state: no debug leftovers, no dead code, no secrets.
+**After changing code** — `dotnet build` warning-clean, `dotnet test` green. If you changed the
+entity model, generate a migration. If you added an endpoint, decide its authorization explicitly.
 
 ---
 
 ## 6) Code Style
 
-### Formatting
+4-space indent, braces on their own line, `_camelCase` private fields, `using` order BCL →
+third-party → project. `.editorconfig` enforces the mechanical parts.
 
-- Standard C# conventions: 4-space indentation, braces on their own line (match the existing files).
-- `using` order: BCL (`System.*`) → third-party (`Microsoft.*`, `MediatR`, `AutoMapper`, `MongoDB.*`,
-  `Autofac`, `FluentValidation`) → project namespaces (`Domain.*`, `Application.*`, `Infrastructure.*`,
-  `Persistence.*`, `WebAPI.*`). Match the surrounding file.
-
-### Naming
-
-- **Service interfaces** (`Application/Abstractions`): `I{Entity}Service` (`IJobAdvertisementService`).
-- **Managers** (`Persistence/Concretes`): `{Entity}Manager` (`JobAdvertisementManager`) — this is where
-  business logic lives, **not** in `Application`.
-- **Repository interfaces** (`Application/Repositories`): `I{Entity}{Read|Write|Delete}Repository`;
-  generic bases `IReadRepository<T>` / `IWriteRepository<T>` / `IDeleteRepository<T>`.
-- **Repository implementations** (`Persistence/Repositories`): `{Entity}{Read|Write|Delete}Repository`,
-  extending `ReadRepository<T>` / `WriteRepository<T>` / `DeleteRepository<T>` where `T : BaseEntity`.
-- **CQRS** (`Application/Features/<Module>/{Commands,Queries}`): request `Create{Entity}Command` /
-  `GetAll{Entity}Query`, with **nested** `{Name}Response` and `{Name}Handler` classes (the request class
-  is `partial` and uses `IRequest<{Name}Response>`).
-- **Validators** (`Application/CrossCuttingConcerns/Validation/Validators/<Module>`): `{Verb}{Entity}Validator`,
-  extend `AbstractValidator<T>`.
-- **Business rules** (`Persistence/Rules`): `{Entity}BusinessRules`, throw `BusinessException`.
-- **Controllers** (`WebAPI/Controllers`): resource controllers plural (`JobAdvertisementsController`),
-  auth/utility ones as named (`AuthController`, `EmployerAuthController`, `MernisController`). Routes are
-  `[Route("api/[controller]")]` with explicit `[HttpGet("...")]` / `[HttpPost("add")]` action templates.
-- **Private fields**: `_camelCase` everywhere.
-- **Mongo collections**: auto-named `typeof(T).Name.ToLowerInvariant() + "s"` (e.g. `JobAdvertisement`
-  → `jobadvertisements`) — renaming an entity renames its collection.
+- **Service interfaces** (`Application/Abstractions/Services`): `I{Entity}Service`.
+- **Managers** (`Application/Services`): `{Entity}Manager` — where business logic lives.
+- **Repositories** (`Application/Abstractions/Repositories` → `Persistence/Repositories`):
+  `I{Entity}Repository` with **intention-revealing methods**, not generic CRUD.
+- **CQRS** (`Application/Features/<Module>/`): request class is `partial`, implements
+  `IRequest<T.Response>`, and **nests** its `Response` and `Handler`. A module's commands share one
+  file; queries share another.
+- **Response members are properties named `Result`** — uniformly, across every module.
+- **Validators** (`Application/Validation`): `{Command}Validator : AbstractValidator<TCommand>`.
+  They validate the **request**, not the entity.
+- **Tables** are `snake_case` (EFCore.NamingConventions); enums are stored **as text**.
 
 ---
 
-## 7) Layering (Onion, one-way dependency)
+## 7) Layering (Onion, one-way)
 
 ```
 Domain  ←  Application  ←  { Infrastructure, Persistence }  ←  WebAPI
 ```
 
-Project references (`*.csproj`): `Application` → `Domain`; `Infrastructure` → `Application`;
-`Persistence` → `Application`; `WebAPI` → `Application` + `Infrastructure` + `Persistence`.
+| Project | Contains | May reference |
+|---|---|---|
+| `Core/Domain` | Entities, value objects, enums | **nothing** |
+| `Core/Application` | `Features/`, `Services/` (managers), `Rules/`, `Abstractions/`, `Validation/`, `Mapping/`, `Common/` | MediatR, FluentValidation, Mapperly, Options/Logging abstractions |
+| `Infrastructure/Persistence` | `HrmsDbContext`, `Configurations/`, `Repositories/`, `Interceptors/`, `Migrations/`, `Seeding/` | EF Core, Npgsql |
+| `Infrastructure/Infrastructure` | JWT, password hashing, storage (Local/R2), identity verification | AWSSDK.S3, JwtBearer, ServiceModel |
+| `Presentation/WebAPI` | Controllers, `Program.cs`, exception handler | everything above |
 
-- **`Core/Domain`** — plain entities (`Entities/`, all extend `Common/BaseEntity`: string ObjectId `Id`,
-  `CreatedAt`, `UpdatedAt`), `Common/` (`IDto`, `UserOperationClaim`), `Objects/` value objects embedded
-  in CVs (`Education`, `JobExperience`, `Language`, `Hobby`, `Project`, `SocialMedia`, `Properties`).
-  References only `MongoDB.Driver` (for BSON attributes). No behaviour.
-- **`Core/Application`** — the app's contracts and orchestration: `Abstractions/` (`I*Service`, storage
-  interfaces), `Features/` (**MediatR** Commands/Queries + handlers), `Repositories/` (repository
-  interfaces), `Aspects/` (`ValidationAspect`, `SecuredOperation`, `LogAspect`),
-  `CrossCuttingConcerns/Validation/` (FluentValidation validators + `ValidationTool`), `Results/`,
-  `Mapping/` (AutoMapper profiles), `Utilities/` (`JWT/`, `Security/`, `Interceptors/`, `IoC/ServiceTool`,
-  `Constants`, `Exceptions/BusinessException`). **No MongoDB, no ASP.NET pipeline code here.**
-- **`Infrastructure/Persistence`** — data + business logic: `Concretes/` (**the `*Manager` business-logic
-  classes**), `Repositories/` (generic + per-entity Mongo repositories), `Context/` (`MongoContext`,
-  `IMongoContext`), `Rules/` (`*BusinessRules`), `Configurations/Configuration` (reads the connection
-  string), and `AutofacServiceRegistration` (the Autofac module).
-- **`Infrastructure/Infrastructure`** — external-service adapters: `Services/JWT/TokenHandler`,
-  `Services/Mernis/CheckPerson` (SOAP via `Connected Services`), `Services/Storage/` (`AzureStorage`,
-  `LocalStorage`, `StorageService`), `Filters/ValidationFilter`, and `ServiceRegistration`.
-- **`Presentation/WebAPI`** — controllers, `Program.cs`, `appsettings*.json`.
+**Wiring is the built-in container only.** Autofac, Castle DynamicProxy and the `ServiceTool` service
+locator were removed — do not reintroduce a service locator. Cross-cutting concerns are MediatR
+`IPipelineBehavior`s (`Validation`, `Logging`, `Performance`), not AOP attributes.
 
-### Wiring pattern (hybrid container)
-
-- **Autofac is the root** (`Program.cs` uses `AutofacServiceProviderFactory` + registers
-  `AutofacServiceRegistration`). That module registers every manager, repository and business rule
-  (all `.SingleInstance()`) and enables **interface interception** (`EnableInterfaceInterceptors` +
-  `AspectInterceptorSelector`) so method attributes like `[ValidationAspect]` fire.
-- **MS built-in DI** still registers MediatR (`AddMediatR`), AutoMapper, `IHttpContextAccessor`, and the
-  infrastructure services (`ITokenHelper`, `ICheckPersonService`, `IStorage`, `IStorageService`) via
-  `AddApplicationServices` / `AddInfrastructureServices`.
-- `Utilities/IoC/ServiceTool` (`AddDependencyResolvers` + `CoreModule`) is a service locator used by
-  aspects (e.g. `SecuredOperation` resolves `IHttpContextAccessor` through it). Don't extend the locator
-  pattern to new code — prefer constructor injection.
-
-### Boundary rules
-
-- Managers depend only on `Application` abstractions (`I*Service`, `I*Repository`, `IMapper`,
-  `*BusinessRules`) — never on `MongoContext` directly; that indirection lives in the repositories.
-- All Mongo query code (`IMongoCollection<T>.AsQueryable()`, filters) stays inside `Persistence/Repositories`.
-- Aspects and validators are cross-cutting and live in `Application`; they must not reference `Persistence`.
+`DbContext`, managers, rules and repositories are **scoped**. `ITokenService`, `IPasswordHasher` and
+`IStorage` are stateless singletons.
 
 ---
 
 ## 8) Error Handling
 
-- **`Result` pattern** for expected outcomes: managers return `SuccessResult`/`ErrorResult` (message-only)
-  or `SuccessDataResult<T>`/`ErrorDataResult<T>` (`IResult` = `IsSuccess` + `Message`; `IDataResult<T>`
-  adds `Data`). Controllers branch on `.IsSuccess` and return `Ok`/`BadRequest`.
-- **`BusinessException`** (`Application/Utilities/Exceptions`) is thrown by `*BusinessRules` for rule
-  violations.
-- **`ValidationFilter`** (`Infrastructure/Filters`) short-circuits invalid model state into a
-  `BadRequest` with the field errors, before the action runs; `[ValidationAspect]` re-checks inside the
-  manager via `ValidationTool`.
-- **Anything uncaught** reaches `ConfigureExceptionHandler` (`Application/Utilities/Extensions`), a global
-  `UseExceptionHandler` that logs the message and returns a JSON `500` envelope. Registered first in the
-  pipeline in `Program.cs`.
+`GlobalExceptionHandler` (`IExceptionHandler`) + `AddProblemDetails()` map exceptions to status codes:
+
+| Exception | Status |
+|---|---|
+| `ValidationException` | 400 + per-field `errors` |
+| `BusinessException` | 400 |
+| `UnauthorizedAccessException` | 401 |
+| `ForbiddenException` | 403 |
+| `NotFoundException` | 404 |
+| `ConflictException` | 409 |
+| anything else | 500 — **message only in Development** |
+
+`Result`/`DataResult` are the **success** envelope. Don't return an error `Result`; throw.
 
 ---
 
 ## 9) Testing
 
-**There is no automated test project in this solution.** Verify changes by building and exercising
-endpoints through Swagger (`/swagger` in Development) or Postman. When you add non-trivial logic, prefer
-making it testable (constructor injection, no hidden statics) so a future test project can cover it —
-but do **not** invent a test project or framework unless explicitly asked. Introducing a test suite is a
-deliberate decision for the modernization, not a side effect of a feature change.
+Two projects, and both must stay green.
+
+- `tests/HRMS.Application.UnitTests` — behaviors, validators, managers with substituted repositories
+  (this is *why* repositories are small interfaces), storage.
+- `tests/HRMS.WebAPI.FunctionalTests` — real HTTP against a **Testcontainers PostgreSQL**, reset per
+  test with Respawn. Covers the hiring lifecycle, the token lifecycle, and `SecuritySmokeTests`.
+
+`SecuritySmokeTests` enumerates the real `EndpointDataSource`. **A new endpoint is covered the moment
+it exists** — if it is anonymous and not on the reviewed allow-list, the suite fails.
 
 ---
 
 ## 10) Security
 
-- **Secrets** never live in committed config. `appsettings.json` and `appsettings.Production.json` are
-  **gitignored** and hold `ConnectionStrings:MongoDb`, `TokenOptions:SecurityKey`, `Seq:SeqUrl`, and the
-  Azure Storage / Mernis settings. Only `appsettings.Development.json` (logging levels, no secrets) is
-  committed. Startup does **not** currently fail-fast on a missing key — treat a missing secret as a
-  configuration error to fix, not a value to hardcode.
-- **Authentication**: JWT bearer validated against `TokenOptions` (`Issuer`, `Audience`, `SecurityKey`).
-  `TokenHandler` (`Infrastructure/Services/JWT`, behind `ITokenHelper`) mints the `AccessToken`;
-  `SecurityKeyHelper`/`SigningCredentialsHelper` build the signing material. Passwords are hashed with
-  `HashingHelper` (HMAC) — never store or return plaintext.
-- **Three identity types**, each with its own controller + manager + login feature: **JobSeeker**
-  (`AuthController` → `AuthManager`), **Employer** (`EmployerAuthController` → `EmployerAuthManager`),
-  **SystemStaff** (`SystemStaffAuthController` → `SystemStaffAuthManager`). `UserOperationClaim`
-  (`UserId` + `string[] UserClaims`) carries roles.
-- **Authorization** is enforced by the **`[SecuredOperation("role")]` aspect** on manager methods, which
-  reads role claims from `HttpContext`. Several of these are currently **commented out** (e.g. in
-  `JobAdvertisementManager.Add`) — when you touch such a method, confirm whether it *should* be secured
-  and flag it rather than silently leaving an admin/write path open. There is no `[Authorize]` on the
-  controllers themselves.
-- **PII**: Mernis input (TCKN national ID, first/last name, birth year) and user emails/phones. Don't log
-  whole request/entity objects that contain them.
-- Mongo queries are built with LINQ expressions/`IMongoCollection` filters — never concatenate query
-  strings from user input.
-- **CORS** (`ApiCorsPolicy`) currently combines specific origins with `AllowAnyOrigin()` — the wildcard
-  wins, so the policy is effectively open. Tighten it if a task touches CORS; don't loosen it further.
+- **JWT bearer**, 15-minute access tokens, 7-day rotating refresh tokens.
+- **Refresh rotation with reuse detection**: replaying a rotated token revokes the whole chain.
+- **Security stamp validated on every request** (`OnTokenValidated`, cached 60s). This is what makes
+  password change, logout-all, deactivation and theft detection take effect *immediately* rather than
+  when the access token happens to expire. Bump the stamp **and** call `Invalidate` together.
+- **Passwords**: PBKDF2-HMAC-SHA512 via `IdentityPasswordHasher`. Never hand-roll this.
+- **Uniform 401** for unknown email, wrong password and disabled account — including a dummy hash
+  verification so response timing does not leak either.
+- **Roles are assigned server-side only.** Never map a role/claim from a request body.
+- **CV files** are personal data: private storage, no presigned URLs, download through an authorized
+  proxy endpoint whose rule is "owner, an employer who received an application from them, or admin".
+- **CORS** reads its origin list from configuration. Never add `AllowAnyOrigin()`.
 
 ---
 
 ## 11) Dependencies
 
-Versions are declared **inline in each `.csproj`** (no `Directory.Packages.props`, no Central Package
-Management). All projects target `net7.0`.
+Versions in `Directory.Packages.props` only. Before adding a package: confirm no BCL/existing
+solution exists, add it to the correct project (§7), and note the rationale in the commit.
 
-| Purpose | Package | Version | Referenced by |
-|---|---|---|---|
-| Database driver | `MongoDB.Driver` | 2.19.0 | Domain, Application, Persistence |
-| CQRS / mediator | `MediatR` | 12.0.1 | Application |
-| Mapping | `AutoMapper` (+ `.Extensions.Microsoft.DependencyInjection`) | 12.0.1 | Application |
-| Validation | `FluentValidation` (+ `.DependencyInjectionExtensions`) | 11.5.1 | Application |
-| Validation (MVC) | `FluentValidation.AspNetCore` | 11.2.2 | Application, WebAPI |
-| IoC container | `Autofac` (+ `.Extensions.DependencyInjection` in WebAPI) | 7.0.0 / 8.0.0 | Persistence, Infrastructure, WebAPI |
-| AOP interception | `Autofac.Extras.DynamicProxy` / `Castle.Core` | 6.0.1 / 5.1.1 | Infrastructure, Application |
-| Auth | `Microsoft.AspNetCore.Authentication.JwtBearer` | 7.0.4 | WebAPI |
-| JWT | `System.IdentityModel.Tokens.Jwt` / `Microsoft.IdentityModel.Tokens` | 6.27.0 | Application, Infrastructure |
-| Logging | `Serilog.AspNetCore` + sinks `Serilog.Sinks.MongoDB` / `Serilog.Sinks.Seq` | 6.1.0 / 5.3.1 / 5.2.2 | WebAPI |
-| Blob storage | `Azure.Storage.Blobs` | 12.15.1 | Infrastructure |
-| Mernis SOAP | `System.ServiceModel.*` | 4.10.0 | Infrastructure |
-| API docs | `Swashbuckle.AspNetCore` / `Microsoft.OpenApi` | 6.5.0 / 1.6.3 | WebAPI |
+| Purpose | Package |
+|---|---|
+| Database | `Npgsql.EntityFrameworkCore.PostgreSQL`, `EFCore.NamingConventions` |
+| CQRS | `MediatR` **`[12.5.0]` — pinned, see §3.9** |
+| Mapping | `Riok.Mapperly` (source generator; unmapped members are build errors) |
+| Validation | `FluentValidation` |
+| Auth | `Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.Extensions.Identity.Core` |
+| Storage | `AWSSDK.S3` (Cloudflare R2 over the S3 API) |
+| Logging | `Serilog.AspNetCore`, `Serilog.Sinks.Seq` |
+| Tests | `xunit.v3`, `NSubstitute`, `Shouldly`, `Testcontainers.PostgreSql`, `Respawn` |
 
-Before adding a package:
-1. Confirm no BCL/existing-package solution exists.
-2. Add the `PackageReference` (with an explicit `Version`) to the correct project only — respect §7.
-3. Note the rationale in the commit description.
-
-> **Modernization note (not yet done):** `net7.0` is out of support. The planned .NET 10 upgrade will
-> also touch MediatR/AutoMapper licensing changes and the `FluentValidation.AspNetCore` /
-> `System.ServiceModel` (Mernis) surfaces. Treat those as a deliberate migration task, not incidental
-> bumps.
+**Licensing:** MediatR 13+, AutoMapper 15+ and FluentAssertions 8+ are commercial. Everything here is
+Apache-2.0/MIT — keep it that way.
 
 ---
 
 ## 12) External Integrations
 
-- **MongoDB** — database `humanresource`; one collection per entity (auto-named, §6). `MongoContext`
-  (`Persistence/Context`) is registered `SingleInstance`; repositories get `IMongoContext` injected.
-- **Serilog** — logs to **Seq** (`Seq:SeqUrl`) and a capped **MongoDB** `logs` collection, enriched with
-  IP address, username, id and roles (`LogContext` middleware in `Program.cs`). The `Log` module reads
-  these back through `LogReadRepository` / `LogsController`.
-- **Azure Blob Storage** — CV file uploads via `IStorage`/`AzureStorage` and `IStorageService`
-  (`Infrastructure/Services/Storage`); `LocalStorage` is the on-disk alternative.
-- **Mernis (KPS) SOAP** — `ICheckPersonService`/`CheckPerson` verifies Turkish national identity against
-  the government service (`Connected Services/MernisServiceReference`), surfaced via `MernisController`.
+- **PostgreSQL** — database `hrms`, Docker on host port **5433**.
+- **Serilog → Console + Seq** (`http://localhost:8081`). Seq is optional; an unset URL skips the sink.
+- **Cloudflare R2** (S3-compatible) for CV files, `Storage:Provider=R2`. Local disk is the default.
+  > R2 requires `DisablePayloadSigning = true` **and** `DisableDefaultChecksumValidation = true` on
+  > every request — it does not implement the Streaming SigV4 that AWSSDK.S3 uses by default.
+- **Mernis (KPS) SOAP** national-ID verification, `IdentityVerification:Provider=Mernis`. Default is
+  a null implementation that **fails closed**.
 
 ---
 
 ## 13) AI Interaction Rules
 
-- **Stop and think.** Trace the request through the real chain
-  (`Controller → IMediator → Handler → Manager → Repository → MongoContext`) before changing anything.
-- **Do not invent features or patterns.** No new architecture, no new auth scheme, no test framework, no
-  extra packages, and no .NET 10 migration steps — unless explicitly asked.
-- **Preserve the aspect/DI wiring.** New managers/repos must be registered in `AutofacServiceRegistration`
-  and, if they need validation/security, decorated with the existing aspects.
-- **Verify.** Run `dotnet build HRMS.sln` and exercise the endpoint via Swagger before handing back.
+- **Trace the real chain** before changing anything.
+- **Do not invent features or patterns.** No new architecture, no new auth scheme, no extra packages
+  unless asked.
+- **Ask before behaviour changes.** Schema shape, API contract, and authorization decisions are the
+  user's call.
+- **Verify.** `dotnet build`, `dotnet test`, and exercise the endpoint before handing back.
 - **Be brief.** Short sentences. Cut the fluff.

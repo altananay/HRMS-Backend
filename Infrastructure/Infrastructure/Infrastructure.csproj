@@ -9,6 +9,16 @@
     were referenced for a CheckPerson whose entire body was `return true`, so no identity was ever
     actually verified.
   -->
+  <PropertyGroup>
+    <!--
+      CS0108 comes from Connected Services/MernisServiceReference/Reference.cs, which svcutil
+      generates: its CloseAsync hides ClientBase<T>.CloseAsync without the `new` keyword. The file is
+      regenerated tooling output, so fixing it by hand would be undone the next time the service
+      reference is refreshed. Scoped to this project so the rest of the solution stays strict.
+    -->
+    <NoWarn>$(NoWarn);CS0108</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="System.ServiceModel.Duplex" />

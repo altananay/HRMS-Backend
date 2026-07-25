@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "feat/**"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version comes from global.json, which pins the SDK deliberately: `dotnet --version` on a
+      # developer machine with a preview SDK installed resolves to the preview otherwise.
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore HRMS.sln
+
+      - name: Build
+        run: dotnet build HRMS.sln --no-restore --configuration Release
+
+      # The functional suite starts its own PostgreSQL through Testcontainers, so no service
+      # container is declared here — ubuntu-latest already has a Docker daemon.
+      - name: Test
+        run: dotnet test HRMS.sln --no-build --configuration Release
+
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list HRMS.sln package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+          # `dotnet list package` exits 0 even when it finds something, so grep the output.
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Vulnerable packages detected"
+            exit 1
+          fi

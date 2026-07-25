@@ -55,6 +55,9 @@ namespace Persistence.Configurations
         }
     }
 
+    // Each CV child repeats the parent's soft-delete filter. EF warns otherwise, and the warning is
+    // right: a filtered principal with unfiltered required dependents means an education row would
+    // still surface in queries after the CV — and the seeker — were soft-deleted.
     public class EducationConfiguration : IEntityTypeConfiguration<Education>
     {
         public void Configure(EntityTypeBuilder<Education> builder)
@@ -65,6 +68,7 @@ namespace Persistence.Configurations
             builder.Property(education => education.Major).HasMaxLength(200).IsRequired();
             builder.Property(education => education.Grade).HasMaxLength(32);
             builder.HasIndex(education => education.CvId);
+            builder.HasQueryFilter(education => education.Cv.JobSeeker.DeletedAt == null);
         }
     }
 
@@ -79,6 +83,7 @@ namespace Persistence.Configurations
             builder.Property(experience => experience.Position).HasMaxLength(200).IsRequired();
             builder.Property(experience => experience.Description).HasMaxLength(2000);
             builder.HasIndex(experience => experience.CvId);
+            builder.HasQueryFilter(experience => experience.Cv.JobSeeker.DeletedAt == null);
         }
     }
 
@@ -91,6 +96,7 @@ namespace Persistence.Configurations
             builder.Property(language => language.Name).HasMaxLength(100).IsRequired();
             builder.Property(language => language.Level).HasConversion<string>().HasMaxLength(32).IsRequired();
             builder.HasIndex(language => language.CvId);
+            builder.HasQueryFilter(language => language.Cv.JobSeeker.DeletedAt == null);
         }
     }
 
@@ -103,6 +109,7 @@ namespace Persistence.Configurations
             builder.Property(project => project.Name).HasMaxLength(200).IsRequired();
             builder.Property(project => project.Description).HasMaxLength(2000);
             builder.HasIndex(project => project.CvId);
+            builder.HasQueryFilter(project => project.Cv.JobSeeker.DeletedAt == null);
         }
     }
 
@@ -119,6 +126,7 @@ namespace Persistence.Configurations
 
             // Not unique: a CV may carry several attachments.
             builder.HasIndex(file => file.CvId);
+            builder.HasQueryFilter(file => file.Cv.JobSeeker.DeletedAt == null);
         }
     }
 
