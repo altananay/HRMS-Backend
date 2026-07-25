@@ -9,6 +9,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Application\Application.csproj" />
     <ProjectReference Include="..\..\Core\Domain\Domain.csproj" />
+    <!-- LocalStorage writes to a temp directory, so its round-trip stays a unit test — no container
+         and no cloud credentials. -->
+    <ProjectReference Include="..\..\Infrastructure\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -60,6 +60,11 @@ namespace Persistence.Repositories
         public Task<CvFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.CvFiles.FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
 
+        public Task<CvFile?> GetByIdWithCvAsync(Guid id, CancellationToken cancellationToken = default)
+            => _context.CvFiles
+                .Include(file => file.Cv)
+                .FirstOrDefaultAsync(file => file.Id == id, cancellationToken);
+
         public void AddRange(IEnumerable<CvFile> files) => _context.CvFiles.AddRange(files);
 
         public void Remove(CvFile file) => _context.CvFiles.Remove(file);
@@ -200,6 +205,15 @@ namespace Persistence.Repositories
             => _context.JobApplications.AnyAsync(
                 application => application.JobSeekerId == jobSeekerId
                                && application.JobAdvertisementId == jobAdvertisementId,
+                cancellationToken);
+
+        public Task<bool> ExistsForEmployerAndSeekerAsync(
+            Guid employerId,
+            Guid jobSeekerId,
+            CancellationToken cancellationToken = default)
+            => _context.JobApplications.AnyAsync(
+                application => application.JobSeekerId == jobSeekerId
+                               && application.JobAdvertisement.EmployerId == employerId,
                 cancellationToken);
 
         public Task<PagedResult<JobApplication>> GetPagedAsync(

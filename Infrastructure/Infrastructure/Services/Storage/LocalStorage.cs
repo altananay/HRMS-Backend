@@ -110,9 +110,50 @@ namespace Infrastructure.Services.Storage
             return stored;
         }
 
+        public Task<Stream?> OpenReadAsync(
+            string containerName,
+            string fileName,
+            CancellationToken cancellationToken = default)
+        {
+            var fullPath = ResolveWithinRoot(containerName, fileName);
+
+            Stream? stream = File.Exists(fullPath)
+                ? new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true)
+                : null;
+
+            return Task.FromResult(stream);
+        }
+
+        /// <summary>
+        /// Resolves a path and refuses anything that escapes the storage root.
+        /// </summary>
+        /// <remarks>
+        /// Path traversal guard. File names reaching this class come from database rows rather than
+        /// straight off the wire, but "the caller is trusted" is precisely the assumption that turns
+        /// a stored value into an arbitrary-file-read. <c>..%2f..%2fappsettings.json</c> costs
+        /// nothing to reject.
+        /// </remarks>
+        private string ResolveWithinRoot(string containerName, string fileName)
+        {
+            // The caller may pass a bare name or a full key that already carries the container
+            // prefix — StoredFile.StoragePath is persisted with it. Strip it before composing the
+            // filesystem path, or the container ends up in the path twice.
+            var relative = StorageKey.StripContainer(containerName, fileName);
+
+            var candidate = Path.GetFullPath(Path.Combine(_rootPath, containerName, relative));
+
+            if (!candidate.StartsWith(_rootPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                && !candidate.Equals(_rootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException($"Resolved path '{candidate}' escapes the storage root.");
+            }
+
+            return candidate;
+        }
+
         public Task DeleteAsync(string containerName, string fileName, CancellationToken cancellationToken = default)
         {
-            var fullPath = Path.Combine(_rootPath, containerName, fileName);
+            var fullPath = ResolveWithinRoot(containerName, fileName);
 
             if (File.Exists(fullPath))
             {
@@ -134,7 +175,7 @@ namespace Infrastructure.Services.Storage
         }
 
         public Task<bool> HasFileAsync(string containerName, string fileName, CancellationToken cancellationToken = default)
-            => Task.FromResult(File.Exists(Path.Combine(_rootPath, containerName, fileName)));
+            => Task.FromResult(File.Exists(ResolveWithinRoot(containerName, fileName)));
 
         /// <summary>
         /// Produces a collision-free name, preserving the extension.
@@ -197,5 +238,8 @@ namespace Infrastructure.Services.Storage
 
         public Task<bool> HasFileAsync(string containerName, string fileName, CancellationToken cancellationToken = default)
             => _storage.HasFileAsync(containerName, fileName, cancellationToken);
+
+        public Task<Stream?> OpenReadAsync(string containerName, string fileName, CancellationToken cancellationToken = default)
+            => _storage.OpenReadAsync(containerName, fileName, cancellationToken);
     }
 }

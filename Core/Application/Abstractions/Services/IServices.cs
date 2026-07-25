@@ -135,6 +135,28 @@ namespace Application.Abstractions.Services
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
+    /// <summary>A CV attachment ready to stream back to an authorized caller.</summary>
+    public sealed record CvFileDownload(Stream Content, string FileName, string ContentType);
+
+    public interface ICvFileService
+    {
+        Task<IDataResult<IReadOnlyList<CvFileDto>>> UploadAsync(
+            UploadCvFileCommand command, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Opens a CV attachment for a caller who is allowed to read it.
+        /// </summary>
+        /// <remarks>
+        /// Authorization lives here rather than in the controller because the rule is a data
+        /// question: the owning seeker, an employer who has actually received an application from
+        /// that seeker, or an admin. Anyone else gets <c>ForbiddenException</c>.
+        /// </remarks>
+        Task<CvFileDownload> DownloadAsync(
+            Guid fileId, Guid requestedBy, CancellationToken cancellationToken = default);
+
+        Task<IResult> DeleteAsync(Guid fileId, Guid requestedBy, CancellationToken cancellationToken = default);
+    }
+
     public interface IJobApplicationService
     {
         Task<IDataResult<PagedResult<JobApplicationDto>>> GetPagedAsync(

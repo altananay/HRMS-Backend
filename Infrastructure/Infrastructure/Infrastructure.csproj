@@ -1,17 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Azure.Storage.Blobs is gone: Cloudflare R2 was chosen instead, and R2 speaks the S3 API, so
+    AWSSDK.S3 covers it along with AWS S3, MinIO and DigitalOcean Spaces.
+
+    The System.ServiceModel.* family stays for the generated Mernis SOAP client. It now has a real
+    implementation behind IdentityVerification:Provider=Mernis — previously these five packages
+    were referenced for a CheckPerson whose entire body was `return true`, so no identity was ever
+    actually verified.
+  -->
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
-    <!-- PasswordHasher<T> only — the hashing primitives, not the EF stores or Identity UI. -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="System.ServiceModel.Duplex" />
     <PackageReference Include="System.ServiceModel.Federation" />
     <PackageReference Include="System.ServiceModel.Http" />
     <PackageReference Include="System.ServiceModel.NetTcp" />
     <PackageReference Include="System.ServiceModel.Security" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <!-- ValidateDataAnnotations() for R2Options — it lives in the DataAnnotations package, not
+         Microsoft.Extensions.Options itself. -->
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <!-- IHostEnvironment, for LocalStorage's guard against writing inside the served web root. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <!-- PasswordHasher<T> only — the hashing primitives, not the EF stores or Identity UI. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
   </ItemGroup>
 
   <ItemGroup>

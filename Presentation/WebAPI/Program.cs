@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Application;
 using Application.Abstractions;
@@ -92,7 +93,17 @@ builder.Services.AddCors(options =>
 // ValidationBehavior in the MediatR pipeline is now the single validation stack, so the default
 // model-state 400 is wanted again and SuppressModelStateInvalidFilter is no longer set.
 // ---------------------------------------------------------------------------------------------
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Serialize enums as their names, not their ordinals. JobApplicationStatus, JobType,
+        // UserType and StorageProvider all cross the wire; as numbers they are unreadable to a
+        // client and, worse, silently change meaning if a member is ever inserted mid-enum — the
+        // same reason they are stored as text in PostgreSQL.
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

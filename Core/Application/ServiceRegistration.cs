@@ -41,6 +41,7 @@ namespace Application
             services.AddScoped<ISystemStaffService, SystemStaffManager>();
             services.AddScoped<IUserService, UserManager>();
             services.AddScoped<ICvService, CvManager>();
+            services.AddScoped<ICvFileService, CvFileManager>();
             services.AddScoped<IJobAdvertisementService, JobAdvertisementManager>();
             services.AddScoped<IJobApplicationService, JobApplicationManager>();
 

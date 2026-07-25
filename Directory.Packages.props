@@ -33,6 +33,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup Label="Auth">
@@ -54,10 +56,14 @@
   </ItemGroup>
 
   <ItemGroup Label="External services">
-    <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.1" />
-    <!-- The System.ServiceModel.* family must move in lockstep; 6.0.0 is the highest version
-         published for every member (Duplex and Security cap there). Used only by the Mernis SOAP
-         client, which Phase 5 puts behind IIdentityVerificationService with a null default. -->
+    <!-- Cloudflare R2 over the S3 API. Also covers AWS S3 / MinIO / Spaces by changing ServiceUrl.
+         Note R2 needs DisablePayloadSigning + DisableDefaultChecksumValidation on every request —
+         see R2Storage. -->
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.101.4" />
+
+    <!-- Mernis (KPS) SOAP client. The family must move in lockstep; 6.0.0 is the highest version
+         published for every member (Duplex and Security cap there). Legacy on .NET 10 but still
+         supported, and the only way to reach the government identity service. -->
     <PackageVersion Include="System.ServiceModel.Duplex" Version="6.0.0" />
     <PackageVersion Include="System.ServiceModel.Federation" Version="6.0.0" />
     <PackageVersion Include="System.ServiceModel.Http" Version="6.0.0" />

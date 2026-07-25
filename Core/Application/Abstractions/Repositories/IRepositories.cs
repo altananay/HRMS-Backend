@@ -123,6 +123,10 @@ namespace Application.Abstractions.Repositories
     public interface ICvFileRepository
     {
         Task<CvFile?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>Includes the parent CV, whose <c>JobSeekerId</c> drives the download check.</summary>
+        Task<CvFile?> GetByIdWithCvAsync(Guid id, CancellationToken cancellationToken = default);
+
         void AddRange(IEnumerable<CvFile> files);
         void Remove(CvFile file);
     }
@@ -170,6 +174,15 @@ namespace Application.Abstractions.Repositories
 
         /// <summary>Backs the unique (seeker, advertisement) rule with a cheap pre-check.</summary>
         Task<bool> ExistsForSeekerAndAdvertisementAsync(Guid jobSeekerId, Guid jobAdvertisementId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Whether this seeker has applied to any advertisement belonging to this employer.
+        /// </summary>
+        /// <remarks>
+        /// The authorization predicate for CV downloads: an employer earns the right to read a CV by
+        /// receiving an application from its owner, not by holding the employer role.
+        /// </remarks>
+        Task<bool> ExistsForEmployerAndSeekerAsync(Guid employerId, Guid jobSeekerId, CancellationToken cancellationToken = default);
 
         Task<PagedResult<JobApplication>> GetPagedAsync(
             PageRequest page,

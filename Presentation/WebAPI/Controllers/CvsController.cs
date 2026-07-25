@@ -1,3 +1,5 @@
+using Application.Abstractions.Services;
+using Application.Abstractions.Storage;
 using Application.Features.Cvs.Commands;
 using Application.Features.Cvs.Queries;
 using Application.Utilities.Constants;
@@ -45,12 +47,46 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
             => Ok((await Mediator.Send(new DeleteCvCommand { Id = id })).Result);
 
-        // NOTE: the file-upload endpoint is intentionally absent for now.
-        //
-        // UploadCvFileCommand bypassed the manager layer entirely, wrote CvFile rows with no link to
-        // any CV or seeker (the entity had no foreign key at all), returned an empty response type,
-        // and its result was discarded by the controller, which always returned Ok(). CvFile now has
-        // a required CvId, so the endpoint is reinstated in Phase 5 together with the storage
-        // rewrite and content-type/size validation.
+        /// <summary>Attaches document files to the caller's own CV.</summary>
+        [Authorize(Roles = Roles.JobSeeker)]
+        [HttpPost("uploadfile")]
+        [RequestSizeLimit(30 * 1024 * 1024)]
+        public async Task<IActionResult> UploadFile(IFormFileCollection files)
+        {
+            // IFormFile is translated here so the Application layer never sees an ASP.NET type —
+            // the storage abstraction used to take IFormFileCollection directly, which is why
+            // Application had to reference the whole ASP.NET Core shared framework.
+            var command = new UploadCvFileCommand
+            {
+                JobSeekerId = CurrentUserId,
+                Files = files.Select(file => new FileUploadRequest(
+                    file.FileName, file.ContentType, file.Length, file.OpenReadStream())).ToList()
+            };
+
+            return Ok((await Mediator.Send(command)).Result);
+        }
+
+        /// <summary>
+        /// Streams a CV attachment to a caller entitled to read it.
+        /// </summary>
+        /// <remarks>
+        /// A proxy rather than a redirect to storage. CVs are personal data, so no URL that works
+        /// without the caller's token is ever produced — which also rules out presigned/SAS links.
+        /// Permission is decided in <c>CvFileManager</c>, since "an employer who received an
+        /// application from this seeker" is a data question, not a role check.
+        /// </remarks>
+        [Authorize]
+        [HttpGet("files/{id:guid}")]
+        public async Task<IActionResult> DownloadFile(Guid id)
+        {
+            var response = await Mediator.Send(new DownloadCvFileQuery { Id = id, RequestedBy = CurrentUserId });
+
+            return File(response.Download.Content, response.Download.ContentType, response.Download.FileName);
+        }
+
+        [Authorize]
+        [HttpDelete("files/{id:guid}")]
+        public async Task<IActionResult> DeleteFile(Guid id)
+            => Ok((await Mediator.Send(new DeleteCvFileCommand { Id = id, RequestedBy = CurrentUserId })).Result);
     }
 }
