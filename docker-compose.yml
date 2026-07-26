@@ -1,6 +1,6 @@
 # Local development infrastructure for HRMS-Backend.
 #
-#   docker compose up -d                  # postgres + seq + mongo (the everyday dev loop)
+#   docker compose up -d                  # postgres + seq (the everyday dev loop)
 #   docker compose --profile api up -d    # the above plus the API in a container
 #
 # The API is behind a profile deliberately: the normal loop is infra in Docker and
@@ -58,23 +58,6 @@ services:
       retries: 5
       start_period: 20s
 
-  # TRANSITIONAL — deleted in Phase 3 together with MongoDB.Driver and Serilog.Sinks.MongoDB.
-  # Present only so the app is actually runnable during Phases 1-2, which lets the cross-cutting
-  # rewrite be verified against a live API before the database swap begins.
-  mongo:
-    image: mongo:7
-    container_name: hrms-mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - hrms-mongodata:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   api:
     profiles: ["api"]
     build:
@@ -101,4 +84,3 @@ services:
 volumes:
   hrms-pgdata:
   hrms-seqdata:
-  hrms-mongodata:

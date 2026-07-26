@@ -31,6 +31,12 @@ namespace Persistence.Configurations
                 socialMedia.Property(media => media.WebSite).HasMaxLength(256).HasColumnName("social_website");
             });
 
+            // Required navigation, so the instance is always materialized. As an optional dependent
+            // it shared this table without a single required column, leaving EF no way to decide
+            // whether the owned object exists when all three links are null — it warned about
+            // exactly that. The columns stay nullable; only the presence of the object is fixed.
+            builder.Navigation(cv => cv.SocialMedia).IsRequired();
+
             builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
 
             // Matches the soft-delete filter on JobSeeker. Without it EF warns that a filtered

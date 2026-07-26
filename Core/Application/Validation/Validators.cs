@@ -1,3 +1,4 @@
+using Application.Features.Auth.Commands;
 using Application.Features.Contacts.Commands;
 using Application.Features.Cvs.Commands;
 using Application.Features.Employers.Commands;
@@ -213,6 +214,31 @@ namespace Application.Validation
             RuleFor(input => input.EndYear)
                 .GreaterThanOrEqualTo(input => input.StartYear)
                 .When(input => input.StartYear.HasValue && input.EndYear.HasValue);
+        }
+    }
+
+    /// <summary>
+    /// Structural checks on the sign-in request — is this a usable credential pair at all.
+    /// </summary>
+    /// <remarks>
+    /// There was no validator here, so an empty email and empty password reached the manager, missed
+    /// on the lookup and came back 401. That status was wrong: 401 says the presented credentials
+    /// were not accepted, but nothing was presented and no authentication was attempted. A request
+    /// that cannot be evaluated is a 400, which is what ValidationBehavior now produces.
+    ///
+    /// The rules stay deliberately structural. Anything that could differ between two well-formed
+    /// requests would break the property <c>AuthScenarioTests</c> pins — that an unknown email and a
+    /// wrong password are indistinguishable — and hand back a user-enumeration oracle. In particular
+    /// there is no minimum length on the password: rejecting a short one before checking it would
+    /// disclose the policy, and would lock out any account whose password predates it. Emptiness is
+    /// a property of the request, identical for every caller, and leaks nothing.
+    /// </remarks>
+    public sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
+    {
+        public LoginCommandValidator()
+        {
+            RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+            RuleFor(command => command.Password).NotEmpty();
         }
     }
 }

@@ -262,10 +262,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseSerilogRequestLogging();
-
+// No UseSerilogRequestLogging. It sat here and emitted nothing: its middleware logs through the
+// static Log.Logger, and this app never assigns it — UseSerilog(ILogger) registers the instance for
+// dependency injection only. So it was a no-op, verified across several runs by the complete
+// absence of RequestLoggingMiddleware events in Seq while every other sink worked.
+//
+// It is removed rather than repaired on purpose. Wiring it up would add an HTTP-completion line to
+// every request on top of the two lines below, which is the duplication this pipeline was just
+// cleaned of. One line per outcome: LoggingBehavior on success, GlobalExceptionHandler on failure.
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// No UseStaticFiles, deliberately. This API serves no files from disk: CV uploads are written
+// outside the web root and read back through an authorized proxy endpoint, and Swagger serves its
+// assets from its own embedded provider. There is no wwwroot, which is why the static-file
+// middleware logged "The WebRootPath was not found" on every boot. Re-adding it would create an
+// unauthenticated read path for anything that later lands in the web root — the exact hole that
+// moving uploads to App_Data closed.
 
 app.UseRouting();
 app.UseCors("ApiCorsPolicy");

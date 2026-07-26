@@ -42,17 +42,27 @@ namespace WebAPI.Infrastructure
         {
             var problemDetails = Map(exception, httpContext);
 
+            // This is the single place a failed request is logged. LoggingBehavior deliberately does
+            // not log its own failures: it only sees exceptions raised inside a MediatR handler,
+            // whereas everything that becomes an error response passes through here, and only here
+            // is the resulting status code known. Two loggers meant two lines per rejection.
             if (problemDetails.Status >= StatusCodes.Status500InternalServerError)
             {
-                _logger.LogError(exception, "Unhandled exception for {Method} {Path}",
-                    httpContext.Request.Method, httpContext.Request.Path);
+                // The exception object, so the stack trace survives — this is a genuine fault.
+                _logger.LogError(exception, "Request {Method} {Path} failed with {StatusCode}",
+                    httpContext.Request.Method, httpContext.Request.Path, problemDetails.Status);
             }
             else
             {
-                _logger.LogInformation(
-                    "Request {Method} {Path} rejected with {StatusCode}: {Title}",
+                // Warning, not Information: a rejected request is worth seeing without hunting for
+                // it — a run of 401s on the login route is how a brute-force attempt shows up. No
+                // stack trace and no exception message: these are expected outcomes, and the message
+                // can carry record ids and user input. The type name says what was thrown; Title is
+                // what the caller was told.
+                _logger.LogWarning(
+                    "Request {Method} {Path} rejected with {StatusCode} ({ExceptionType}): {Title}",
                     httpContext.Request.Method, httpContext.Request.Path,
-                    problemDetails.Status, problemDetails.Title);
+                    problemDetails.Status, exception.GetType().Name, problemDetails.Title);
             }
 
             httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;

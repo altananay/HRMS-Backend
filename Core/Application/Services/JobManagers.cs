@@ -352,14 +352,15 @@ namespace Application.Services
             cv.Hobbies = hobbies;
             cv.Skills = skills;
 
-            cv.SocialMedia = socialMedia is null
-                ? null
-                : new SocialMedia
-                {
-                    Github = socialMedia.Github,
-                    Linkedin = socialMedia.Linkedin,
-                    WebSite = socialMedia.WebSite
-                };
+            // Always assigned: the owned instance is a required navigation now, so null would fail on
+            // save. An omitted block still means "clear the links" — the three columns end up null
+            // either way, so this stores exactly what the previous conditional stored.
+            cv.SocialMedia = new SocialMedia
+            {
+                Github = socialMedia?.Github,
+                Linkedin = socialMedia?.Linkedin,
+                WebSite = socialMedia?.WebSite
+            };
 
             cv.Educations.Clear();
             foreach (var education in educations)

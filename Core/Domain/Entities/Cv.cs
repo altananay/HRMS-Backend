@@ -28,8 +28,17 @@ namespace Domain.Entities
         /// <summary>PostgreSQL <c>text[]</c> with a GIN index, so "find CVs with skill X" is indexable.</summary>
         public string[] Skills { get; set; } = [];
 
-        /// <summary>Owned type — three inline nullable columns, not a separate table.</summary>
-        public SocialMedia? SocialMedia { get; set; }
+        /// <summary>
+        /// Owned type — three inline nullable columns, not a separate table.
+        /// </summary>
+        /// <remarks>
+        /// Always present, with each link individually optional. It was nullable, which made this an
+        /// <i>optional</i> dependent sharing the <c>cvs</c> table with no required column to prove it
+        /// exists — so EF could not tell "no social media" from "three empty links" and warned on
+        /// every model build. A CV simply always has this section; whether it is filled in is the
+        /// question, and that is what the three nullable columns answer.
+        /// </remarks>
+        public SocialMedia SocialMedia { get; set; } = new();
 
         public ICollection<Education> Educations { get; set; } = [];
 

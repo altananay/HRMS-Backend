@@ -42,29 +42,23 @@ namespace Application.Common.Behaviors
             var userId = _currentUser.UserId;
             var stopwatch = Stopwatch.StartNew();
 
-            try
-            {
-                var response = await next();
+            // No try/catch, deliberately: failures are logged once, by GlobalExceptionHandler.
+            // Logging them here as well produced two entries for every rejected request — a Warning
+            // from this behavior and an Information from the handler — which is what "one failed
+            // login, two log lines" looked like in Seq. The handler is the better of the two places:
+            // it sits outermost, so it also sees exceptions that never reach a MediatR handler, and
+            // it knows the resulting status code, which is the field you actually filter on.
+            //
+            // Nothing is lost by letting the exception pass through untouched: if next() throws, the
+            // success line below is never written, which is exactly the signal it should carry.
+            var response = await next();
 
-                stopwatch.Stop();
-                _logger.LogInformation(
-                    "Request {RequestName} handled for user {UserId} in {ElapsedMilliseconds}ms",
-                    requestName, userId, stopwatch.ElapsedMilliseconds);
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "Request {RequestName} handled for user {UserId} in {ElapsedMilliseconds}ms",
+                requestName, userId, stopwatch.ElapsedMilliseconds);
 
-                return response;
-            }
-            catch (Exception exception)
-            {
-                stopwatch.Stop();
-
-                // Pass the exception object, not just its message, so the stack trace survives.
-                _logger.LogError(
-                    exception,
-                    "Request {RequestName} failed for user {UserId} after {ElapsedMilliseconds}ms",
-                    requestName, userId, stopwatch.ElapsedMilliseconds);
-
-                throw;
-            }
+            return response;
         }
     }
 }

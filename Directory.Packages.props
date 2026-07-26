@@ -72,30 +72,15 @@
   </ItemGroup>
 
   <!--
-    TRANSITIONAL — every package below is deleted before this migration is finished.
-    Kept only so Phase 0/1 can reach a green build on net10.0 while still running on MongoDB.
-
-      Phase 2 removes: Autofac*, Castle.Core, FluentValidation.AspNetCore
-      Phase 3 removes: MongoDB.Driver, Serilog.Sinks.MongoDB, AutoMapper*
-
-    AutoMapper is held at 12.0.1 (last free release; 15.0.0+ is commercial) rather than upgraded,
-    because it is being replaced by Riok.Mapperly rather than kept.
+    The transitional group that used to sit here is gone. It carried Autofac, Castle.Core,
+    AutoMapper, MongoDB.Driver and Serilog.Sinks.MongoDB so the solution could reach a green build
+    on net10.0 while still running on MongoDB, and every one of them was replaced: Autofac and
+    Castle by the built-in container plus MediatR pipeline behaviors, AutoMapper by Riok.Mapperly,
+    the driver and its log sink by EF Core/Npgsql and Seq. No project references any of them, so
+    the declarations were orphaned — under central package management an unreferenced
+    PackageVersion is inert, which is precisely why it can sit here unnoticed. Do not re-add one
+    speculatively; declare a version when a csproj actually references it.
   -->
-  <ItemGroup Label="Transitional — removed during migration">
-    <PackageVersion Include="Autofac" Version="9.3.1" />
-    <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageVersion Include="Autofac.Extras.DynamicProxy" Version="8.0.1" />
-    <PackageVersion Include="Castle.Core" Version="5.2.1" />
-    <PackageVersion Include="AutoMapper" Version="12.0.1" />
-    <PackageVersion Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-    <!-- Do not bump either of these. Driver 3.x is a breaking rewrite and this code targets the 2.x
-         API; Serilog.Sinks.MongoDB 7.x in turn requires driver >= 3.0.0 (NU1109). Sink 5.3.1 also
-         carries a metadata reference to driver 2.17.1, so raising the driver past 2.19.0 breaks
-         Program.cs's SetMongoDatabase call with CS0012. 2.19.0 + 5.3.1 is the one pairing that
-         compiles. Both are deleted in Phase 3 along with the Mongo log sink. -->
-    <PackageVersion Include="MongoDB.Driver" Version="2.19.0" />
-    <PackageVersion Include="Serilog.Sinks.MongoDB" Version="5.3.1" />
-  </ItemGroup>
 
   <!--
     INCOMING — added in Phase 3 (EF Core / PostgreSQL) and Phase 2 (tests).

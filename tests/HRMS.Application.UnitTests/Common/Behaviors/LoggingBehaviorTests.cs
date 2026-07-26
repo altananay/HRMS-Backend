@@ -1,5 +1,8 @@
 ﻿using Application.Abstractions;
 using Application.Common.Behaviors;
+using Application.Common.Exceptions;
+using Application.Utilities.Exceptions;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -70,14 +73,44 @@ public class LoggingBehaviorTests
         thrown.ShouldBeSameAs(boom);
     }
 
+    public static TheoryData<Exception> Failures() =>
+    [
+        new ValidationException([new ValidationFailure("Email", "E-posta zorunludur.")]),
+        new NotFoundException("Kayıt bulunamadı."),
+        new ConflictException("Bu ilana zaten başvurdunuz."),
+        new ForbiddenException(),
+        new BusinessException("İş kuralı ihlali."),
+        new UnauthorizedAccessException("E-posta veya parola hatalı."),
+        new InvalidOperationException("a genuine fault")
+    ];
+
+    /// <summary>
+    /// A failed request is logged once, by GlobalExceptionHandler, which is the only place that
+    /// knows the resulting status code. This behavior must stay silent or every rejection produces
+    /// two entries — the duplication this test exists to prevent.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Failures))]
+    public async Task Handle_Should_LogNothing_When_HandlerThrows(Exception failure)
+    {
+        _currentUser.UserId.Returns("user-1");
+
+        await Should.ThrowAsync<Exception>(() => CreateSut().Handle(
+            new SampleQuery("developer"),
+            _ => Task.FromException<string>(failure),
+            CancellationToken.None));
+
+        LoggedLevels().ShouldBeEmpty();
+    }
+
     /// <summary>
     /// The replaced LogAspect could not do this. Castle's MethodInterception is synchronous, so for
-    /// an <c>async Task</c> method its OnSuccess/OnAfter hooks fired when the Task was *returned*
-    /// and OnException never observed a failure thrown after the first await â€” meaning it reported
-    /// success for operations that went on to fail.
+    /// an <c>async Task</c> method its OnSuccess/OnAfter hooks fired when the Task was *returned*,
+    /// meaning it reported success for operations that went on to fail. Here the success line is
+    /// written after the await completes, so a failure thrown later can never be logged as success.
     /// </summary>
     [Fact]
-    public async Task Handle_Should_LogError_When_HandlerFailsAsynchronously()
+    public async Task Handle_Should_NotLogSuccess_When_HandlerFailsAsynchronously()
     {
         _currentUser.UserId.Returns("user-1");
 
@@ -90,9 +123,7 @@ public class LoggingBehaviorTests
             },
             CancellationToken.None));
 
-        // Exactly one Error and no success line — the failure is observed after the await, which is
-        // precisely what the synchronous Castle interceptor could not do.
-        LoggedLevels().ShouldBe([LogLevel.Error]);
+        LoggedLevels().ShouldBeEmpty();
     }
 
     [Fact]

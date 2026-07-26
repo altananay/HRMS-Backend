@@ -69,6 +69,43 @@ public class AuthScenarioTests : IAsyncLifetime
         StripTraceId(unknownEmail.Body).ShouldBe(StripTraceId(wrongPassword.Body));
     }
 
+    /// <summary>
+    /// An unusable credential pair is a bad request, not a failed authentication.
+    /// </summary>
+    /// <remarks>
+    /// There was no validator on LoginCommand, so blank fields reached the manager, missed on the
+    /// lookup and came back 401 — claiming the credentials had been rejected when none were
+    /// submitted and no verification ever ran.
+    /// </remarks>
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("", "Passw0rd!23")]
+    [InlineData("someone@test.local", "")]
+    [InlineData("not-an-email", "Passw0rd!23")]
+    public async Task Login_Should_Return400_When_TheRequestCannotBeEvaluated(string email, string password)
+    {
+        var response = await _client.LoginAsync(email, password);
+
+        response.Status.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// The 400/401 split must follow the shape of the request, never the existence of the account —
+    /// otherwise the new status code becomes the enumeration oracle that the uniform 401 closed.
+    /// </summary>
+    [Fact]
+    public async Task Login_Should_Return401_ForBothKnownAndUnknownAccounts_When_TheRequestIsWellFormed()
+    {
+        await _client.RegisterJobSeekerAsync("shaped@test.local");
+        _client.Authenticate(null);
+
+        var known = await _client.LoginAsync("shaped@test.local", "CompletelyWrong!9");
+        var unknown = await _client.LoginAsync("absent@test.local", "CompletelyWrong!9");
+
+        known.Status.ShouldBe(HttpStatusCode.Unauthorized);
+        unknown.Status.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
     [Fact]
     public async Task Refresh_Should_IssueANewPair_And_RetireTheOldToken()
     {

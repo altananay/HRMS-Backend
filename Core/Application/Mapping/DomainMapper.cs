@@ -48,9 +48,20 @@ namespace Application.Mapping
 
         public static partial CvFileDto ToDto(CvFile cvFile);
 
-        /// <summary>Hand-written: the source is nullable and the target is a positional record.</summary>
+        /// <summary>
+        /// Hand-written: the target is a positional record, and an instance whose three links are all
+        /// empty is reported as absent.
+        /// </summary>
+        /// <remarks>
+        /// The emptiness check is what keeps the JSON contract stable. <c>Cv.SocialMedia</c> is a
+        /// required owned navigation, so it is never null in memory; without collapsing the empty
+        /// case here, a CV with no links would start serializing
+        /// <c>"socialMedia": { "github": null, "linkedin": null, "webSite": null }</c> where it
+        /// previously sent <c>"socialMedia": null</c>.
+        /// </remarks>
         public static SocialMediaDto? ToDto(Domain.ValueObjects.SocialMedia? socialMedia)
-            => socialMedia is null
+            => socialMedia is null ||
+               (socialMedia.Github is null && socialMedia.Linkedin is null && socialMedia.WebSite is null)
                 ? null
                 : new SocialMediaDto(socialMedia.Github, socialMedia.Linkedin, socialMedia.WebSite);
 
