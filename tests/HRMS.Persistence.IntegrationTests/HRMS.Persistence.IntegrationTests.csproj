@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- A real PostgreSQL. Every assertion in this project is about something only the database
+         knows: a partial unique index, an ON DELETE rule, a citext comparison, a generated column.
+         An in-memory provider would report all of them as passing without enforcing any. -->
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Infrastructure\Persistence\Persistence.csproj" />
+    <!-- The seeder resolves IPasswordHasher, whose implementation lives in Infrastructure. -->
+    <ProjectReference Include="..\..\Infrastructure\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>

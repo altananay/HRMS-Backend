@@ -133,7 +133,7 @@ If any item below is violated, the change is invalid.
 
 ## 4) Commands
 
-Solution `HRMS.sln`: 5 source projects + 2 test projects, all `net10.0`, SDK pinned by `global.json`.
+Solution `HRMS.sln`: 5 source projects + 3 test projects, all `net10.0`, SDK pinned by `global.json`.
 
 ```bash
 # Infrastructure (postgres on 5433, seq on 8081). 5433 avoids a locally-installed PostgreSQL.
@@ -230,12 +230,22 @@ locator were removed — do not reintroduce a service locator. Cross-cutting con
 
 ## 9) Testing
 
-Two projects, and both must stay green.
+Three projects, and all three must stay green.
 
 - `tests/HRMS.Application.UnitTests` — behaviors, validators, managers with substituted repositories
   (this is *why* repositories are small interfaces), storage.
+- `tests/HRMS.Persistence.IntegrationTests` — the mapping, against a real **Testcontainers
+  PostgreSQL**: migrations, unique indexes (including the partial ones), delete rules, soft delete
+  and its query filters, the auditing interceptor, the repositories, and seeding.
 - `tests/HRMS.WebAPI.FunctionalTests` — real HTTP against a **Testcontainers PostgreSQL**, reset per
-  test with Respawn. Covers the hiring lifecycle, the token lifecycle, and `SecuritySmokeTests`.
+  test with Respawn. Covers the hiring lifecycle, the token lifecycle, resource ownership, and
+  `SecuritySmokeTests`.
+
+Two of these exist because the other lies to you if it is alone. Unit tests substitute the
+repositories, so a query that forgets an `Include` passes every one of them — that shipped, and the
+CV read surface answered 500 for months. Integration tests never see a controller, so an endpoint
+that skips an ownership check passes those — that shipped too. Add coverage at the layer the rule
+actually lives in.
 
 `SecuritySmokeTests` enumerates the real `EndpointDataSource`. **A new endpoint is covered the moment
 it exists** — if it is anonymous and not on the reviewed allow-list, the suite fails.
