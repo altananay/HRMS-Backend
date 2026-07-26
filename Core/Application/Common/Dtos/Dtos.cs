@@ -15,6 +15,19 @@ namespace Application.Common.Dtos
     /// National IDs are likewise absent from every DTO here — TCKN is PII and has no business in a
     /// list response.
     /// </remarks>
+    /// <summary>What a successful create returns: the identity of the row that now exists.</summary>
+    /// <remarks>
+    /// Creates used to answer <c>{ "isSuccess": true, "message": "..." }</c> and nothing else, so a
+    /// client that had just published an advertisement had no way to address it — the only route to
+    /// its id was to list everything and search by title. The functional tests did exactly that,
+    /// which is how obvious the gap was.
+    ///
+    /// An object rather than a bare <c>Guid</c> in <c>data</c>: every other payload under that key
+    /// is an object with an <c>id</c>, so clients keep one shape to parse, and a create that later
+    /// needs to return a second field extends without breaking the contract.
+    /// </remarks>
+    public sealed record CreatedDto(Guid Id);
+
     public sealed record JobSeekerDto(
         Guid Id,
         string Email,

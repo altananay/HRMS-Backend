@@ -33,7 +33,12 @@ namespace WebAPI.Controllers
             // caller could publish an advertisement in any employer's name.
             command.EmployerId = CurrentUserId;
 
-            return Ok((await Mediator.Send(command)).Result);
+            var result = (await Mediator.Send(command)).Result;
+
+            // 201 with a Location, so the caller can address what it just published. This used to
+            // answer 200 with no id at all, leaving "list everything and match on title" as the only
+            // way to find it — which is exactly what the functional tests had to do.
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
         [Authorize(Roles = Roles.Employer)]

@@ -44,17 +44,20 @@ public class JobLifecycleScenarioTests : IAsyncLifetime
         // 3. Employer publishes an advertisement. EmployerId comes from the token, never the body.
         await _client.LoginAsAsync(EmployerEmail, Password);
         var posted = await _client.PostAdvertisementAsync("Senior Backend Engineer");
-        posted.IsSuccess.ShouldBeTrue(posted.Body);
+        posted.Status.ShouldBe(HttpStatusCode.Created, posted.Body);
 
-        // 4. The board is browsable without an account.
+        // The create returns the id it assigned. This test used to have to list the whole board and
+        // match on title to find out what it had just published.
+        var advertisementId = posted.DataString("id");
+
+        // 4. The board is browsable without an account, and shows the record just created.
         _client.Authenticate(null);
         var board = await _client.GetAsync("/api/JobAdvertisements/getall");
         board.Status.ShouldBe(HttpStatusCode.OK);
 
         var items = board.Data.GetProperty("items");
         items.GetArrayLength().ShouldBe(1);
-
-        var advertisementId = items[0].GetProperty("id").GetString()!;
+        items[0].GetProperty("id").GetString().ShouldBe(advertisementId);
 
         // The denormalized company columns are gone, but the contract still carries them —
         // projected from the Employer navigation.

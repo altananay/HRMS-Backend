@@ -36,7 +36,13 @@ namespace WebAPI.Controllers
         {
             command.JobSeekerId = CurrentUserId;
 
-            return Ok((await Mediator.Send(command)).Result);
+            var result = (await Mediator.Send(command)).Result;
+
+            // A CV is addressed by its owner, not by its own id — there is one per seeker and no
+            // getbyid route — so the Location points at getbyjobseekerid. The body still carries the
+            // CV's own id, which is what the delete endpoint takes.
+            return CreatedAtAction(
+                nameof(GetByJobSeekerId), new { jobSeekerId = command.JobSeekerId }, result);
         }
 
         /// <remarks>
@@ -73,7 +79,8 @@ namespace WebAPI.Controllers
                     file.FileName, file.ContentType, file.Length, file.OpenReadStream())).ToList()
             };
 
-            return Ok((await Mediator.Send(command)).Result);
+            // 201: attachments are created here, and the response already carries their ids.
+            return Created((string?)null, (await Mediator.Send(command)).Result);
         }
 
         /// <summary>

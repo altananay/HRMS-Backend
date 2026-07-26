@@ -187,7 +187,7 @@ namespace Application.Services
         /// Admin-only at the controller. The role is assigned here, server-side — never read from the
         /// request — which is what closes the old privilege-escalation path.
         /// </remarks>
-        public async Task<IResult> RegisterSystemStaffAsync(
+        public async Task<IDataResult<CreatedDto>> RegisterSystemStaffAsync(
             RegisterSystemStaffCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -205,7 +205,7 @@ namespace Application.Services
             await AssignRoleAsync(staff, Roles.Admin, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.SystemStaff.Added);
+            return new SuccessDataResult<CreatedDto>(new CreatedDto(staff.Id), Messages.SystemStaff.Added);
         }
 
         // -----------------------------------------------------------------------------------------

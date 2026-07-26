@@ -35,7 +35,11 @@ namespace Application.Abstractions.Services
         Task<IDataResult<AuthResponse>> RegisterEmployerAsync(
             RegisterEmployerCommand command, CancellationToken cancellationToken = default);
 
-        Task<IResult> RegisterSystemStaffAsync(
+        /// <remarks>
+        /// Unlike the other two registrations this issues no tokens — an admin is creating somebody
+        /// else's account, not signing in — so the new staff id is the only useful thing to return.
+        /// </remarks>
+        Task<IDataResult<CreatedDto>> RegisterSystemStaffAsync(
             RegisterSystemStaffCommand command, CancellationToken cancellationToken = default);
 
         Task<IDataResult<AuthResponse>> RefreshAsync(
@@ -69,7 +73,7 @@ namespace Application.Abstractions.Services
     {
         Task<IDataResult<PagedResult<ContactDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<IDataResult<ContactDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IResult> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedDto>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateContactCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
@@ -78,7 +82,8 @@ namespace Application.Abstractions.Services
     {
         Task<IDataResult<PagedResult<JobPositionDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<IDataResult<JobPositionDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IResult> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default);
+        /// <remarks>Resolve-or-create, so this returns the existing position's id when the name is taken.</remarks>
+        Task<IDataResult<CreatedDto>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobPositionCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
@@ -130,7 +135,7 @@ namespace Application.Abstractions.Services
         /// </param>
         Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
 
-        Task<IResult> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedDto>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default);
 
         /// <param name="requestedBy">The caller, from their token. Only the owner or an admin may delete.</param>
@@ -144,7 +149,7 @@ namespace Application.Abstractions.Services
             bool orderByHighestSalary = false, CancellationToken cancellationToken = default);
 
         Task<IDataResult<JobAdvertisementDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IResult> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedDto>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
 
         /// <param name="employerId">
@@ -188,7 +193,7 @@ namespace Application.Abstractions.Services
         /// </param>
         Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
 
-        Task<IResult> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedDto>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }

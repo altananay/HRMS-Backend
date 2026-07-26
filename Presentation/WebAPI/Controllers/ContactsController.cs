@@ -34,7 +34,11 @@ namespace WebAPI.Controllers
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Add(CreateContactCommand command)
-            => Ok((await Mediator.Send(command)).Result);
+        {
+            var result = (await Mediator.Send(command)).Result;
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
+        }
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, UpdateContactCommand command)

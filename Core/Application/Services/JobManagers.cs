@@ -58,7 +58,7 @@ namespace Application.Services
             return new SuccessDataResult<JobAdvertisementDto>(DomainMapper.ToDto(advertisement));
         }
 
-        public async Task<IResult> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
         {
             // Verify the employer BEFORE writing anything. The old flow inserted a JobPosition
             // first and only then looked the employer up, so a bad employer id left an orphan
@@ -67,7 +67,7 @@ namespace Application.Services
 
             var position = await _positions.ResolveOrCreateAsync(command.JobPositionName, cancellationToken);
 
-            _advertisements.Add(new JobAdvertisement
+            var advertisement = new JobAdvertisement
             {
                 EmployerId = command.EmployerId,
                 JobPosition = position,
@@ -83,12 +83,15 @@ namespace Application.Services
                 JobType = command.JobType,
                 Deadline = command.Deadline,
                 IsActive = true
-            });
+            };
+
+            _advertisements.Add(advertisement);
 
             // One SaveChanges, so the position and the advertisement land in a single transaction.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.JobAdvertisement.Added);
+            return new SuccessDataResult<CreatedDto>(
+                new CreatedDto(advertisement.Id), Messages.JobAdvertisement.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
@@ -208,7 +211,7 @@ namespace Application.Services
             return new SuccessDataResult<JobApplicationDto>(DomainMapper.ToDto(application));
         }
 
-        public async Task<IResult> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default)
         {
             var advertisement = await _rules.EnsureJobAdvertisementExistsAsync(command.JobAdvertisementId, cancellationToken);
             await _rules.EnsureJobSeekerExistsAsync(command.JobSeekerId, cancellationToken);
@@ -220,18 +223,20 @@ namespace Application.Services
 
             await _rules.EnsureNotAlreadyAppliedAsync(command.JobSeekerId, command.JobAdvertisementId, cancellationToken);
 
-            _applications.Add(new JobApplication
+            var application = new JobApplication
             {
                 JobAdvertisementId = command.JobAdvertisementId,
                 JobSeekerId = command.JobSeekerId,
                 JobSeekerNote = command.JobSeekerNote,
                 Status = JobApplicationStatus.Submitted,
                 StatusChangedAt = _timeProvider.GetUtcNow().UtcDateTime
-            });
+            };
 
+            _applications.Add(application);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.JobApplication.Added);
+            return new SuccessDataResult<CreatedDto>(
+                new CreatedDto(application.Id), Messages.JobApplication.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobApplicationCommand command, CancellationToken cancellationToken = default)
@@ -313,7 +318,7 @@ namespace Application.Services
             return new SuccessDataResult<CvDto>(DomainMapper.ToDto(cv));
         }
 
-        public async Task<IResult> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedDto>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default)
         {
             await _rules.EnsureJobSeekerExistsAsync(command.JobSeekerId, cancellationToken);
             await _rules.EnsureCvDoesNotExistForJobSeekerAsync(command.JobSeekerId, cancellationToken);
@@ -329,7 +334,7 @@ namespace Application.Services
             // two writes, no transaction, and two copies free to drift apart.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.Cv.Added);
+            return new SuccessDataResult<CreatedDto>(new CreatedDto(cv.Id), Messages.Cv.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default)

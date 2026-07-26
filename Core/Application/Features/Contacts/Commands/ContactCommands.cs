@@ -1,4 +1,5 @@
 using Application.Abstractions.Services;
+using Application.Common.Dtos;
 using Application.Results;
 using MediatR;
 
@@ -29,7 +30,10 @@ namespace Application.Features.Contacts.Commands
 
         public sealed class Response
         {
-            public IResult Result { get; init; } = null!;
+            // Declared as the concrete result type, not IResult. System.Text.Json serializes by the
+            // declared type, so an IResult-typed member would emit isSuccess and message and quietly
+            // drop the data payload — the id would never reach the client.
+            public IDataResult<CreatedDto> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<CreateContactCommand, Response>

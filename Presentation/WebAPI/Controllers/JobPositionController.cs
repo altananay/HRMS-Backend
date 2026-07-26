@@ -20,10 +20,18 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetById(Guid id)
             => Ok((await Mediator.Send(new GetJobPositionByIdQuery { Id = id })).Result);
 
+        /// <remarks>
+        /// Resolve-or-create, so re-adding an existing name is idempotent and answers 201 carrying
+        /// the id of the position that was already there.
+        /// </remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpPost("addjobposition")]
         public async Task<IActionResult> Add(CreateJobPositionCommand command)
-            => Ok((await Mediator.Send(command)).Result);
+        {
+            var result = (await Mediator.Send(command)).Result;
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
+        }
 
         [Authorize(Roles = Roles.Admin)]
         [HttpPut("update")]

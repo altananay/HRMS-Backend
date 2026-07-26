@@ -30,24 +30,32 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Login(LoginCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
+        /// <remarks>
+        /// 201 without a Location: an account is created, but there is no per-user address to point
+        /// at — <c>/api/auth/me</c> resolves from the token rather than from an id, and the seeker
+        /// profile is not readable by everyone. The body carries the tokens the caller needs next.
+        /// </remarks>
         [AllowAnonymous]
         [HttpPost("register/jobseeker")]
         public async Task<IActionResult> RegisterJobSeeker(RegisterJobSeekerCommand command)
-            => Ok((await Mediator.Send(command)).Result);
+            => Created((string?)null, (await Mediator.Send(command)).Result);
 
         [AllowAnonymous]
         [HttpPost("register/employer")]
         public async Task<IActionResult> RegisterEmployer(RegisterEmployerCommand command)
-            => Ok((await Mediator.Send(command)).Result);
+            => Created((string?)null, (await Mediator.Send(command)).Result);
 
         /// <remarks>
         /// Admin-only, and the role is assigned server-side. The old equivalent took a
         /// client-supplied <c>Claims</c> array that AutoMapper copied onto the entity.
+        ///
+        /// Unlike the other two this issues no tokens — an admin is creating somebody else's
+        /// account — so the response carries the new staff id instead.
         /// </remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpPost("register/system-staff")]
         public async Task<IActionResult> RegisterSystemStaff(RegisterSystemStaffCommand command)
-            => Ok((await Mediator.Send(command)).Result);
+            => Created((string?)null, (await Mediator.Send(command)).Result);
 
         [AllowAnonymous]
         [HttpPost("refresh")]

@@ -56,7 +56,9 @@ namespace WebAPI.Controllers
         {
             command.JobSeekerId = CurrentUserId;
 
-            return Ok((await Mediator.Send(command)).Result);
+            var result = (await Mediator.Send(command)).Result;
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
         /// <summary>Employer-side moderation: set the status and leave a note.</summary>

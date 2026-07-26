@@ -44,20 +44,23 @@ namespace Application.Services
             return new SuccessDataResult<ContactDto>(DomainMapper.ToDto(contact));
         }
 
-        public async Task<IResult> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedDto>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default)
         {
-            _contacts.Add(new Contact
+            // Held in a local so the id can be returned: BaseEntity assigns it in the constructor,
+            // so it is known before the insert rather than read back after it.
+            var contact = new Contact
             {
                 FirstName = command.FirstName,
                 LastName = command.LastName,
                 Email = command.Email,
                 Subject = command.Subject,
                 Message = command.Message
-            });
+            };
 
+            _contacts.Add(contact);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.Contact.Added);
+            return new SuccessDataResult<CreatedDto>(new CreatedDto(contact.Id), Messages.Contact.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateContactCommand command, CancellationToken cancellationToken = default)
@@ -122,14 +125,16 @@ namespace Application.Services
             return new SuccessDataResult<JobPositionDto>(DomainMapper.ToDto(position));
         }
 
-        public async Task<IResult> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default)
         {
             // Resolve-or-create rather than blind insert: the name is unique now, and an admin
             // re-adding an existing position should be idempotent rather than a 500 from the index.
-            await _positions.ResolveOrCreateAsync(command.Name, cancellationToken);
+            // The returned id is therefore the existing position's when the name was already taken,
+            // which is what makes the call idempotent in the response as well as in the table.
+            var position = await _positions.ResolveOrCreateAsync(command.Name, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessResult(Messages.JobPosition.Added);
+            return new SuccessDataResult<CreatedDto>(new CreatedDto(position.Id), Messages.JobPosition.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobPositionCommand command, CancellationToken cancellationToken = default)

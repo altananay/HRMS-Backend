@@ -58,28 +58,26 @@ public class ResourceOwnershipTests : IAsyncLifetime
         await _client.LoginAsAsync(Owner, Password);
         var seekerId = await CurrentUserIdAsync();
 
-        (await _client.PostAsync("/api/Cvs/add", new
+        // The create hands back the id it just assigned, so there is nothing to look up.
+        var created = await _client.PostAsync("/api/Cvs/add", new
         {
             information = "Gizli özgeçmiş.",
             skills = new[] { "csharp" }
-        })).IsSuccess.ShouldBeTrue();
+        });
+        created.Status.ShouldBe(HttpStatusCode.Created, created.Body);
 
-        var cv = await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}");
-        cv.Status.ShouldBe(HttpStatusCode.OK, cv.Body);
-
-        return (seekerId, cv.DataString("id"));
+        return (seekerId, created.DataString("id"));
     }
 
     /// <summary>Signs in as the employer, publishes an advertisement, and returns its id.</summary>
     private async Task<string> GivenEmployerHasAnAdvertisementAsync()
     {
         await _client.LoginAsAsync(Employer, Password);
-        (await _client.PostAdvertisementAsync("Senior Backend Engineer")).IsSuccess.ShouldBeTrue();
 
-        _client.Authenticate(null);
-        var board = await _client.GetAsync("/api/JobAdvertisements/getall");
+        var created = await _client.PostAdvertisementAsync("Senior Backend Engineer");
+        created.Status.ShouldBe(HttpStatusCode.Created, created.Body);
 
-        return board.Data.GetProperty("items")[0].GetProperty("id").GetString()!;
+        return created.DataString("id");
     }
 
     // -------------------------------------------------------------------------------------------
@@ -223,14 +221,14 @@ public class ResourceOwnershipTests : IAsyncLifetime
         var advertisementId = await GivenEmployerHasAnAdvertisementAsync();
 
         await _client.LoginAsAsync(Owner, Password);
-        (await _client.PostAsync("/api/JobApplications/add", new
+        var created = await _client.PostAsync("/api/JobApplications/add", new
         {
             jobAdvertisementId = advertisementId,
             jobSeekerNote = "İlgileniyorum."
-        })).IsSuccess.ShouldBeTrue();
+        });
+        created.Status.ShouldBe(HttpStatusCode.Created, created.Body);
 
-        var applicationId = (await _client.GetAsync("/api/JobApplications/getall"))
-            .Data.GetProperty("items")[0].GetProperty("id").GetString()!;
+        var applicationId = created.DataString("id");
 
         // The applicant reads their own.
         (await _client.GetAsync($"/api/JobApplications/getbyid/{applicationId}"))

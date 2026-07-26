@@ -100,8 +100,9 @@ public class AuthScenarioTests : IAsyncLifetime
             .Status.ShouldBe(HttpStatusCode.BadRequest);
 
         // Five characters, no digit and no symbol: the policy is length only, on purpose.
+        // 201, not 200 — registration creates an account.
         (await _client.RegisterJobSeekerAsync("plain@test.local", "abcde"))
-            .Status.ShouldBe(HttpStatusCode.OK);
+            .Status.ShouldBe(HttpStatusCode.Created);
 
         _client.Authenticate(null);
         (await _client.LoginAsync("plain@test.local", "abcde")).Status.ShouldBe(HttpStatusCode.OK);

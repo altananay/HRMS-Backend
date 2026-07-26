@@ -12,7 +12,7 @@ namespace Application.Features.JobPositions.Commands
 
         public sealed class Response
         {
-            public IResult Result { get; init; } = null!;
+            public IDataResult<CreatedDto> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<CreateJobPositionCommand, Response>
