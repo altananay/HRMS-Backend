@@ -38,28 +38,25 @@ namespace Application.Services
 
         private readonly ICvRepository _cvs;
         private readonly ICvFileRepository _cvFiles;
-        private readonly IJobApplicationRepository _applications;
         private readonly IStorageService _storage;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ICurrentUserService _currentUser;
         private readonly BusinessRules _rules;
+        private readonly CandidateAccessPolicy _access;
 
         public CvFileManager(
             ICvRepository cvs,
             ICvFileRepository cvFiles,
-            IJobApplicationRepository applications,
             IStorageService storage,
             IUnitOfWork unitOfWork,
-            ICurrentUserService currentUser,
-            BusinessRules rules)
+            BusinessRules rules,
+            CandidateAccessPolicy access)
         {
             _cvs = cvs;
             _cvFiles = cvFiles;
-            _applications = applications;
             _storage = storage;
             _unitOfWork = unitOfWork;
-            _currentUser = currentUser;
             _rules = rules;
+            _access = access;
         }
 
         public async Task<IDataResult<IReadOnlyList<CvFileDto>>> UploadAsync(
@@ -112,7 +109,7 @@ namespace Application.Services
             var file = await _cvFiles.GetByIdWithCvAsync(fileId, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
 
-            await EnsureCanReadAsync(file, requestedBy, cancellationToken);
+            await _access.EnsureCanReadAsync(file.Cv.JobSeekerId, requestedBy, cancellationToken);
 
             var content = await _storage.OpenReadAsync(ContainerName, file.StoragePath, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
@@ -130,10 +127,7 @@ namespace Application.Services
 
             // Deleting is stricter than reading: only the owner or an admin, never an employer who
             // merely received an application.
-            if (file.Cv.JobSeekerId != requestedBy && !_currentUser.IsInRole(Roles.Admin))
-            {
-                throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
-            }
+            _access.EnsureCanModify(file.Cv.JobSeekerId, requestedBy);
 
             await _storage.DeleteAsync(ContainerName, file.StoragePath, cancellationToken);
 
@@ -143,35 +137,6 @@ namespace Application.Services
             return new SuccessResult(Messages.Cv.Deleted);
         }
 
-        /// <summary>
-        /// Allows the owning seeker, an employer holding an application from them, or an admin.
-        /// </summary>
-        /// <remarks>
-        /// The employer case is the reason this is a database question rather than a role check: an
-        /// employer may read a CV precisely because that seeker applied to one of their
-        /// advertisements, and not otherwise. A plain <c>[Authorize(Roles = "employer")]</c> would
-        /// let any employer read every CV in the system.
-        /// </remarks>
-        private async Task EnsureCanReadAsync(CvFile file, Guid requestedBy, CancellationToken cancellationToken)
-        {
-            if (file.Cv.JobSeekerId == requestedBy || _currentUser.IsInRole(Roles.Admin))
-            {
-                return;
-            }
-
-            if (_currentUser.IsInRole(Roles.Employer))
-            {
-                var hasApplication = await _applications.ExistsForEmployerAndSeekerAsync(
-                    requestedBy, file.Cv.JobSeekerId, cancellationToken);
-
-                if (hasApplication)
-                {
-                    return;
-                }
-            }
-
-            throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
-        }
 
         private static void Validate(FileUploadRequest file)
         {

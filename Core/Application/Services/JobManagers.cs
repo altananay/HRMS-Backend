@@ -1,3 +1,4 @@
+using Application.Abstractions;
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
 using Application.Common.Dtos;
@@ -120,9 +121,13 @@ namespace Application.Services
             return new SuccessResult(Messages.JobAdvertisement.Updated);
         }
 
-        public async Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IResult> DeleteAsync(Guid id, Guid employerId, CancellationToken cancellationToken = default)
         {
             var advertisement = await _rules.EnsureJobAdvertisementExistsAsync(id, cancellationToken);
+
+            // The same guard Update uses. It was missing here, so an employer could delete a rival's
+            // listing outright — the destructive half of the very hole EnsureOwnedBy was written for.
+            EnsureOwnedBy(advertisement, employerId);
 
             // Soft delete, and the shared JobPosition is left alone — the old Delete removed the
             // position along with the advertisement, which only made sense while positions were
@@ -155,17 +160,20 @@ namespace Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly BusinessRules _rules;
         private readonly TimeProvider _timeProvider;
+        private readonly ICurrentUserService _currentUser;
 
         public JobApplicationManager(
             IJobApplicationRepository applications,
             IUnitOfWork unitOfWork,
             BusinessRules rules,
-            TimeProvider timeProvider)
+            TimeProvider timeProvider,
+            ICurrentUserService currentUser)
         {
             _applications = applications;
             _unitOfWork = unitOfWork;
             _rules = rules;
             _timeProvider = timeProvider;
+            _currentUser = currentUser;
         }
 
         public async Task<IDataResult<PagedResult<JobApplicationDto>>> GetPagedAsync(
@@ -181,10 +189,21 @@ namespace Application.Services
                 result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
         {
             var application = await _applications.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobApplication.NotFound);
+
+            // Only the two parties to the application, or an admin. GetPaged narrows by role and
+            // token, but this path took an id and returned it to any authenticated caller — so
+            // iterating ids exposed every applicant's name and every employer's private note.
+            var isApplicant = application.JobSeekerId == requestedBy;
+            var isOwningEmployer = application.JobAdvertisement.EmployerId == requestedBy;
+
+            if (!isApplicant && !isOwningEmployer && !_currentUser.IsInRole(Roles.Admin))
+            {
+                throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
+            }
 
             return new SuccessDataResult<JobApplicationDto>(DomainMapper.ToDto(application));
         }
@@ -256,12 +275,18 @@ namespace Application.Services
         private readonly ICvRepository _cvs;
         private readonly IUnitOfWork _unitOfWork;
         private readonly BusinessRules _rules;
+        private readonly CandidateAccessPolicy _access;
 
-        public CvManager(ICvRepository cvs, IUnitOfWork unitOfWork, BusinessRules rules)
+        public CvManager(
+            ICvRepository cvs,
+            IUnitOfWork unitOfWork,
+            BusinessRules rules,
+            CandidateAccessPolicy access)
         {
             _cvs = cvs;
             _unitOfWork = unitOfWork;
             _rules = rules;
+            _access = access;
         }
 
         public async Task<IDataResult<PagedResult<CvDto>>> GetPagedAsync(
@@ -274,8 +299,12 @@ namespace Application.Services
                 result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default)
         {
+            // Checked before the lookup, so a caller with no right to this candidate cannot tell a
+            // seeker who has a CV from one who does not.
+            await _access.EnsureCanReadAsync(jobSeekerId, requestedBy, cancellationToken);
+
             // Looks the CV up BY seeker id. The old GetByJobSeekerId passed the seeker id into
             // CheckIfCvExists, which validates CV ids — so it failed for every caller whose CV id
             // did not happen to equal their own.
@@ -317,10 +346,16 @@ namespace Application.Services
             return new SuccessResult(Messages.Cv.Updated);
         }
 
-        public async Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IResult> DeleteAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
         {
             var cv = await _cvs.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
+
+            // There was no check at all here, and cvs has no deleted_at column — so any job seeker
+            // could permanently destroy another's CV, cascading to their education, experience,
+            // language, project and file rows. The file-level delete right below always enforced
+            // this; the CV-level one did not.
+            _access.EnsureCanModify(cv.JobSeekerId, requestedBy);
 
             _cvs.Remove(cv);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

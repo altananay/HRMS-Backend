@@ -101,12 +101,18 @@ namespace Application.Services
         private readonly IJobSeekerRepository _jobSeekers;
         private readonly IUnitOfWork _unitOfWork;
         private readonly BusinessRules _rules;
+        private readonly CandidateAccessPolicy _access;
 
-        public JobSeekerManager(IJobSeekerRepository jobSeekers, IUnitOfWork unitOfWork, BusinessRules rules)
+        public JobSeekerManager(
+            IJobSeekerRepository jobSeekers,
+            IUnitOfWork unitOfWork,
+            BusinessRules rules,
+            CandidateAccessPolicy access)
         {
             _jobSeekers = jobSeekers;
             _unitOfWork = unitOfWork;
             _rules = rules;
+            _access = access;
         }
 
         public async Task<IDataResult<PagedResult<JobSeekerDto>>> GetPagedAsync(
@@ -119,8 +125,13 @@ namespace Application.Services
                 result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
         {
+            // Same policy as the CV: the candidate, an employer holding an application from them, or
+            // an admin. Without it any authenticated caller could walk the id space and collect every
+            // seeker's email and date of birth.
+            await _access.EnsureCanReadAsync(id, requestedBy, cancellationToken);
+
             var jobSeeker = await _rules.EnsureJobSeekerExistsAsync(id, cancellationToken);
             return new SuccessDataResult<JobSeekerDto>(DomainMapper.ToDto(jobSeeker));
         }

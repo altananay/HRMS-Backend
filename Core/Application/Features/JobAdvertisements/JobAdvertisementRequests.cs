@@ -93,6 +93,9 @@ namespace Application.Features.JobAdvertisements.Commands
     {
         public Guid Id { get; set; }
 
+        /// <summary>Set by the controller from the token, never bound from the request.</summary>
+        public Guid EmployerId { get; set; }
+
         public sealed class Response
         {
             public IResult Result { get; init; } = null!;
@@ -105,7 +108,7 @@ namespace Application.Features.JobAdvertisements.Commands
             public Handler(IJobAdvertisementService service) => _service = service;
 
             public async Task<Response> Handle(DeleteJobAdvertisementCommand request, CancellationToken cancellationToken)
-                => new() { Result = await _service.DeleteAsync(request.Id, cancellationToken) };
+                => new() { Result = await _service.DeleteAsync(request.Id, request.EmployerId, cancellationToken) };
         }
     }
 }

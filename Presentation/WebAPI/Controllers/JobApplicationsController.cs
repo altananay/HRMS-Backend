@@ -37,9 +37,18 @@ namespace WebAPI.Controllers
             return Ok((await Mediator.Send(query)).Result);
         }
 
+        /// <remarks>
+        /// GetAll above narrows by role and token; this took an id and served it to any
+        /// authenticated caller, so iterating ids exposed every applicant's name and every
+        /// employer's private note. The service now admits only the two parties, or an admin.
+        /// </remarks>
         [HttpGet("getbyid/{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
-            => Ok((await Mediator.Send(new GetByIdJobApplicationQuery { Id = id })).Result);
+            => Ok((await Mediator.Send(new GetByIdJobApplicationQuery
+            {
+                Id = id,
+                RequestedBy = CurrentUserId
+            })).Result);
 
         [Authorize(Roles = Roles.JobSeeker)]
         [HttpPost("add")]

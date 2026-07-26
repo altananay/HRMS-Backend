@@ -19,9 +19,18 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll([FromQuery] GetAllJobSeekerQuery query)
             => Ok((await Mediator.Send(query)).Result);
 
+        /// <remarks>
+        /// Guarded by the same policy as the CV: the seeker themselves, an employer holding an
+        /// application from them, or an admin. It used to answer for any authenticated caller, which
+        /// made the id space a directory of every candidate's email and date of birth.
+        /// </remarks>
         [HttpGet("getbyid/{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
-            => Ok((await Mediator.Send(new GetByIdJobSeekerQuery { Id = id })).Result);
+            => Ok((await Mediator.Send(new GetByIdJobSeekerQuery
+            {
+                Id = id,
+                RequestedBy = CurrentUserId
+            })).Result);
 
         [Authorize(Roles = Roles.Admin)]
         [HttpGet("getbyemail")]

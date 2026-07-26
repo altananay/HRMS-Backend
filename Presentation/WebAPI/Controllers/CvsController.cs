@@ -16,9 +16,19 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll([FromQuery] GetAllCvQuery query)
             => Ok((await Mediator.Send(query)).Result);
 
+        /// <summary>Reads a candidate's CV, for a caller entitled to see it.</summary>
+        /// <remarks>
+        /// A CV is personal data, so this cannot be a plain lookup by id. The rule lives in
+        /// <c>CandidateAccessPolicy</c> — owner, an employer holding an application from them, or an
+        /// admin — the same one the file download has always used.
+        /// </remarks>
         [HttpGet("getbyjobseekerid/{jobSeekerId:guid}")]
         public async Task<IActionResult> GetByJobSeekerId(Guid jobSeekerId)
-            => Ok((await Mediator.Send(new GetByJobSeekerIdCvQuery { JobSeekerId = jobSeekerId })).Result);
+            => Ok((await Mediator.Send(new GetByJobSeekerIdCvQuery
+            {
+                JobSeekerId = jobSeekerId,
+                RequestedBy = CurrentUserId
+            })).Result);
 
         [Authorize(Roles = Roles.JobSeeker)]
         [HttpPost("add")]
@@ -45,7 +55,7 @@ namespace WebAPI.Controllers
         [Authorize(Roles = Roles.JobSeeker)]
         [HttpDelete("deletecv/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
-            => Ok((await Mediator.Send(new DeleteCvCommand { Id = id })).Result);
+            => Ok((await Mediator.Send(new DeleteCvCommand { Id = id, RequestedBy = CurrentUserId })).Result);
 
         /// <summary>Attaches document files to the caller's own CV.</summary>
         [Authorize(Roles = Roles.JobSeeker)]

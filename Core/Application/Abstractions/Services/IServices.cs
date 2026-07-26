@@ -95,7 +95,13 @@ namespace Application.Abstractions.Services
     public interface IJobSeekerService
     {
         Task<IDataResult<PagedResult<JobSeekerDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
-        Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <param name="requestedBy">
+        /// The caller, from their token. A seeker profile carries an email and date of birth, so the
+        /// same <c>CandidateAccessPolicy</c> that guards the CV guards this.
+        /// </param>
+        Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
+
         Task<IDataResult<JobSeekerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobSeekerCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
@@ -117,10 +123,18 @@ namespace Application.Abstractions.Services
     public interface ICvService
     {
         Task<IDataResult<PagedResult<CvDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
-        Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, CancellationToken cancellationToken = default);
+
+        /// <param name="requestedBy">
+        /// The caller, from their token. A CV is personal data, so reading one is a permission
+        /// question rather than a lookup — see <c>CandidateAccessPolicy</c>.
+        /// </param>
+        Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
+
         Task<IResult> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default);
-        Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <param name="requestedBy">The caller, from their token. Only the owner or an admin may delete.</param>
+        Task<IResult> DeleteAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
     }
 
     public interface IJobAdvertisementService
@@ -132,7 +146,12 @@ namespace Application.Abstractions.Services
         Task<IDataResult<JobAdvertisementDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IResult> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
-        Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <param name="employerId">
+        /// The caller, from their token. Update already refused a non-owner; delete did not, so any
+        /// employer could remove any other employer's listing.
+        /// </param>
+        Task<IResult> DeleteAsync(Guid id, Guid employerId, CancellationToken cancellationToken = default);
     }
 
     /// <summary>A CV attachment ready to stream back to an authorized caller.</summary>
@@ -163,7 +182,12 @@ namespace Application.Abstractions.Services
             PageRequest page, Guid? employerId = null, Guid? jobSeekerId = null,
             JobApplicationStatus? status = null, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        /// <param name="requestedBy">
+        /// The caller, from their token. An application carries the applicant's name and the
+        /// employer's private note, so only the two parties to it — or an admin — may read it.
+        /// </param>
+        Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
+
         Task<IResult> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);

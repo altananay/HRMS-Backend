@@ -77,6 +77,9 @@ namespace Application.Features.Cvs.Commands
     {
         public Guid Id { get; set; }
 
+        /// <summary>Set by the controller from the token, never bound from the request body.</summary>
+        public Guid RequestedBy { get; set; }
+
         public sealed class Response
         {
             public IResult Result { get; init; } = null!;
@@ -89,7 +92,7 @@ namespace Application.Features.Cvs.Commands
             public Handler(ICvService cvService) => _cvService = cvService;
 
             public async Task<Response> Handle(DeleteCvCommand request, CancellationToken cancellationToken)
-                => new() { Result = await _cvService.DeleteAsync(request.Id, cancellationToken) };
+                => new() { Result = await _cvService.DeleteAsync(request.Id, request.RequestedBy, cancellationToken) };
         }
     }
 }
@@ -125,6 +128,9 @@ namespace Application.Features.Cvs.Queries
     {
         public Guid JobSeekerId { get; set; }
 
+        /// <summary>Set by the controller from the token, never bound from the request.</summary>
+        public Guid RequestedBy { get; set; }
+
         public sealed class Response
         {
             public IDataResult<CvDto> Result { get; init; } = null!;
@@ -137,7 +143,7 @@ namespace Application.Features.Cvs.Queries
             public Handler(ICvService cvService) => _cvService = cvService;
 
             public async Task<Response> Handle(GetByJobSeekerIdCvQuery request, CancellationToken cancellationToken)
-                => new() { Result = await _cvService.GetByJobSeekerIdAsync(request.JobSeekerId, cancellationToken) };
+                => new() { Result = await _cvService.GetByJobSeekerIdAsync(request.JobSeekerId, request.RequestedBy, cancellationToken) };
         }
     }
 }

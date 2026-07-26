@@ -17,33 +17,48 @@ namespace Persistence.Repositories
         /// explosion — 3 educations x 4 experiences x 2 languages is 24 duplicated rows before the
         /// projection even starts.
         /// </remarks>
-        public Task<Cv?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-            => _context.Cvs
+        /// <summary>
+        /// Every read of a CV carries its owner and its child collections.
+        /// </summary>
+        /// <remarks>
+        /// <c>JobSeeker</c> is not optional here. <c>DomainMapper.ToDto(Cv)</c> reads the owner's
+        /// name, email and date of birth off this navigation, so a query that omits it does not
+        /// return a CV with a missing name — it throws NullReferenceException and the endpoint
+        /// answers 500. Every CV read path did exactly that, including for the CV's own owner.
+        /// </remarks>
+        private static IQueryable<Cv> WithDetails(IQueryable<Cv> query)
+            => query
+                .Include(cv => cv.JobSeeker)
                 .Include(cv => cv.Educations)
                 .Include(cv => cv.JobExperiences)
                 .Include(cv => cv.Languages)
                 .Include(cv => cv.Projects)
                 .Include(cv => cv.Files)
-                .AsSplitQuery()
+                .AsSplitQuery();
+
+        public Task<Cv?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+            => WithDetails(_context.Cvs)
                 .FirstOrDefaultAsync(cv => cv.Id == id, cancellationToken);
 
         public Task<Cv?> GetByJobSeekerIdAsync(Guid jobSeekerId, CancellationToken cancellationToken = default)
-            => _context.Cvs
-                .Include(cv => cv.Educations)
-                .Include(cv => cv.JobExperiences)
-                .Include(cv => cv.Languages)
-                .Include(cv => cv.Projects)
-                .Include(cv => cv.Files)
-                .AsSplitQuery()
+            => WithDetails(_context.Cvs)
                 .FirstOrDefaultAsync(cv => cv.JobSeekerId == jobSeekerId, cancellationToken);
 
         public Task<bool> ExistsForJobSeekerAsync(Guid jobSeekerId, CancellationToken cancellationToken = default)
             => _context.Cvs.AnyAsync(cv => cv.JobSeekerId == jobSeekerId, cancellationToken);
 
+        /// <remarks>
+        /// The <c>ThenBy</c> is not decoration, and it is why this differs from the other paged
+        /// queries. This is the only one that pairs a split query with Skip/Take, and a split query
+        /// issues a separate SQL statement per collection: if two CVs share a CreatedAt the order is
+        /// not total, the statements can disagree about which page a row belongs to, and a record
+        /// surfaces twice or not at all. Guid v7 is time-ordered, so the id agrees with CreatedAt
+        /// and simply makes the ordering unique.
+        /// </remarks>
         public Task<PagedResult<Cv>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => _context.Cvs
-                .AsNoTracking()
+            => WithDetails(_context.Cvs.AsNoTracking())
                 .OrderByDescending(cv => cv.CreatedAt)
+                .ThenByDescending(cv => cv.Id)
                 .ToPagedResultAsync(page, cancellationToken);
 
         public void Add(Cv cv) => _context.Cvs.Add(cv);

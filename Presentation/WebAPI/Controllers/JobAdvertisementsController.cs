@@ -47,9 +47,18 @@ namespace WebAPI.Controllers
             return Ok((await Mediator.Send(command)).Result);
         }
 
+        /// <remarks>
+        /// Same ownership guard as Update. It was missing here, so the role attribute was the only
+        /// thing standing between a rival employer and someone else's listing — and it grants
+        /// exactly the role every attacker in this scenario already holds.
+        /// </remarks>
         [Authorize(Roles = Roles.Employer)]
         [HttpDelete("deletebyid/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
-            => Ok((await Mediator.Send(new DeleteJobAdvertisementCommand { Id = id })).Result);
+            => Ok((await Mediator.Send(new DeleteJobAdvertisementCommand
+            {
+                Id = id,
+                EmployerId = CurrentUserId
+            })).Result);
     }
 }

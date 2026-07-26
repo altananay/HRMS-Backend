@@ -50,7 +50,12 @@ public class CvFileManagerTests
             Substitute.For<IContactRepository>(),
             Substitute.For<IUserRepository>());
 
-        return new CvFileManager(_cvs, _cvFiles, _applications, _storage, _unitOfWork, _currentUser, rules);
+        // The real policy, not a substitute: it is the thing under test in the authorization cases
+        // below, and it is shared with CvManager and JobSeekerManager, so a fake here would let the
+        // three drift apart silently.
+        var access = new CandidateAccessPolicy(_applications, _currentUser);
+
+        return new CvFileManager(_cvs, _cvFiles, _storage, _unitOfWork, rules, access);
     }
 
     private Cv GivenCvExists(int existingFileCount = 0)

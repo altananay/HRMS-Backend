@@ -123,6 +123,9 @@ namespace Application.Features.JobApplications.Queries
     {
         public Guid Id { get; set; }
 
+        /// <summary>Set by the controller from the token, never bound from the request.</summary>
+        public Guid RequestedBy { get; set; }
+
         public sealed class Response
         {
             public IDataResult<JobApplicationDto> Result { get; init; } = null!;
@@ -135,7 +138,7 @@ namespace Application.Features.JobApplications.Queries
             public Handler(IJobApplicationService service) => _service = service;
 
             public async Task<Response> Handle(GetByIdJobApplicationQuery request, CancellationToken cancellationToken)
-                => new() { Result = await _service.GetByIdAsync(request.Id, cancellationToken) };
+                => new() { Result = await _service.GetByIdAsync(request.Id, request.RequestedBy, cancellationToken) };
         }
     }
 }
