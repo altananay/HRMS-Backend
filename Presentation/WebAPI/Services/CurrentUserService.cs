@@ -3,7 +3,6 @@ using Application.Abstractions;
 
 namespace WebAPI.Services
 {
-    /// <inheritdoc cref="ICurrentUserService"/>
     public sealed class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;

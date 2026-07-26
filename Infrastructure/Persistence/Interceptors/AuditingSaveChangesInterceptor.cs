@@ -4,18 +4,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Persistence.Interceptors
 {
-    /// <summary>
-    /// Stamps <c>CreatedAt</c>/<c>UpdatedAt</c> and turns deletes of <see cref="ISoftDeletable"/>
-    /// entities into updates.
-    /// </summary>
-    /// <remarks>
-    /// Timestamps came from scattered <c>DateTime.UtcNow</c> — and in several managers
-    /// <c>DateTime.Now</c> — assignments hand-written in every Add and Update method, which meant
-    /// they were routinely forgotten or set inconsistently.
-    ///
-    /// Time comes from an injected <see cref="TimeProvider"/> rather than the static clock, so tests
-    /// can advance it deterministically instead of sleeping.
-    /// </remarks>
     public sealed class AuditingSaveChangesInterceptor : SaveChangesInterceptor
     {
         private readonly TimeProvider _timeProvider;
@@ -59,7 +47,7 @@ namespace Persistence.Interceptors
 
                     case EntityState.Modified:
                         entry.Entity.UpdatedAt = utcNow;
-                        // Never let an update rewrite the creation timestamp.
+                        // Without this an update rewrites CreatedAt to the time it was last touched.
                         entry.Property(entity => entity.CreatedAt).IsModified = false;
                         break;
                 }
@@ -72,8 +60,6 @@ namespace Persistence.Interceptors
                     continue;
                 }
 
-                // Rewrite the delete as an update so dependent rows (applications on an
-                // advertisement, a seeker's history) survive.
                 entry.State = EntityState.Modified;
                 entry.Entity.DeletedAt = utcNow;
             }

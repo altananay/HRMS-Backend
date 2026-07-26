@@ -2,7 +2,7 @@ using Application.Abstractions;
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
 using Application.Abstractions.Storage;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Exceptions;
 using Application.Features.Cvs.Commands;
 using Application.Mapping;
@@ -15,20 +15,11 @@ namespace Application.Services
 {
     public sealed class CvFileManager : ICvFileService
     {
-        /// <summary>Container/prefix under which CV attachments are stored.</summary>
         private const string ContainerName = "cv-files";
 
         private const long MaxFileSizeBytes = 5 * 1024 * 1024;
         private const int MaxFilesPerCv = 5;
 
-        /// <summary>
-        /// Accepted document types, and the extensions each one may claim.
-        /// </summary>
-        /// <remarks>
-        /// Both halves are checked. A content type alone is caller-supplied and trivially spoofed;
-        /// an extension alone says nothing about the payload. Requiring them to agree at least stops
-        /// <c>payload.exe</c> arriving labelled <c>application/pdf</c>.
-        /// </remarks>
         private static readonly Dictionary<string, string[]> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             ["application/pdf"] = [".pdf"],
@@ -59,7 +50,7 @@ namespace Application.Services
             _access = access;
         }
 
-        public async Task<IDataResult<IReadOnlyList<CvFileDto>>> UploadAsync(
+        public async Task<IDataResult<IReadOnlyList<CvFileResponse>>> UploadAsync(
             UploadCvFileCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -68,8 +59,6 @@ namespace Application.Services
                 throw new ConflictException("Yüklenecek dosya bulunamadı.");
             }
 
-            // The CV is resolved from the caller's own id, so a file always lands on a real CV owned
-            // by whoever uploaded it.
             var cv = await _rules.EnsureCvExistsForJobSeekerAsync(command.JobSeekerId, cancellationToken);
 
             if (cv.Files.Count + command.Files.Count > MaxFilesPerCv)
@@ -97,8 +86,8 @@ namespace Application.Services
             _cvFiles.AddRange(entities);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<IReadOnlyList<CvFileDto>>(
-                entities.Select(DomainMapper.ToDto).ToList(), Messages.Cv.Updated);
+            return new SuccessDataResult<IReadOnlyList<CvFileResponse>>(
+                entities.Select(DomainMapper.ToResponse).ToList(), Messages.Cv.Updated);
         }
 
         public async Task<CvFileDownload> DownloadAsync(
@@ -125,8 +114,6 @@ namespace Application.Services
             var file = await _cvFiles.GetByIdWithCvAsync(fileId, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
 
-            // Deleting is stricter than reading: only the owner or an admin, never an employer who
-            // merely received an application.
             _access.EnsureCanModify(file.Cv.JobSeekerId, requestedBy);
 
             await _storage.DeleteAsync(ContainerName, file.StoragePath, cancellationToken);
@@ -136,7 +123,6 @@ namespace Application.Services
 
             return new SuccessResult(Messages.Cv.Deleted);
         }
-
 
         private static void Validate(FileUploadRequest file)
         {

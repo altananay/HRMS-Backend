@@ -1,7 +1,7 @@
 using Application.Abstractions;
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Exceptions;
 using Application.Features.Auth.Commands;
 using Application.Results;
@@ -15,19 +15,6 @@ namespace Application.Services
 {
     public sealed class AuthManager : IAuthService
     {
-        /// <summary>
-        /// A well-formed hash of a throwaway password, verified when no user matches.
-        /// </summary>
-        /// <remarks>
-        /// Closes the timing half of the user-enumeration oracle. Returning early on an unknown email
-        /// makes that path measurably faster than a wrong-password attempt, which is enough to
-        /// enumerate registered addresses even when both return an identical 401. Verifying against a
-        /// dummy hash keeps the work — and therefore the response time — comparable.
-        ///
-        /// The message half is closed separately: unknown email, wrong password and disabled account
-        /// all return <see cref="Messages.Authentication.InvalidCredentials"/>. Previously an unknown
-        /// email escaped as a BusinessException and surfaced as a 500 with a distinct message.
-        /// </remarks>
         private static readonly string DummyPasswordHash =
             "AQAAAAIAAYagAAAAEL1sHqFhZ3vLbTLpJZ8pQwXn7yZKcC5vN1qYbGxHhTZ9kV2mR8sD4wA6fE1cP0uL9g==";
 
@@ -78,10 +65,6 @@ namespace Application.Services
             _tokenOptions = tokenOptions.Value;
         }
 
-        // -----------------------------------------------------------------------------------------
-        // Sign in
-        // -----------------------------------------------------------------------------------------
-
         public async Task<IDataResult<AuthResponse>> LoginAsync(
             LoginCommand command,
             CancellationToken cancellationToken = default)
@@ -90,7 +73,6 @@ namespace Application.Services
 
             if (found is null)
             {
-                // Spend comparable time before failing — see DummyPasswordHash.
                 _passwordHasher.Verify(DummyPasswordHash, command.Password);
                 throw new UnauthorizedAccessException(Messages.Authentication.InvalidCredentials);
             }
@@ -104,8 +86,6 @@ namespace Application.Services
                 throw new UnauthorizedAccessException(Messages.Authentication.InvalidCredentials);
             }
 
-            // Checked at last. Registration set this flag and nothing ever read it, so a deactivated
-            // account could still sign in. Same generic message, so it is not an enumeration signal.
             if (!user.IsActive)
             {
                 throw new UnauthorizedAccessException(Messages.Authentication.InvalidCredentials);
@@ -116,17 +96,12 @@ namespace Application.Services
                 user.PasswordHash = _passwordHasher.Hash(command.Password);
             }
 
-            // Housekeeping instead of a background service: cheap, and bounded per user.
             await _refreshTokens.DeleteExpiredForUserAsync(user.Id, UtcNow, cancellationToken);
 
             return new SuccessDataResult<AuthResponse>(
                 await IssueTokensAsync(user, roles, cancellationToken),
                 Messages.Authentication.LoggedIn);
         }
-
-        // -----------------------------------------------------------------------------------------
-        // Registration
-        // -----------------------------------------------------------------------------------------
 
         public async Task<IDataResult<AuthResponse>> RegisterJobSeekerAsync(
             RegisterJobSeekerCommand command,
@@ -147,8 +122,6 @@ namespace Application.Services
             _jobSeekers.Add(jobSeeker);
             await AssignRoleAsync(jobSeeker, Roles.JobSeeker, cancellationToken);
 
-            // One SaveChanges for user + role. The old flow inserted an empty User document, copied
-            // its id onto the seeker, then inserted the seeker — two writes, no transaction.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new SuccessDataResult<AuthResponse>(
@@ -183,11 +156,7 @@ namespace Application.Services
                 Messages.Authentication.Registered);
         }
 
-        /// <remarks>
-        /// Admin-only at the controller. The role is assigned here, server-side — never read from the
-        /// request — which is what closes the old privilege-escalation path.
-        /// </remarks>
-        public async Task<IDataResult<CreatedDto>> RegisterSystemStaffAsync(
+        public async Task<IDataResult<CreatedResponse>> RegisterSystemStaffAsync(
             RegisterSystemStaffCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -205,12 +174,8 @@ namespace Application.Services
             await AssignRoleAsync(staff, Roles.Admin, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(new CreatedDto(staff.Id), Messages.SystemStaff.Added);
+            return new SuccessDataResult<CreatedResponse>(new CreatedResponse(staff.Id), Messages.SystemStaff.Added);
         }
-
-        // -----------------------------------------------------------------------------------------
-        // Token lifecycle
-        // -----------------------------------------------------------------------------------------
 
         public async Task<IDataResult<AuthResponse>> RefreshAsync(
             RefreshTokenCommand command,
@@ -224,10 +189,6 @@ namespace Application.Services
                 throw new UnauthorizedAccessException(Messages.Authentication.InvalidRefreshToken);
             }
 
-            // Reuse detection. A token that was already rotated away should never be presented
-            // again; if it is, the most likely explanation is that it was stolen. Revoking only that
-            // token would leave whichever party holds the newer one — quite possibly the attacker —
-            // with a live session, so the entire chain goes.
             if (stored.IsRevoked)
             {
                 await RevokeEverythingAsync(stored.UserId, cancellationToken);
@@ -250,8 +211,6 @@ namespace Application.Services
 
             var (user, roles) = found.Value;
 
-            // Rotate: the presented token dies and the replacement is linked to it, so a later replay
-            // of this one is detectable by the branch above.
             stored.RevokedAt = UtcNow;
             stored.RevokedByIp = _currentUser.IpAddress;
 
@@ -265,8 +224,6 @@ namespace Application.Services
             var stored = await _refreshTokens.GetByHashAsync(
                 _tokenService.HashRefreshToken(refreshToken), cancellationToken);
 
-            // Deliberately idempotent: an unknown or already-revoked token still reports success, so
-            // logout cannot be used to probe which tokens exist.
             if (stored is not null && !stored.IsRevoked)
             {
                 stored.RevokedAt = UtcNow;
@@ -299,15 +256,13 @@ namespace Application.Services
 
             user.PasswordHash = _passwordHasher.Hash(command.NewPassword);
 
-            // Every existing session dies, including access tokens that have not expired yet. Without
-            // the stamp being validated per request this would only take effect at the next refresh.
             await RevokeEverythingAsync(user.Id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new SuccessResult(Messages.Authentication.PasswordChanged);
         }
 
-        public async Task<IDataResult<AuthenticatedUserDto>> GetCurrentUserAsync(
+        public async Task<IDataResult<AuthenticatedUserResponse>> GetCurrentUserAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
@@ -316,12 +271,8 @@ namespace Application.Services
 
             var roles = await _roles.GetRoleNamesForUserAsync(userId, cancellationToken);
 
-            return new SuccessDataResult<AuthenticatedUserDto>(ToDto(user, roles));
+            return new SuccessDataResult<AuthenticatedUserResponse>(ToResponse(user, roles));
         }
-
-        // -----------------------------------------------------------------------------------------
-        // Helpers
-        // -----------------------------------------------------------------------------------------
 
         private DateTime UtcNow => _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -356,19 +307,9 @@ namespace Application.Services
                 accessToken.ExpiresAtUtc,
                 refreshToken,
                 entity.ExpiresAt,
-                ToDto(user, roles));
+                ToResponse(user, roles));
         }
 
-        /// <summary>
-        /// Kills every session for a user: revokes the refresh tokens and rotates the security stamp.
-        /// </summary>
-        /// <remarks>
-        /// Both halves are required. Revoking refresh tokens alone leaves outstanding access tokens
-        /// working until they expire — up to fifteen minutes during which a password change, a
-        /// "log out everywhere", or a detected theft has visibly happened and yet changed nothing.
-        /// Rotating the stamp is what makes those access tokens fail on their next request, and
-        /// invalidating the cache is what makes it immediate rather than eventual.
-        /// </remarks>
         private async Task RevokeEverythingAsync(Guid userId, CancellationToken cancellationToken)
         {
             await _refreshTokens.RevokeAllForUserAsync(userId, UtcNow, _currentUser.IpAddress, cancellationToken);
@@ -391,7 +332,7 @@ namespace Application.Services
             _roles.AddUserRole(new UserRole { UserId = user.Id, RoleId = role.Id });
         }
 
-        private static AuthenticatedUserDto ToDto(User user, IReadOnlyList<string> roles)
+        private static AuthenticatedUserResponse ToResponse(User user, IReadOnlyList<string> roles)
             => new(
                 user.Id,
                 user.Email,

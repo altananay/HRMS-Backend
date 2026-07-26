@@ -14,10 +14,6 @@ namespace Domain.Entities
 
         public string? Grade { get; set; }
 
-        /// <summary>
-        /// Replaces <c>string[] Years</c>, which stored the range as an untyped array and so could
-        /// not be sorted, filtered or validated.
-        /// </summary>
         public int? StartYear { get; set; }
 
         public int? EndYear { get; set; }

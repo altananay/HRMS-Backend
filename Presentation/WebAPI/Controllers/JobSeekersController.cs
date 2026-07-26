@@ -9,21 +9,11 @@ namespace WebAPI.Controllers
     [Authorize]
     public class JobSeekersController : ApiControllerBase
     {
-        /// <remarks>
-        /// Admin-only, and returns <c>JobSeekerDto</c>. This was the worst leak in the API: fully
-        /// anonymous, serializing raw entities, so every job seeker's <c>PasswordHash</c>,
-        /// <c>PasswordSalt</c> and national ID were available to anyone who called it.
-        /// </remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll([FromQuery] GetAllJobSeekerQuery query)
             => Ok((await Mediator.Send(query)).Result);
 
-        /// <remarks>
-        /// Guarded by the same policy as the CV: the seeker themselves, an employer holding an
-        /// application from them, or an admin. It used to answer for any authenticated caller, which
-        /// made the id space a directory of every candidate's email and date of birth.
-        /// </remarks>
         [HttpGet("getbyid/{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
             => Ok((await Mediator.Send(new GetByIdJobSeekerQuery

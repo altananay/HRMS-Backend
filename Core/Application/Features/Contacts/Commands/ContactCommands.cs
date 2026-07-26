@@ -1,25 +1,10 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Results;
 using MediatR;
 
 namespace Application.Features.Contacts.Commands
 {
-    /// <summary>
-    /// Contact write requests.
-    /// </summary>
-    /// <remarks>
-    /// Requests keep the documented shape — a request type with its <c>Response</c> and
-    /// <c>Handler</c> nested inside it, and a handler that only delegates to an <c>I*Service</c>.
-    /// The one deviation from the previous layout is that a module's commands share a file instead
-    /// of taking one file each; with ~50 requests across 8 modules the per-file split was mostly
-    /// using-directive boilerplate, and grouping keeps a module's write surface readable at a glance.
-    ///
-    /// Two shape fixes carried across every module: response members are properties rather than
-    /// public fields, and each response exposes its payload as <c>Result</c> rather than a
-    /// differently-named member per module (<c>JobAdvertisements</c>, <c>Users</c>, <c>Contact</c>,
-    /// <c>DataResult</c>…), which is what stopped the controllers from sharing any common handling.
-    /// </remarks>
     public partial class CreateContactCommand : IRequest<CreateContactCommand.Response>
     {
         public string FirstName { get; set; } = null!;
@@ -30,10 +15,9 @@ namespace Application.Features.Contacts.Commands
 
         public sealed class Response
         {
-            // Declared as the concrete result type, not IResult. System.Text.Json serializes by the
-            // declared type, so an IResult-typed member would emit isSuccess and message and quietly
-            // drop the data payload — the id would never reach the client.
-            public IDataResult<CreatedDto> Result { get; init; } = null!;
+            // Declared type, not IResult: System.Text.Json serializes by it, so IResult here would
+            // drop the data payload and the created id would never reach the client.
+            public IDataResult<CreatedResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<CreateContactCommand, Response>

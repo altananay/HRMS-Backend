@@ -7,21 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HRMS.WebAPI.FunctionalTests;
 
-/// <summary>
-/// Guards the single worst property of the pre-migration API: essentially every endpoint was
-/// anonymous.
-/// </summary>
-/// <remarks>
-/// There was not one <c>[Authorize]</c> attribute in the entire solution. Authorization lived only
-/// in <c>[SecuredOperation]</c> aspects on manager methods, and those were commented out on most
-/// write paths — so <c>GET /api/JobSeekers/getall</c> and <c>GET /api/Employers/getall</c> returned
-/// every user record, <b>PasswordHash and PasswordSalt included</b>, to an unauthenticated caller.
-///
-/// These tests enumerate the real endpoint table rather than a hand-written list, so an endpoint
-/// added later is covered the moment it exists. A new endpoint is protected by the authorization
-/// fallback policy by default; opening it requires adding it to <see cref="PublicEndpoints"/> here,
-/// which makes "this is deliberately public" a reviewable decision instead of an oversight.
-/// </remarks>
 [Collection(ApiCollection.Name)]
 public class SecuritySmokeTests
 {
@@ -29,46 +14,28 @@ public class SecuritySmokeTests
 
     public SecuritySmokeTests(HrmsApiFactory factory) => _factory = factory;
 
-    /// <summary>Routes that are intentionally reachable without a token.</summary>
+    // Every anonymous endpoint must be listed here. A new one that is not fails the suite on purpose,
+    // which is what turns "this is deliberately public" into a decision somebody signed off on.
     private static readonly string[] PublicEndpoints =
     [
-        // Public contact form.
         "api/Contacts",
 
-        // The job board itself. Browsing listings must not require an account — this is the
-        // product's entire front page.
         "api/JobAdvertisements/getall",
         "api/JobAdvertisements/getbyid/{id:guid}",
 
-        // Position lookup, needed to render the board's filters.
         "api/JobPosition/getall",
         "api/JobPosition/getbyid/{id:guid}",
 
-        // Company profile behind a listing. Returns EmployerDetailDto, which carries no password
-        // material and no national ID.
         "api/Employers/getbyemployerid/{id:guid}",
 
-        // Authentication. Note that /me, /logout-all, /change-password and /register/system-staff
-        // are deliberately NOT here — they require a token. An earlier version of AuthController
-        // carried [AllowAnonymous] at class level, which in ASP.NET Core overrides [Authorize] on
-        // individual actions and silently made all four anonymous. This list is what catches that.
         "api/auth/login",
         "api/auth/register/jobseeker",
         "api/auth/register/employer",
         "api/auth/refresh",
 
-        // The refresh token is itself the credential here, and a client whose access token has
-        // already expired must still be able to end its session.
         "api/auth/logout"
     ];
 
-    /// <summary>
-    /// Endpoints that must never serve an anonymous caller, checked over real HTTP.
-    /// </summary>
-    /// <remarks>
-    /// The first four are the ones that used to return every user record — <c>PasswordHash</c> and
-    /// <c>PasswordSalt</c> included — to anyone who asked.
-    /// </remarks>
     private static readonly string[] MustRequireAuthentication =
     [
         "/api/JobSeekers/getall",
@@ -97,7 +64,6 @@ public class SecuritySmokeTests
     [Fact]
     public void EndpointTable_Should_NotBeEmpty()
     {
-        // If this fails the other tests are vacuously passing.
         GetEndpoints().ShouldNotBeEmpty();
     }
 
@@ -149,8 +115,6 @@ public class SecuritySmokeTests
             new StringContent("{}", System.Text.Encoding.UTF8, "application/json"),
             TestContext.Current.CancellationToken);
 
-        // Previously anonymous: JobAdvertisementManager.Add had its
-        // //[SecuredOperation("employer")] commented out.
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

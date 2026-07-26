@@ -1,18 +1,5 @@
 namespace Application.Utilities.Constants
 {
-    /// <summary>
-    /// User-facing messages. Turkish, matching the existing API surface.
-    /// </summary>
-    /// <remarks>
-    /// Rewritten as <c>const</c> rather than mutable <c>static string</c> fields — the previous
-    /// version could be reassigned at runtime by any caller.
-    ///
-    /// Note that authentication failures now share a single
-    /// <see cref="Authentication.InvalidCredentials"/> message. The old code returned
-    /// "Bilgileriniz hatalı." for a wrong password but let an unknown email fall through to a
-    /// BusinessException with a different message <i>and</i> a different status code, which together
-    /// made a reliable user-enumeration oracle.
-    /// </remarks>
     public static class Messages
     {
         public static class Contact
@@ -82,7 +69,6 @@ namespace Application.Utilities.Constants
 
         public static class Authentication
         {
-            /// <summary>Deliberately identical for unknown email, wrong password and disabled account.</summary>
             public const string InvalidCredentials = "E-posta veya parola hatalı.";
 
             public const string EmailAlreadyUsed = "Bu e-posta adresi kullanılamaz.";

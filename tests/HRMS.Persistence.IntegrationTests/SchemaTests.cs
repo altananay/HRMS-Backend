@@ -3,18 +3,9 @@ using Npgsql;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// The migrations are the schema record, so this asserts they still produce the model the code
-/// assumes.
-/// </summary>
 [Collection(PersistenceCollection.Name)]
 public class SchemaTests(PostgresFixture fixture)
 {
-    /// <summary>
-    /// The fixture applies the real migrations to an empty database; reaching a test at all means
-    /// that worked. This states it as an assertion so a broken migration reports itself here rather
-    /// than as thirty unrelated failures.
-    /// </summary>
     [Fact]
     public async Task Migrations_Should_ApplyToAnEmptyDatabase()
     {
@@ -26,10 +17,6 @@ public class SchemaTests(PostgresFixture fixture)
         (await context.Database.GetPendingMigrationsAsync()).ShouldBeEmpty();
     }
 
-    /// <summary>
-    /// Catches the commonest drift there is: an entity or configuration edited without generating a
-    /// migration, which passes every unit test and fails on the first real deployment.
-    /// </summary>
     [Fact]
     public async Task Model_Should_HaveNoChangesThatAreNotInAMigration()
     {
@@ -68,10 +55,6 @@ public class SchemaTests(PostgresFixture fixture)
         exists.ShouldBeTrue($"table {table} is missing");
     }
 
-    /// <summary>
-    /// citext is what makes email comparison case-insensitive in the database rather than in every
-    /// query that happens to remember <c>ToLower()</c>.
-    /// </summary>
     [Fact]
     public async Task UserEmail_Should_UseCitext()
     {
@@ -82,7 +65,6 @@ public class SchemaTests(PostgresFixture fixture)
         type.ShouldBe("citext");
     }
 
-    /// <summary>Enums are stored as text, so adding a member cannot reinterpret existing rows.</summary>
     [Theory]
     [InlineData("users", "user_type")]
     [InlineData("job_applications", "status")]
@@ -99,7 +81,6 @@ public class SchemaTests(PostgresFixture fixture)
         type.ShouldBe("character varying");
     }
 
-    /// <summary>A GIN index is the difference between "find CVs with skill X" scanning and seeking.</summary>
     [Theory]
     [InlineData("cvs", "skills")]
     [InlineData("job_advertisements", "skills")]

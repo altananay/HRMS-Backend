@@ -3,15 +3,6 @@ using Npgsql;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// Rules the database enforces, rather than rules the application remembers to check.
-/// </summary>
-/// <remarks>
-/// MongoDB enforced none of these. Duplicate applications, two CVs for one seeker and a job position
-/// created afresh for every advertisement were all reachable, because the only guard was a
-/// hand-written existence check that a concurrent request could slip past between the read and the
-/// write. A unique index cannot be raced.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -19,7 +10,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    /// <summary>PostgreSQL's unique_violation. Anything else is a different failure.</summary>
     private static async Task ShouldViolateUniqueAsync(Func<Task> save)
     {
         var exception = await Should.ThrowAsync<DbUpdateException>(save);
@@ -37,14 +27,12 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
             await arrange.SaveChangesAsync();
         }
 
-        // A different subtype in the TPT hierarchy still shares the users table.
         await using var context = fixture.CreateContext();
         context.Add(Given.Employer("duplicate@test.local"));
 
         await ShouldViolateUniqueAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>citext, so the uniqueness is on the address rather than on its casing.</summary>
     [Fact]
     public async Task Email_Should_BeUniqueRegardlessOfCase()
     {
@@ -60,10 +48,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
         await ShouldViolateUniqueAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>
-    /// The point of the partial index: the unique constraint is filtered on <c>deleted_at IS NULL</c>,
-    /// so closing an account releases its address instead of burning it forever.
-    /// </summary>
     [Fact]
     public async Task Email_Should_BeReusableAfterTheAccountIsSoftDeleted()
     {
@@ -73,7 +57,7 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
             arrange.Add(seeker);
             await arrange.SaveChangesAsync();
 
-            arrange.Remove(seeker);           // interceptor rewrites this as a soft delete
+            arrange.Remove(seeker);
             await arrange.SaveChangesAsync();
         }
 
@@ -103,10 +87,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
         await ShouldViolateUniqueAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>
-    /// What turns JobPosition into a shared lookup. Add used to create a new position per
-    /// advertisement and delete it again with the advertisement.
-    /// </summary>
     [Fact]
     public async Task JobPositionName_Should_BeUnique()
     {
@@ -149,7 +129,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
         await ShouldViolateUniqueAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>Applying to a second advertisement is the same seeker, a different pair.</summary>
     [Fact]
     public async Task Seeker_Should_ApplyToSeveralDifferentAdvertisements()
     {
@@ -169,10 +148,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
         await Should.NotThrowAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>
-    /// Filtered on <c>national_id IS NOT NULL</c>, so any number of seekers may leave it unset while
-    /// a supplied one still cannot be claimed twice.
-    /// </summary>
     [Fact]
     public async Task NationalId_Should_BeUniqueWhenSupplied()
     {
@@ -200,10 +175,6 @@ public class UniqueConstraintTests(PostgresFixture fixture) : IAsyncLifetime
         await Should.NotThrowAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>
-    /// Refresh tokens are stored hashed and looked up by that hash, so a collision would let one
-    /// token resolve to another user's session.
-    /// </summary>
     [Fact]
     public async Task RefreshTokenHash_Should_BeUnique()
     {

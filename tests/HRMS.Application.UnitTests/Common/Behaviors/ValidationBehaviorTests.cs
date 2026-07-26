@@ -71,7 +71,6 @@ public class ValidationBehaviorTests
             _ => { nextWasCalled = true; return Task.FromResult("ok"); },
             CancellationToken.None));
 
-        // The whole point of validating in the pipeline: the handler must never see a bad request.
         nextWasCalled.ShouldBeFalse();
     }
 
@@ -100,7 +99,6 @@ public class ValidationBehaviorTests
             _ => Task.FromResult("ok"),
             CancellationToken.None));
 
-        // Every registered IValidator<T> runs, not just the first match.
         exception.Errors.ShouldContainKey(nameof(SampleCommand.Email));
         exception.Errors[nameof(SampleCommand.Email)].Length.ShouldBeGreaterThan(1);
     }
@@ -111,12 +109,6 @@ public class ValidationBehaviorTests
             => RuleFor(command => command.Email).MinimumLength(5).WithMessage("Email is too short.");
     }
 
-    /// <summary>
-    /// Regression guard for the aspect this behavior replaced. ValidationAspect selected arguments
-    /// via <c>invocation.Arguments.Where(t =&gt; t.GetType() == entityType)</c>, so a manager method
-    /// taking a plain <c>string id</c> validated nothing at all â€” which is why all 21
-    /// <c>[ValidationAspect(typeof(ObjectIdValidator))]</c> attributes were silently inert.
-    /// </summary>
     [Fact]
     public async Task Handle_Should_ValidateRequestsWithPrimitiveMembers()
     {

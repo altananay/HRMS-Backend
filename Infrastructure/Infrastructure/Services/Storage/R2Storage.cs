@@ -6,20 +6,6 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Services.Storage
 {
-    /// <summary>
-    /// Object storage on Cloudflare R2, via the S3-compatible API.
-    /// </summary>
-    /// <remarks>
-    /// R2 was chosen over AWS S3 and Azure Blob on free-tier terms: 10 GB and unlimited egress, with
-    /// no expiry. AWS accounts opened after July 2025 close automatically once the six-month plan
-    /// ends, taking the data with them 90 days later — unacceptable for a long-lived project.
-    ///
-    /// Because this speaks S3, pointing <see cref="R2Options.ServiceUrl"/> elsewhere makes it work
-    /// against AWS S3, MinIO or DigitalOcean Spaces unchanged.
-    ///
-    /// Buckets are never made public and no presigned URLs are issued: downloads go through the
-    /// authorized proxy endpoint, so a CV is never reachable without a valid token.
-    /// </remarks>
     public sealed class R2Storage : IStorage
     {
         private readonly IAmazonS3 _client;
@@ -35,11 +21,8 @@ namespace Infrastructure.Services.Storage
                 {
                     ServiceURL = _options.ResolveServiceUrl(),
 
-                    // R2 exposes one bucket per path segment on a single host rather than as
-                    // virtual-hosted subdomains.
                     ForcePathStyle = true,
 
-                    // R2 ignores the region but the SDK insists on one being set.
                     AuthenticationRegion = "auto"
                 });
         }
@@ -53,9 +36,6 @@ namespace Infrastructure.Services.Storage
 
             foreach (var file in files)
             {
-                // Stored under an opaque generated key. The original name is kept in the database
-                // and re-attached on download, so a caller cannot probe for another CV by guessing
-                // file names, and two people uploading "cv.pdf" cannot collide.
                 var key = $"{containerName}/{Guid.CreateVersion7()}{Path.GetExtension(file.FileName)}";
 
                 var request = new PutObjectRequest
@@ -65,11 +45,7 @@ namespace Infrastructure.Services.Storage
                     InputStream = file.Content,
                     ContentType = file.ContentType,
 
-                    // Both flags are mandatory for R2 and are the single most common reason S3 code
-                    // fails against it. R2 does not implement the Streaming SigV4 payload signing
-                    // that AWSSDK.S3 uses by default, and recent SDK versions also send a CRC32
-                    // integrity header R2 rejects outright with
-                    // "Header 'x-amz-checksum-algorithm' with value 'CRC32' not implemented".
+                    // Both required: R2 does not implement the Streaming SigV4 the SDK defaults to.
                     DisablePayloadSigning = true,
                     DisableDefaultChecksumValidation = true
                 };
@@ -96,7 +72,6 @@ namespace Infrastructure.Services.Storage
             }
             catch (AmazonS3Exception exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                // A missing object is an expected outcome, not a fault — the caller turns it into 404.
                 return null;
             }
         }
@@ -133,7 +108,6 @@ namespace Infrastructure.Services.Storage
             }
         }
 
-        /// <summary>Shared with LocalStorage so the two cannot disagree about key shape.</summary>
         private static string BuildKey(string containerName, string fileName)
             => StorageKey.Build(containerName, fileName);
     }

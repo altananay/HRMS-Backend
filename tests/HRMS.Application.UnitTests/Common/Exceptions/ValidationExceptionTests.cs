@@ -28,7 +28,6 @@ public class ValidationExceptionTests
     [Fact]
     public void Constructor_Should_SetAGenericMessage()
     {
-        // The per-field detail belongs in Errors; Message is what a caller sees as the title.
         new ValidationException([new ValidationFailure("Email", "required")])
             .Message.ShouldNotBeNullOrWhiteSpace();
     }

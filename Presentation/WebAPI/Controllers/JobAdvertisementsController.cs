@@ -6,12 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
 {
-    /// <remarks>
-    /// The six near-identical GET endpoints (getall, getallbystatus, getallorderbysalary,
-    /// getbyemployerid, getbyemployerid/{id}/{status}) collapse into one parameterised query. Two of
-    /// the originals also passed an employer id to <c>JobAdvertisementExists</c>, which validates
-    /// advertisement ids — so they threw for every caller.
-    /// </remarks>
     [Authorize]
     public class JobAdvertisementsController : ApiControllerBase
     {
@@ -29,15 +23,10 @@ namespace WebAPI.Controllers
         [HttpPost("add")]
         public async Task<IActionResult> Add(CreateJobAdvertisementCommand command)
         {
-            // Taken from the token, never the body. It used to be a client-supplied field, so any
-            // caller could publish an advertisement in any employer's name.
             command.EmployerId = CurrentUserId;
 
             var result = (await Mediator.Send(command)).Result;
 
-            // 201 with a Location, so the caller can address what it just published. This used to
-            // answer 200 with no id at all, leaving "list everything and match on title" as the only
-            // way to find it — which is exactly what the functional tests had to do.
             return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
@@ -45,18 +34,11 @@ namespace WebAPI.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateJobAdvertisementCommand command)
         {
-            // The service compares this against the advertisement's owner and throws Forbidden on a
-            // mismatch, so an employer cannot edit someone else's listing.
             command.EmployerId = CurrentUserId;
 
             return Ok((await Mediator.Send(command)).Result);
         }
 
-        /// <remarks>
-        /// Same ownership guard as Update. It was missing here, so the role attribute was the only
-        /// thing standing between a rival employer and someone else's listing — and it grants
-        /// exactly the role every attacker in this scenario already holds.
-        /// </remarks>
         [Authorize(Roles = Roles.Employer)]
         [HttpDelete("deletebyid/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)

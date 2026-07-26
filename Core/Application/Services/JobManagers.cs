@@ -1,7 +1,7 @@
 using Application.Abstractions;
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Exceptions;
 using Application.Common.Models;
 using Application.Features.Cvs.Commands;
@@ -36,7 +36,7 @@ namespace Application.Services
             _rules = rules;
         }
 
-        public async Task<IDataResult<PagedResult<JobAdvertisementDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<JobAdvertisementResponse>>> GetPagedAsync(
             PageRequest page,
             Guid? employerId = null,
             bool? isActive = null,
@@ -46,23 +46,20 @@ namespace Application.Services
             var result = await _advertisements.GetPagedAsync(
                 page, employerId, isActive, orderByHighestSalary, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<JobAdvertisementDto>>(new PagedResult<JobAdvertisementDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<JobAdvertisementResponse>>(new PagedResult<JobAdvertisementResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<JobAdvertisementDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobAdvertisementResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var advertisement = await _advertisements.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobAdvertisement.NotFound);
 
-            return new SuccessDataResult<JobAdvertisementDto>(DomainMapper.ToDto(advertisement));
+            return new SuccessDataResult<JobAdvertisementResponse>(DomainMapper.ToResponse(advertisement));
         }
 
-        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedResponse>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
         {
-            // Verify the employer BEFORE writing anything. The old flow inserted a JobPosition
-            // first and only then looked the employer up, so a bad employer id left an orphan
-            // position behind — with no transaction to roll it back.
             await _rules.EnsureEmployerExistsAsync(command.EmployerId, cancellationToken);
 
             var position = await _positions.ResolveOrCreateAsync(command.JobPositionName, cancellationToken);
@@ -87,11 +84,10 @@ namespace Application.Services
 
             _advertisements.Add(advertisement);
 
-            // One SaveChanges, so the position and the advertisement land in a single transaction.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(
-                new CreatedDto(advertisement.Id), Messages.JobAdvertisement.Added);
+            return new SuccessDataResult<CreatedResponse>(
+                new CreatedResponse(advertisement.Id), Messages.JobAdvertisement.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobAdvertisementCommand command, CancellationToken cancellationToken = default)
@@ -115,8 +111,6 @@ namespace Application.Services
             advertisement.JobType = command.JobType;
             advertisement.Deadline = command.Deadline;
 
-            // Explicitly carried. The old Update never restored Status, so editing an advertisement
-            // deactivated it every time.
             advertisement.IsActive = command.IsActive;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -128,26 +122,14 @@ namespace Application.Services
         {
             var advertisement = await _rules.EnsureJobAdvertisementExistsAsync(id, cancellationToken);
 
-            // The same guard Update uses. It was missing here, so an employer could delete a rival's
-            // listing outright — the destructive half of the very hole EnsureOwnedBy was written for.
             EnsureOwnedBy(advertisement, employerId);
 
-            // Soft delete, and the shared JobPosition is left alone — the old Delete removed the
-            // position along with the advertisement, which only made sense while positions were
-            // created one-per-advertisement.
             _advertisements.Remove(advertisement);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new SuccessResult(Messages.JobAdvertisement.Deleted);
         }
 
-        /// <summary>
-        /// Rejects an employer acting on somebody else's advertisement.
-        /// </summary>
-        /// <remarks>
-        /// There was no such check. EmployerId arrived in the request body, so any caller could edit
-        /// or delete any advertisement — role membership alone does not establish ownership.
-        /// </remarks>
         private static void EnsureOwnedBy(JobAdvertisement advertisement, Guid employerId)
         {
             if (advertisement.EmployerId != employerId)
@@ -179,7 +161,7 @@ namespace Application.Services
             _currentUser = currentUser;
         }
 
-        public async Task<IDataResult<PagedResult<JobApplicationDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<JobApplicationResponse>>> GetPagedAsync(
             PageRequest page,
             Guid? employerId = null,
             Guid? jobSeekerId = null,
@@ -188,18 +170,15 @@ namespace Application.Services
         {
             var result = await _applications.GetPagedAsync(page, employerId, jobSeekerId, status, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<JobApplicationDto>>(new PagedResult<JobApplicationDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<JobApplicationResponse>>(new PagedResult<JobApplicationResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobApplicationResponse>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
         {
             var application = await _applications.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobApplication.NotFound);
 
-            // Only the two parties to the application, or an admin. GetPaged narrows by role and
-            // token, but this path took an id and returned it to any authenticated caller — so
-            // iterating ids exposed every applicant's name and every employer's private note.
             var isApplicant = application.JobSeekerId == requestedBy;
             var isOwningEmployer = application.JobAdvertisement.EmployerId == requestedBy;
 
@@ -208,10 +187,10 @@ namespace Application.Services
                 throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
             }
 
-            return new SuccessDataResult<JobApplicationDto>(DomainMapper.ToDto(application));
+            return new SuccessDataResult<JobApplicationResponse>(DomainMapper.ToResponse(application));
         }
 
-        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedResponse>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default)
         {
             var advertisement = await _rules.EnsureJobAdvertisementExistsAsync(command.JobAdvertisementId, cancellationToken);
             await _rules.EnsureJobSeekerExistsAsync(command.JobSeekerId, cancellationToken);
@@ -235,8 +214,8 @@ namespace Application.Services
             _applications.Add(application);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(
-                new CreatedDto(application.Id), Messages.JobApplication.Added);
+            return new SuccessDataResult<CreatedResponse>(
+                new CreatedResponse(application.Id), Messages.JobApplication.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobApplicationCommand command, CancellationToken cancellationToken = default)
@@ -244,8 +223,6 @@ namespace Application.Services
             var application = await _applications.GetByIdWithDetailsAsync(command.Id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobApplication.NotFound);
 
-            // The advertisement carries the employer, so ownership is checked through the join
-            // rather than a denormalized column that could disagree with it.
             if (application.JobAdvertisement.EmployerId != command.EmployerId)
             {
                 throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
@@ -294,31 +271,26 @@ namespace Application.Services
             _access = access;
         }
 
-        public async Task<IDataResult<PagedResult<CvDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<CvResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _cvs.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<CvDto>>(new PagedResult<CvDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<CvResponse>>(new PagedResult<CvResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CvResponse>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default)
         {
-            // Checked before the lookup, so a caller with no right to this candidate cannot tell a
-            // seeker who has a CV from one who does not.
             await _access.EnsureCanReadAsync(jobSeekerId, requestedBy, cancellationToken);
 
-            // Looks the CV up BY seeker id. The old GetByJobSeekerId passed the seeker id into
-            // CheckIfCvExists, which validates CV ids — so it failed for every caller whose CV id
-            // did not happen to equal their own.
             var cv = await _rules.EnsureCvExistsForJobSeekerAsync(jobSeekerId, cancellationToken);
 
-            return new SuccessDataResult<CvDto>(DomainMapper.ToDto(cv));
+            return new SuccessDataResult<CvResponse>(DomainMapper.ToResponse(cv));
         }
 
-        public async Task<IDataResult<CreatedDto>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedResponse>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default)
         {
             await _rules.EnsureJobSeekerExistsAsync(command.JobSeekerId, cancellationToken);
             await _rules.EnsureCvDoesNotExistForJobSeekerAsync(command.JobSeekerId, cancellationToken);
@@ -329,18 +301,13 @@ namespace Application.Services
 
             _cvs.Add(cv);
 
-            // A single write. The old Add inserted the CV and then called
-            // JobSeekerManager.UpdateCvById to embed a second copy inside the seeker document —
-            // two writes, no transaction, and two copies free to drift apart.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(new CreatedDto(cv.Id), Messages.Cv.Added);
+            return new SuccessDataResult<CreatedResponse>(new CreatedResponse(cv.Id), Messages.Cv.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default)
         {
-            // Requires the CV to EXIST. The old Update called CheckIfCvExistsByJobSeekerId, which
-            // throws when one is found, so this operation failed unconditionally.
             var cv = await _rules.EnsureCvExistsForJobSeekerAsync(command.JobSeekerId, cancellationToken);
 
             ApplyTo(cv, command.Information, command.ImageUrl, command.Hobbies, command.Skills,
@@ -356,10 +323,7 @@ namespace Application.Services
             var cv = await _cvs.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
 
-            // There was no check at all here, and cvs has no deleted_at column — so any job seeker
-            // could permanently destroy another's CV, cascading to their education, experience,
-            // language, project and file rows. The file-level delete right below always enforced
-            // this; the CV-level one did not.
+            // cvs has no deleted_at: this is permanent and cascades to every child row.
             _access.EnsureCanModify(cv.JobSeekerId, requestedBy);
 
             _cvs.Remove(cv);
@@ -368,33 +332,23 @@ namespace Application.Services
             return new SuccessResult(Messages.Cv.Deleted);
         }
 
-        /// <summary>
-        /// Applies the scalar fields and replaces the child collections.
-        /// </summary>
-        /// <remarks>
-        /// Shared by Add and Update — those two methods previously carried the same
-        /// project/experience construction loops duplicated verbatim.
-        /// </remarks>
         private static void ApplyTo(
             Cv cv,
             string? information,
             string? imageUrl,
             string? hobbies,
             string[] skills,
-            SocialMediaInput? socialMedia,
-            List<EducationInput> educations,
-            List<JobExperienceInput> jobExperiences,
-            List<CvLanguageInput> languages,
-            List<CvProjectInput> projects)
+            SocialMediaRequest? socialMedia,
+            List<EducationRequest> educations,
+            List<JobExperienceRequest> jobExperiences,
+            List<CvLanguageRequest> languages,
+            List<CvProjectRequest> projects)
         {
             cv.Information = information;
             cv.ImageUrl = imageUrl;
             cv.Hobbies = hobbies;
             cv.Skills = skills;
 
-            // Always assigned: the owned instance is a required navigation now, so null would fail on
-            // save. An omitted block still means "clear the links" — the three columns end up null
-            // either way, so this stores exactly what the previous conditional stored.
             cv.SocialMedia = new SocialMedia
             {
                 Github = socialMedia?.Github,

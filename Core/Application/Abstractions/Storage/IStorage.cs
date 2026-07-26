@@ -1,11 +1,5 @@
 namespace Application.Abstractions.Storage
 {
-    /// <summary>A file to be stored, decoupled from ASP.NET's IFormFile.</summary>
-    /// <remarks>
-    /// The storage interfaces used to take <c>IFormFileCollection</c>, which is the reason
-    /// Application had to reference the ASP.NET Core shared framework at all. Controllers now
-    /// translate IFormFile into this record, so the HTTP type stays in the Presentation layer.
-    /// </remarks>
     public sealed record FileUploadRequest(string FileName, string? ContentType, long Length, Stream Content);
 
     public sealed record StoredFile(string FileName, string StoragePath, string? ContentType, long SizeBytes);
@@ -17,15 +11,6 @@ namespace Application.Abstractions.Storage
             IReadOnlyList<FileUploadRequest> files,
             CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Opens a stored file for reading, or returns <c>null</c> if it is not there.
-        /// </summary>
-        /// <remarks>
-        /// The interface had no read method at all, which made the authorized download endpoint
-        /// impossible to write. Downloads are proxied through the API rather than handed out as
-        /// presigned URLs: CVs are personal data, and a URL that works without the caller's token is
-        /// exactly what must not exist.
-        /// </remarks>
         Task<Stream?> OpenReadAsync(string containerName, string fileName, CancellationToken cancellationToken = default);
 
         Task DeleteAsync(string containerName, string fileName, CancellationToken cancellationToken = default);

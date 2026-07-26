@@ -1,6 +1,6 @@
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Features.Contacts.Commands;
 using Application.Features.JobPositions.Commands;
@@ -25,29 +25,27 @@ namespace Application.Services
             _rules = rules;
         }
 
-        public async Task<IDataResult<PagedResult<ContactDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<ContactResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _contacts.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<ContactDto>>(new PagedResult<ContactDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(),
+            return new SuccessDataResult<PagedResult<ContactResponse>>(new PagedResult<ContactResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(),
                 result.Page,
                 result.PageSize,
                 result.TotalCount));
         }
 
-        public async Task<IDataResult<ContactDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<ContactResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var contact = await _rules.EnsureContactExistsAsync(id, cancellationToken);
-            return new SuccessDataResult<ContactDto>(DomainMapper.ToDto(contact));
+            return new SuccessDataResult<ContactResponse>(DomainMapper.ToResponse(contact));
         }
 
-        public async Task<IDataResult<CreatedDto>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedResponse>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default)
         {
-            // Held in a local so the id can be returned: BaseEntity assigns it in the constructor,
-            // so it is known before the insert rather than read back after it.
             var contact = new Contact
             {
                 FirstName = command.FirstName,
@@ -60,16 +58,13 @@ namespace Application.Services
             _contacts.Add(contact);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(new CreatedDto(contact.Id), Messages.Contact.Added);
+            return new SuccessDataResult<CreatedResponse>(new CreatedResponse(contact.Id), Messages.Contact.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateContactCommand command, CancellationToken cancellationToken = default)
         {
             var contact = await _rules.EnsureContactExistsAsync(command.Id, cancellationToken);
 
-            // Change tracking writes only the properties that actually differ. The old flow read the
-            // document, hand-copied every unchanged field onto a new object and called
-            // ReplaceOneAsync — which is how fields like JobAdvertisement.Status got dropped.
             contact.FirstName = command.FirstName;
             contact.LastName = command.LastName;
             contact.Email = command.Email;
@@ -106,35 +101,31 @@ namespace Application.Services
             _rules = rules;
         }
 
-        public async Task<IDataResult<PagedResult<JobPositionDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<JobPositionResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _positions.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<JobPositionDto>>(new PagedResult<JobPositionDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(),
+            return new SuccessDataResult<PagedResult<JobPositionResponse>>(new PagedResult<JobPositionResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(),
                 result.Page,
                 result.PageSize,
                 result.TotalCount));
         }
 
-        public async Task<IDataResult<JobPositionDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobPositionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var position = await _rules.EnsureJobPositionExistsAsync(id, cancellationToken);
-            return new SuccessDataResult<JobPositionDto>(DomainMapper.ToDto(position));
+            return new SuccessDataResult<JobPositionResponse>(DomainMapper.ToResponse(position));
         }
 
-        public async Task<IDataResult<CreatedDto>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CreatedResponse>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default)
         {
-            // Resolve-or-create rather than blind insert: the name is unique now, and an admin
-            // re-adding an existing position should be idempotent rather than a 500 from the index.
-            // The returned id is therefore the existing position's when the name was already taken,
-            // which is what makes the call idempotent in the response as well as in the table.
             var position = await _positions.ResolveOrCreateAsync(command.Name, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new SuccessDataResult<CreatedDto>(new CreatedDto(position.Id), Messages.JobPosition.Added);
+            return new SuccessDataResult<CreatedResponse>(new CreatedResponse(position.Id), Messages.JobPosition.Added);
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobPositionCommand command, CancellationToken cancellationToken = default)
@@ -151,8 +142,6 @@ namespace Application.Services
         {
             var position = await _rules.EnsureJobPositionExistsAsync(id, cancellationToken);
 
-            // Now that positions are shared, deleting one that advertisements reference would break
-            // them. The FK is RESTRICT; this turns that into a 409 with a usable message.
             await _rules.EnsureJobPositionNotReferencedAsync(id, cancellationToken);
 
             _positions.Remove(position);

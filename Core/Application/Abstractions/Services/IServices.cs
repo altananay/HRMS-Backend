@@ -1,4 +1,4 @@
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Features.Auth.Commands;
 using Application.Features.Contacts.Commands;
@@ -14,17 +14,6 @@ using Domain.Enums;
 
 namespace Application.Abstractions.Services
 {
-    /// <summary>
-    /// Registration, sign-in, token lifecycle and password management for all three actor types.
-    /// </summary>
-    /// <remarks>
-    /// One service replacing <c>AuthManager</c>, <c>EmployerAuthManager</c> and
-    /// <c>SystemStaffAuthManager</c>. Those three duplicated the same flow with slightly different
-    /// bugs each: the SystemStaff one alone null-checked the result wrapper instead of its
-    /// <c>.Data</c>, passed a MediatR command where an <c>IValidator</c> was expected, and called a
-    /// method guarded by <c>[SecuredOperation("admin")]</c> — so signing in as an administrator
-    /// required already being one.
-    /// </remarks>
     public interface IAuthService
     {
         Task<IDataResult<AuthResponse>> LoginAsync(LoginCommand command, CancellationToken cancellationToken = default);
@@ -35,11 +24,7 @@ namespace Application.Abstractions.Services
         Task<IDataResult<AuthResponse>> RegisterEmployerAsync(
             RegisterEmployerCommand command, CancellationToken cancellationToken = default);
 
-        /// <remarks>
-        /// Unlike the other two registrations this issues no tokens — an admin is creating somebody
-        /// else's account, not signing in — so the new staff id is the only useful thing to return.
-        /// </remarks>
-        Task<IDataResult<CreatedDto>> RegisterSystemStaffAsync(
+        Task<IDataResult<CreatedResponse>> RegisterSystemStaffAsync(
             RegisterSystemStaffCommand command, CancellationToken cancellationToken = default);
 
         Task<IDataResult<AuthResponse>> RefreshAsync(
@@ -52,129 +37,93 @@ namespace Application.Abstractions.Services
         Task<IResult> ChangePasswordAsync(
             ChangePasswordCommand command, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<AuthenticatedUserDto>> GetCurrentUserAsync(
+        Task<IDataResult<AuthenticatedUserResponse>> GetCurrentUserAsync(
             Guid userId, CancellationToken cancellationToken = default);
     }
 
-    /// <summary>
-    /// Business-logic contracts, implemented by the managers in <c>Application/Services</c>.
-    /// </summary>
-    /// <remarks>
-    /// The implementations moved out of <c>Persistence/Concretes</c>. Keeping business logic in the
-    /// same project as the database provider meant nothing structurally stopped a manager from
-    /// reaching for the provider directly — that boundary was enforced only by a convention written
-    /// in a markdown file. Now the compiler enforces it: Application cannot see Npgsql at all.
-    ///
-    /// Every method is async and takes a CancellationToken. The old interfaces had synchronous reads
-    /// returning <c>IQueryable&lt;T&gt;</c>, which meant the query was executed by the JSON
-    /// serializer in the WebAPI layer, outside any error handling.
-    /// </remarks>
     public interface IContactService
     {
-        Task<IDataResult<PagedResult<ContactDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
-        Task<IDataResult<ContactDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IDataResult<CreatedDto>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<ContactResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<ContactResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedResponse>> AddAsync(CreateContactCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateContactCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
     public interface IJobPositionService
     {
-        Task<IDataResult<PagedResult<JobPositionDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
-        Task<IDataResult<JobPositionDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        /// <remarks>Resolve-or-create, so this returns the existing position's id when the name is taken.</remarks>
-        Task<IDataResult<CreatedDto>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<JobPositionResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<JobPositionResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedResponse>> AddAsync(CreateJobPositionCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobPositionCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
     public interface IEmployerService
     {
-        Task<IDataResult<PagedResult<EmployerDto>>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
-        Task<IDataResult<EmployerDetailDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IDataResult<EmployerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<EmployerResponse>>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
+        Task<IDataResult<EmployerDetailResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IDataResult<EmployerResponse>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateEmployerCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
     public interface IJobSeekerService
     {
-        Task<IDataResult<PagedResult<JobSeekerDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<JobSeekerResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
 
-        /// <param name="requestedBy">
-        /// The caller, from their token. A seeker profile carries an email and date of birth, so the
-        /// same <c>CandidateAccessPolicy</c> that guards the CV guards this.
-        /// </param>
-        Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
+        Task<IDataResult<JobSeekerResponse>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<JobSeekerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+        Task<IDataResult<JobSeekerResponse>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobSeekerCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
     public interface ISystemStaffService
     {
-        Task<IDataResult<PagedResult<SystemStaffDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
-        Task<IDataResult<SystemStaffDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<SystemStaffResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<SystemStaffResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateSystemStaffCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 
     public interface IUserService
     {
-        Task<IDataResult<PagedResult<UserSummaryDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<UserSummaryResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
     }
 
     public interface ICvService
     {
-        Task<IDataResult<PagedResult<CvDto>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<IDataResult<PagedResult<CvResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
 
-        /// <param name="requestedBy">
-        /// The caller, from their token. A CV is personal data, so reading one is a permission
-        /// question rather than a lookup — see <c>CandidateAccessPolicy</c>.
-        /// </param>
-        Task<IDataResult<CvDto>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
+        Task<IDataResult<CvResponse>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<CreatedDto>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedResponse>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default);
 
-        /// <param name="requestedBy">The caller, from their token. Only the owner or an admin may delete.</param>
         Task<IResult> DeleteAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
     }
 
     public interface IJobAdvertisementService
     {
-        Task<IDataResult<PagedResult<JobAdvertisementDto>>> GetPagedAsync(
+        Task<IDataResult<PagedResult<JobAdvertisementResponse>>> GetPagedAsync(
             PageRequest page, Guid? employerId = null, bool? isActive = null,
             bool orderByHighestSalary = false, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<JobAdvertisementDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<IDataResult<CreatedDto>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<JobAdvertisementResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedResponse>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
 
-        /// <param name="employerId">
-        /// The caller, from their token. Update already refused a non-owner; delete did not, so any
-        /// employer could remove any other employer's listing.
-        /// </param>
         Task<IResult> DeleteAsync(Guid id, Guid employerId, CancellationToken cancellationToken = default);
     }
 
-    /// <summary>A CV attachment ready to stream back to an authorized caller.</summary>
     public sealed record CvFileDownload(Stream Content, string FileName, string ContentType);
 
     public interface ICvFileService
     {
-        Task<IDataResult<IReadOnlyList<CvFileDto>>> UploadAsync(
+        Task<IDataResult<IReadOnlyList<CvFileResponse>>> UploadAsync(
             UploadCvFileCommand command, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Opens a CV attachment for a caller who is allowed to read it.
-        /// </summary>
-        /// <remarks>
-        /// Authorization lives here rather than in the controller because the rule is a data
-        /// question: the owning seeker, an employer who has actually received an application from
-        /// that seeker, or an admin. Anyone else gets <c>ForbiddenException</c>.
-        /// </remarks>
         Task<CvFileDownload> DownloadAsync(
             Guid fileId, Guid requestedBy, CancellationToken cancellationToken = default);
 
@@ -183,17 +132,13 @@ namespace Application.Abstractions.Services
 
     public interface IJobApplicationService
     {
-        Task<IDataResult<PagedResult<JobApplicationDto>>> GetPagedAsync(
+        Task<IDataResult<PagedResult<JobApplicationResponse>>> GetPagedAsync(
             PageRequest page, Guid? employerId = null, Guid? jobSeekerId = null,
             JobApplicationStatus? status = null, CancellationToken cancellationToken = default);
 
-        /// <param name="requestedBy">
-        /// The caller, from their token. An application carries the applicant's name and the
-        /// employer's private note, so only the two parties to it — or an admin — may read it.
-        /// </param>
-        Task<IDataResult<JobApplicationDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
+        Task<IDataResult<JobApplicationResponse>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<CreatedDto>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default);
+        Task<IDataResult<CreatedResponse>> AddAsync(CreateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateJobApplicationCommand command, CancellationToken cancellationToken = default);
         Task<IResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }

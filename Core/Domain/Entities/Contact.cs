@@ -2,7 +2,6 @@ using Domain.Common;
 
 namespace Domain.Entities
 {
-    /// <summary>A message from the public contact form. Standalone — no relationships.</summary>
     public class Contact : BaseEntity
     {
         public string FirstName { get; set; } = null!;

@@ -1,16 +1,11 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
 
 namespace Application.Features.Users.Queries
 {
-    /// <remarks>
-    /// Admin-only, and now returns <see cref="UserSummaryDto"/>. The old version exposed the raw
-    /// <c>users</c> collection — which under the previous model held nothing but bare ObjectIds,
-    /// since User was an empty marker entity — to anonymous callers.
-    /// </remarks>
     public partial class GetAllUserQuery : IRequest<GetAllUserQuery.Response>
     {
         public int Page { get; set; } = 1;
@@ -18,7 +13,7 @@ namespace Application.Features.Users.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<UserSummaryDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<UserSummaryResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllUserQuery, Response>

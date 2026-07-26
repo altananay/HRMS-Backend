@@ -19,15 +19,6 @@ public class LoggingBehaviorTests
 
     private LoggingBehavior<SampleQuery, string> CreateSut() => new(_logger, _currentUser);
 
-    /// <summary>
-    /// The levels passed to <see cref="ILogger.Log{TState}"/>, read off the recorded calls.
-    /// </summary>
-    /// <remarks>
-    /// Asserting via <c>ReceivedWithAnyArgs().Log(LogLevel.X, ...)</c> does not work: "with any
-    /// args" ignores every argument including the level, so it matches a log call at any level.
-    /// The generic TState is the internal FormattedLogValues type, which also makes an
-    /// <c>Arg.Any&lt;object&gt;()</c> overload fail to bind — so inspect the calls directly.
-    /// </remarks>
     private IReadOnlyList<LogLevel> LoggedLevels() =>
         _logger.ReceivedCalls()
             .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
@@ -84,11 +75,6 @@ public class LoggingBehaviorTests
         new InvalidOperationException("a genuine fault")
     ];
 
-    /// <summary>
-    /// A failed request is logged once, by GlobalExceptionHandler, which is the only place that
-    /// knows the resulting status code. This behavior must stay silent or every rejection produces
-    /// two entries — the duplication this test exists to prevent.
-    /// </summary>
     [Theory]
     [MemberData(nameof(Failures))]
     public async Task Handle_Should_LogNothing_When_HandlerThrows(Exception failure)
@@ -103,12 +89,6 @@ public class LoggingBehaviorTests
         LoggedLevels().ShouldBeEmpty();
     }
 
-    /// <summary>
-    /// The replaced LogAspect could not do this. Castle's MethodInterception is synchronous, so for
-    /// an <c>async Task</c> method its OnSuccess/OnAfter hooks fired when the Task was *returned*,
-    /// meaning it reported success for operations that went on to fail. Here the success line is
-    /// written after the await completes, so a failure thrown later can never be logged as success.
-    /// </summary>
     [Fact]
     public async Task Handle_Should_NotLogSuccess_When_HandlerFailsAsynchronously()
     {

@@ -1,15 +1,5 @@
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// Timestamps, stamped centrally.
-/// </summary>
-/// <remarks>
-/// These were hand-written in every Add and Update method before — and several used
-/// <c>DateTime.Now</c> rather than UtcNow, so on a UTC+3 server the values were three hours ahead of
-/// everything else in the database. Doing it in one interceptor means a new entity cannot forget.
-///
-/// The clock is injected, so these assert an exact instant rather than "roughly now".
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class AuditingInterceptorTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -71,15 +61,9 @@ public class AuditingInterceptorTests(PostgresFixture fixture) : IAsyncLifetime
 
         stored.UpdatedAt.ShouldBe(UpdatedInstant.UtcDateTime);
 
-        // The interceptor explicitly marks CreatedAt unmodified; without that an update would
-        // rewrite it and the record would appear to have been created when it was last touched.
         stored.CreatedAt.ShouldBe(CreatedInstant.UtcDateTime);
     }
 
-    /// <summary>
-    /// Even when the caller sets CreatedAt by hand, the interceptor wins — otherwise a client-supplied
-    /// value would decide when a record claims to have been created.
-    /// </summary>
     [Fact]
     public async Task Insert_Should_OverrideACreatedAtSuppliedByTheCaller()
     {
@@ -127,7 +111,6 @@ public class AuditingInterceptorTests(PostgresFixture fixture) : IAsyncLifetime
         stored.DeletedAt.ShouldBe(UpdatedInstant.UtcDateTime);
     }
 
-    /// <summary>Child rows saved with their parent are stamped too, not just the aggregate root.</summary>
     [Fact]
     public async Task Insert_Should_StampChildRowsAsWell()
     {
@@ -150,7 +133,6 @@ public class AuditingInterceptorTests(PostgresFixture fixture) : IAsyncLifetime
         education.CreatedAt.ShouldBe(CreatedInstant.UtcDateTime);
     }
 
-    /// <summary>Timestamps are UTC, which is what the UtcNow/Now mix used to get wrong.</summary>
     [Fact]
     public async Task Timestamps_Should_BeStoredAsUtc()
     {

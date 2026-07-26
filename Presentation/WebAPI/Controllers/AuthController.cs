@@ -7,20 +7,8 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebAPI.Controllers
 {
-    /// <summary>
-    /// Registration, sign-in and token lifecycle for every actor type.
-    /// </summary>
-    /// <remarks>
-    /// Replaces <c>AuthController</c>, <c>EmployerAuthController</c> and
-    /// <c>SystemStaffAuthController</c>. Three login endpoints over one user table is a footgun: a
-    /// job seeker posting to the employer endpoint would get a different error than a wrong password,
-    /// which is an enumeration signal by construction. One endpoint, one uniform 401, and the
-    /// <c>userType</c> in the response tells the client where to route.
-    /// </remarks>
-    // NOT [AllowAnonymous] at class level, deliberately. ASP.NET Core treats [AllowAnonymous]
-    // anywhere in an endpoint's metadata as final, so a class-level one silently overrides
-    // [Authorize] on individual actions — which made /me, /logout-all and /change-password
-    // anonymous. Each action opts out explicitly instead.
+    // Never put [AllowAnonymous] on the class: it overrides [Authorize] on individual actions and
+    // would silently open /me, /logout-all, /change-password and /register/system-staff.
     [EnableRateLimiting("auth")]
     [Route("api/auth")]
     public class AuthController : ApiControllerBase
@@ -30,11 +18,6 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Login(LoginCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
-        /// <remarks>
-        /// 201 without a Location: an account is created, but there is no per-user address to point
-        /// at — <c>/api/auth/me</c> resolves from the token rather than from an id, and the seeker
-        /// profile is not readable by everyone. The body carries the tokens the caller needs next.
-        /// </remarks>
         [AllowAnonymous]
         [HttpPost("register/jobseeker")]
         public async Task<IActionResult> RegisterJobSeeker(RegisterJobSeekerCommand command)
@@ -45,13 +28,6 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> RegisterEmployer(RegisterEmployerCommand command)
             => Created((string?)null, (await Mediator.Send(command)).Result);
 
-        /// <remarks>
-        /// Admin-only, and the role is assigned server-side. The old equivalent took a
-        /// client-supplied <c>Claims</c> array that AutoMapper copied onto the entity.
-        ///
-        /// Unlike the other two this issues no tokens — an admin is creating somebody else's
-        /// account — so the response carries the new staff id instead.
-        /// </remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpPost("register/system-staff")]
         public async Task<IActionResult> RegisterSystemStaff(RegisterSystemStaffCommand command)
@@ -62,16 +38,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Refresh(RefreshTokenCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
-        /// <remarks>
-        /// Anonymous by design: the refresh token itself is the credential, and a client whose
-        /// access token has already expired must still be able to end its session.
-        /// </remarks>
         [AllowAnonymous]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(LogoutCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
-        /// <summary>Ends every session for the caller, including unexpired access tokens.</summary>
         [Authorize]
         [HttpPost("logout-all")]
         public async Task<IActionResult> LogoutAll()
@@ -81,7 +52,6 @@ namespace WebAPI.Controllers
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordCommand command)
         {
-            // Always the caller. A user id in the body would let anyone reset anyone's password.
             command.UserId = CurrentUserId;
 
             return Ok((await Mediator.Send(command)).Result);

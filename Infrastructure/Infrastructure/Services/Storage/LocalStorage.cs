@@ -6,23 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Storage
 {
-    /// <summary>
-    /// Writes uploads to the local filesystem. The default in Development and tests.
-    /// </summary>
-    /// <remarks>
-    /// The previous implementation was unusable and unreachable. Its upload method read:
-    /// <code>
-    /// if (!Directory.Exists(uploadPath)) { Directory.CreateDirectory(uploadPath); }
-    /// else { throw new Exception("Dosyalar yüklenirken hata oluştu."); }
-    /// </code>
-    /// — it threw whenever the target directory already existed, so the second upload always
-    /// failed. It also never appeared in any DI registration, so nothing could reach it: storage was
-    /// hard-wired to Azure with no configuration switch, which is why the functional tests would
-    /// otherwise need a real Azure account.
-    /// </remarks>
     public sealed class LocalStorage : IStorage
     {
-        /// <summary>Outside wwwroot, deliberately — see <see cref="GuardAgainstPubliclyServedRoot"/>.</summary>
         private const string DefaultRelativeRoot = "App_Data/uploads";
 
         private readonly string _rootPath;
@@ -45,20 +30,6 @@ namespace Infrastructure.Services.Storage
             GuardAgainstPubliclyServedRoot(contentRoot);
         }
 
-        /// <summary>
-        /// Refuses to start if uploads would land inside the statically-served web root.
-        /// </summary>
-        /// <remarks>
-        /// This is not hypothetical. The configured default was <c>wwwroot/uploads</c> while
-        /// <c>Program.cs</c> calls <c>UseStaticFiles()</c>, and in a published application the
-        /// content root and the base directory are the same folder — so every uploaded CV would have
-        /// been anonymously downloadable by anyone who could guess its URL. That is the same class of
-        /// mistake as the <c>PublicAccessType.BlobContainer</c> the Azure adapter used to set.
-        ///
-        /// A comment warning against it would not have prevented the next person reinstating it, so
-        /// this fails loudly at startup instead. CVs are personal data and are served only through
-        /// the authorized download endpoint.
-        /// </remarks>
         private void GuardAgainstPubliclyServedRoot(string contentRoot)
         {
             var webRoot = Path.GetFullPath(Path.Combine(contentRoot, "wwwroot"));
@@ -124,20 +95,8 @@ namespace Infrastructure.Services.Storage
             return Task.FromResult(stream);
         }
 
-        /// <summary>
-        /// Resolves a path and refuses anything that escapes the storage root.
-        /// </summary>
-        /// <remarks>
-        /// Path traversal guard. File names reaching this class come from database rows rather than
-        /// straight off the wire, but "the caller is trusted" is precisely the assumption that turns
-        /// a stored value into an arbitrary-file-read. <c>..%2f..%2fappsettings.json</c> costs
-        /// nothing to reject.
-        /// </remarks>
         private string ResolveWithinRoot(string containerName, string fileName)
         {
-            // The caller may pass a bare name or a full key that already carries the container
-            // prefix — StoredFile.StoragePath is persisted with it. Strip it before composing the
-            // filesystem path, or the container ends up in the path twice.
             var relative = StorageKey.StripContainer(containerName, fileName);
 
             var candidate = Path.GetFullPath(Path.Combine(_rootPath, containerName, relative));
@@ -177,14 +136,6 @@ namespace Infrastructure.Services.Storage
         public Task<bool> HasFileAsync(string containerName, string fileName, CancellationToken cancellationToken = default)
             => Task.FromResult(File.Exists(ResolveWithinRoot(containerName, fileName)));
 
-        /// <summary>
-        /// Produces a collision-free name, preserving the extension.
-        /// </summary>
-        /// <remarks>
-        /// The old helper recursed through a <c>await Task.Run(async () =&gt; ...)</c> wrapper for no
-        /// reason and, in AzureStorage, was passed <c>file.Name</c> — the form field name — instead
-        /// of <c>file.FileName</c>, so every upload in a request collided on a single name.
-        /// </remarks>
         private static string BuildUniqueFileName(string directory, string originalFileName)
         {
             var extension = Path.GetExtension(originalFileName);

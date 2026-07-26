@@ -10,20 +10,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure.Services.JWT
 {
-    /// <summary>
-    /// Stateless JWT factory. Registered as a singleton.
-    /// </summary>
-    /// <remarks>
-    /// The previous TokenHandler was registered <c>AddScoped</c> in the MS container but injected
-    /// into managers that Autofac registered <c>.SingleInstance()</c> — a captive dependency — and
-    /// it kept the expiry in a mutable <c>_accessTokenExpiration</c> instance field that concurrent
-    /// requests raced on. This type holds no per-request state, so it is safe as a singleton.
-    /// </remarks>
     public sealed class JwtTokenService : ITokenService
     {
         public const string TokenSchemaVersionClaim = "ver";
 
-        /// <summary>Bump when the claim set changes shape, to reject tokens using the old layout.</summary>
         public const string CurrentTokenSchemaVersion = "1";
 
         private readonly TokenOptions _options;
@@ -41,9 +31,6 @@ namespace Infrastructure.Services.JWT
 
         public AccessToken CreateAccessToken(User user, IReadOnlyCollection<string> roles)
         {
-            // UtcNow via TimeProvider. The old code used DateTime.Now for both nbf and exp, so on a
-            // UTC+3 server every token was stamped three hours ahead and rejected by
-            // ValidateLifetime as not-yet-valid — well beyond the default five-minute skew.
             var issuedAt = _timeProvider.GetUtcNow().UtcDateTime;
             var expiresAt = issuedAt.AddMinutes(_options.AccessTokenExpirationMinutes);
 
@@ -56,9 +43,6 @@ namespace Infrastructure.Services.JWT
                 new("user_type", user.UserType.ToString()),
                 new("security_stamp", user.SecurityStamp.ToString()),
 
-                // Claim-schema version. If the set of claims ever changes shape, bump this and
-                // tokens minted against the old layout stop validating instead of being silently
-                // misread. Validated in OnTokenValidated — an unchecked claim is worse than none.
                 new(TokenSchemaVersionClaim, CurrentTokenSchemaVersion)
             };
 
@@ -77,19 +61,12 @@ namespace Infrastructure.Services.JWT
 
         public (string Token, string TokenHash) CreateRefreshToken()
         {
-            // 256 bits from a cryptographic RNG. Base64url so it survives headers and JSON intact.
             var bytes = RandomNumberGenerator.GetBytes(32);
             var token = Base64UrlEncoder.Encode(bytes);
 
             return (token, HashRefreshToken(token));
         }
 
-        /// <remarks>
-        /// Only the hash is ever persisted. A leaked <c>refresh_tokens</c> table must not hand an
-        /// attacker usable sessions, which storing raw tokens would. SHA-256 with no salt is correct
-        /// here and not a password-hashing mistake: the input is 256 bits of entropy we generated,
-        /// so it is not brute-forcible and the lookup must be deterministic.
-        /// </remarks>
         public string HashRefreshToken(string token)
             => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }

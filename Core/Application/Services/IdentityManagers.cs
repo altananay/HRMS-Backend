@@ -1,6 +1,6 @@
 using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Features.Employers.Commands;
 using Application.Features.JobSeekers.Commands;
@@ -26,33 +26,29 @@ namespace Application.Services
             _rules = rules;
         }
 
-        public async Task<IDataResult<PagedResult<EmployerDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<EmployerResponse>>> GetPagedAsync(
             PageRequest page,
             bool orderByHeadcount = false,
             CancellationToken cancellationToken = default)
         {
             var result = await _employers.GetPagedAsync(page, orderByHeadcount, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<EmployerDto>>(new PagedResult<EmployerDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<EmployerResponse>>(new PagedResult<EmployerResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<EmployerDetailDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<EmployerDetailResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var employer = await _rules.EnsureEmployerExistsAsync(id, cancellationToken);
-            return new SuccessDataResult<EmployerDetailDto>(DomainMapper.ToDetailDto(employer));
+            return new SuccessDataResult<EmployerDetailResponse>(DomainMapper.ToDetailResponse(employer));
         }
 
-        /// <remarks>
-        /// Returns 404 when no employer matches rather than leaking whether an address is
-        /// registered through a differently-shaped response.
-        /// </remarks>
-        public async Task<IDataResult<EmployerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<EmployerResponse>> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             var employer = await _employers.GetByEmailAsync(email, cancellationToken)
                 ?? throw new Common.Exceptions.NotFoundException(Messages.Employer.NotFound);
 
-            return new SuccessDataResult<EmployerDto>(DomainMapper.ToDto(employer));
+            return new SuccessDataResult<EmployerResponse>(DomainMapper.ToResponse(employer));
         }
 
         public async Task<IResult> UpdateAsync(UpdateEmployerCommand command, CancellationToken cancellationToken = default)
@@ -66,7 +62,6 @@ namespace Application.Services
             employer.Description = command.Description;
             employer.Sectors = command.Sectors;
 
-            // Departments are replaced wholesale; cascade delete removes the detached rows.
             employer.Departments.Clear();
             foreach (var department in command.Departments)
             {
@@ -87,8 +82,6 @@ namespace Application.Services
         {
             var employer = await _rules.EnsureEmployerExistsAsync(id, cancellationToken);
 
-            // Soft delete via the auditing interceptor — the employer's advertisements and the
-            // applications attached to them are hiring history and must survive.
             _employers.Remove(employer);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -115,41 +108,36 @@ namespace Application.Services
             _access = access;
         }
 
-        public async Task<IDataResult<PagedResult<JobSeekerDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<JobSeekerResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _jobSeekers.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<JobSeekerDto>>(new PagedResult<JobSeekerDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<JobSeekerResponse>>(new PagedResult<JobSeekerResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<JobSeekerDto>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobSeekerResponse>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default)
         {
-            // Same policy as the CV: the candidate, an employer holding an application from them, or
-            // an admin. Without it any authenticated caller could walk the id space and collect every
-            // seeker's email and date of birth.
             await _access.EnsureCanReadAsync(id, requestedBy, cancellationToken);
 
             var jobSeeker = await _rules.EnsureJobSeekerExistsAsync(id, cancellationToken);
-            return new SuccessDataResult<JobSeekerDto>(DomainMapper.ToDto(jobSeeker));
+            return new SuccessDataResult<JobSeekerResponse>(DomainMapper.ToResponse(jobSeeker));
         }
 
-        public async Task<IDataResult<JobSeekerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<JobSeekerResponse>> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             var jobSeeker = await _jobSeekers.GetByEmailAsync(email, cancellationToken)
                 ?? throw new Common.Exceptions.NotFoundException(Messages.JobSeeker.NotFound);
 
-            return new SuccessDataResult<JobSeekerDto>(DomainMapper.ToDto(jobSeeker));
+            return new SuccessDataResult<JobSeekerResponse>(DomainMapper.ToResponse(jobSeeker));
         }
 
         public async Task<IResult> UpdateAsync(UpdateJobSeekerCommand command, CancellationToken cancellationToken = default)
         {
             var jobSeeker = await _rules.EnsureJobSeekerExistsAsync(command.Id, cancellationToken);
 
-            // All four fields are applied. The old manager wrote only Email and silently discarded
-            // everything else the caller sent, inside a try/catch that swallowed the reason.
             jobSeeker.FirstName = command.FirstName;
             jobSeeker.LastName = command.LastName;
             jobSeeker.Email = command.Email;
@@ -164,9 +152,6 @@ namespace Application.Services
         {
             var jobSeeker = await _rules.EnsureJobSeekerExistsAsync(id, cancellationToken);
 
-            // One soft delete, one SaveChanges. Previously this deleted from the users collection
-            // and then the jobseekers collection as two independent Mongo calls with no transaction,
-            // so a failure between them left the two permanently inconsistent.
             _jobSeekers.Remove(jobSeeker);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -185,22 +170,22 @@ namespace Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IDataResult<PagedResult<SystemStaffDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<SystemStaffResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _systemStaff.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<SystemStaffDto>>(new PagedResult<SystemStaffDto>(
-                result.Items.Select(DomainMapper.ToDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<SystemStaffResponse>>(new PagedResult<SystemStaffResponse>(
+                result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<SystemStaffDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<SystemStaffResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var staff = await _systemStaff.GetByIdAsync(id, cancellationToken)
                 ?? throw new Common.Exceptions.NotFoundException(Messages.SystemStaff.NotFound);
 
-            return new SuccessDataResult<SystemStaffDto>(DomainMapper.ToDto(staff));
+            return new SuccessDataResult<SystemStaffResponse>(DomainMapper.ToResponse(staff));
         }
 
         public async Task<IResult> UpdateAsync(UpdateSystemStaffCommand command, CancellationToken cancellationToken = default)
@@ -235,14 +220,14 @@ namespace Application.Services
 
         public UserManager(IUserRepository users) => _users = users;
 
-        public async Task<IDataResult<PagedResult<UserSummaryDto>>> GetPagedAsync(
+        public async Task<IDataResult<PagedResult<UserSummaryResponse>>> GetPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)
         {
             var result = await _users.GetPagedAsync(page, cancellationToken);
 
-            return new SuccessDataResult<PagedResult<UserSummaryDto>>(new PagedResult<UserSummaryDto>(
-                result.Items.Select(DomainMapper.ToSummaryDto).ToList(), result.Page, result.PageSize, result.TotalCount));
+            return new SuccessDataResult<PagedResult<UserSummaryResponse>>(new PagedResult<UserSummaryResponse>(
+                result.Items.Select(DomainMapper.ToSummaryResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
     }
 }

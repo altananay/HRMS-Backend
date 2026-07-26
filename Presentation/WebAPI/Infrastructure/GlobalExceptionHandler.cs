@@ -6,19 +6,6 @@ using ValidationException = Application.Common.Exceptions.ValidationException;
 
 namespace WebAPI.Infrastructure
 {
-    /// <summary>
-    /// Maps application exceptions onto RFC 9457 ProblemDetails responses.
-    /// </summary>
-    /// <remarks>
-    /// Replaces ConfigureExceptionHandlerExtension, which mapped every exception to HTTP 500 and
-    /// echoed <c>Exception.Message</c> straight back to the caller. Two consequences of that:
-    /// the API had effectively no 400/401/403/404 anywhere, and an unknown-email login — which threw
-    /// BusinessException from JobSeekerBusinessRules — returned a 500 whose distinct message made it
-    /// a user-enumeration oracle.
-    ///
-    /// Unhandled exceptions now surface only a traceId. The message is included in Development to
-    /// keep debugging tolerable, and never outside it.
-    /// </remarks>
     public sealed class GlobalExceptionHandler : IExceptionHandler
     {
         private readonly ILogger<GlobalExceptionHandler> _logger;
@@ -42,23 +29,13 @@ namespace WebAPI.Infrastructure
         {
             var problemDetails = Map(exception, httpContext);
 
-            // This is the single place a failed request is logged. LoggingBehavior deliberately does
-            // not log its own failures: it only sees exceptions raised inside a MediatR handler,
-            // whereas everything that becomes an error response passes through here, and only here
-            // is the resulting status code known. Two loggers meant two lines per rejection.
             if (problemDetails.Status >= StatusCodes.Status500InternalServerError)
             {
-                // The exception object, so the stack trace survives — this is a genuine fault.
                 _logger.LogError(exception, "Request {Method} {Path} failed with {StatusCode}",
                     httpContext.Request.Method, httpContext.Request.Path, problemDetails.Status);
             }
             else
             {
-                // Warning, not Information: a rejected request is worth seeing without hunting for
-                // it — a run of 401s on the login route is how a brute-force attempt shows up. No
-                // stack trace and no exception message: these are expected outcomes, and the message
-                // can carry record ids and user input. The type name says what was thrown; Title is
-                // what the caller was told.
                 _logger.LogWarning(
                     "Request {Method} {Path} rejected with {StatusCode} ({ExceptionType}): {Title}",
                     httpContext.Request.Method, httpContext.Request.Path,
@@ -100,9 +77,6 @@ namespace WebAPI.Infrastructure
                 case UnauthorizedAccessException:
                     return Problem(StatusCodes.Status401Unauthorized, "Kimlik doğrulanamadı.", detail: null);
 
-                // BusinessException is thrown by the *BusinessRules classes for rule violations.
-                // It is a bad request, not a server fault — this is the single biggest status-code
-                // correction in the migration.
                 case BusinessException:
                     return Problem(StatusCodes.Status400BadRequest, "İş kuralı ihlali.", exception.Message);
 

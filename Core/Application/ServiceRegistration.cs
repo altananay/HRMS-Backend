@@ -19,8 +19,6 @@ namespace Application
             {
                 configuration.RegisterServicesFromAssembly(applicationAssembly);
 
-                // Outermost first: logging wraps everything so rejected requests are still recorded,
-                // and validation runs before the handler does any work.
                 configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
                 configuration.AddOpenBehavior(typeof(PerformanceBehavior<,>));
                 configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
@@ -30,14 +28,8 @@ namespace Application
 
             services.AddScoped<BusinessRules>();
 
-            // Who may read a candidate's profile, CV and files. Separate from BusinessRules because
-            // it answers an authorization question rather than an existence one, and because the
-            // three managers that need it should not also take a dependency on every other rule.
             services.AddScoped<CandidateAccessPolicy>();
 
-            // The managers live here now rather than in Persistence, so Application owns both the
-            // I*Service contracts and their implementations, and the database provider stays behind
-            // the repository interfaces.
             services.AddScoped<IAuthService, AuthManager>();
             services.AddScoped<IContactService, ContactManager>();
             services.AddScoped<IJobPositionService, JobPositionManager>();

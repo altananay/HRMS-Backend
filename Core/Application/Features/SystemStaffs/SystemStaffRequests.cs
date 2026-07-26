@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -13,11 +13,6 @@ namespace Application.Features.SystemStaffs.Commands
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;
 
-        /// <remarks>
-        /// There is deliberately no <c>Claims</c> property here. The old CreateSystemStaffCommand
-        /// exposed one and AutoMapper copied it straight onto the entity, so any caller who reached
-        /// this endpoint could grant themselves the admin role. Roles are assigned server-side only.
-        /// </remarks>
         public sealed class Response
         {
             public IResult Result { get; init; } = null!;
@@ -64,7 +59,7 @@ namespace Application.Features.SystemStaffs.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<SystemStaffDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<SystemStaffResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllSystemStaffQuery, Response>
@@ -88,7 +83,7 @@ namespace Application.Features.SystemStaffs.Queries
 
         public sealed class Response
         {
-            public IDataResult<SystemStaffDto> Result { get; init; } = null!;
+            public IDataResult<SystemStaffResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByIdSystemStaffQuery, Response>

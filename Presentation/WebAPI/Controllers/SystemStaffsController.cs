@@ -25,12 +25,5 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
             => Ok((await Mediator.Send(new DeleteSystemStaffCommand { Id = id })).Result);
 
-        // Staff creation moves to POST /api/auth/register/system-staff in Phase 4.
-        //
-        // It cannot live here as a plain CRUD add: creating a staff member means creating a User
-        // with a password hash and a role assignment. The old POST add went through
-        // SystemStaffAuthManager.Register, which carried [ValidationAspect(typeof(
-        // CreateSystemStaffCommand))] — a MediatR command passed where an IValidator was expected,
-        // so ValidationAspect's constructor threw before the method could run at all.
     }
 }

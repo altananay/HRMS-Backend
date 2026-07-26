@@ -11,18 +11,6 @@ using Domain.Enums;
 
 namespace HRMS.Application.UnitTests.Services;
 
-/// <summary>
-/// Upload validation and download authorization for CV attachments.
-/// </summary>
-/// <remarks>
-/// These are exactly the rules that are cheap to get wrong and expensive to discover in production:
-/// a CV is personal data, and the employer case is a data question ("did this seeker apply to me?")
-/// rather than a role check, so <c>[Authorize(Roles = "employer")]</c> alone would hand every CV in
-/// the system to every employer.
-///
-/// Substituting the repositories is what the per-aggregate interface design was chosen for — none of
-/// this needs a database.
-/// </remarks>
 public class CvFileManagerTests
 {
     private static readonly Guid OwnerId = Guid.Parse("00000000-0000-0000-0000-0000000000a1");
@@ -50,9 +38,6 @@ public class CvFileManagerTests
             Substitute.For<IContactRepository>(),
             Substitute.For<IUserRepository>());
 
-        // The real policy, not a substitute: it is the thing under test in the authorization cases
-        // below, and it is shared with CvManager and JobSeekerManager, so a fake here would let the
-        // three drift apart silently.
         var access = new CandidateAccessPolicy(_applications, _currentUser);
 
         return new CvFileManager(_cvs, _cvFiles, _storage, _unitOfWork, rules, access);
@@ -78,10 +63,6 @@ public class CvFileManagerTests
             Files = [new FileUploadRequest(fileName, contentType, length, new MemoryStream([1, 2, 3]))]
         };
 
-    // ---------------------------------------------------------------------------------------------
-    // Upload validation
-    // ---------------------------------------------------------------------------------------------
-
     [Fact]
     public async Task UploadAsync_Should_StoreFile_When_ItIsAValidPdf()
     {
@@ -105,7 +86,6 @@ public class CvFileManagerTests
         await Should.ThrowAsync<ConflictException>(
             () => CreateSut().UploadAsync(Upload("cv.pdf", "application/pdf", 6 * 1024 * 1024)));
 
-        // Nothing may reach storage once validation fails.
         await _storage.DidNotReceiveWithAnyArgs().UploadAsync(default!, default!, default);
     }
 
@@ -118,13 +98,6 @@ public class CvFileManagerTests
             () => CreateSut().UploadAsync(Upload("cv.png", "image/png", 1024)));
     }
 
-    /// <summary>
-    /// The check that stops <c>payload.exe</c> arriving labelled <c>application/pdf</c>.
-    /// </summary>
-    /// <remarks>
-    /// A content type is caller-supplied and trivially spoofed, and an extension says nothing about
-    /// the bytes — requiring the two to agree is the cheap defence that catches the obvious attempt.
-    /// </remarks>
     [Fact]
     public async Task UploadAsync_Should_Reject_When_ExtensionContradictsContentType()
     {
@@ -163,10 +136,6 @@ public class CvFileManagerTests
             () => CreateSut().UploadAsync(Upload("cv.pdf", "application/pdf", 1024)));
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Download authorization
-    // ---------------------------------------------------------------------------------------------
-
     private void GivenStoredFile()
     {
         var cv = new Cv { Id = CvId, JobSeekerId = OwnerId };
@@ -204,9 +173,6 @@ public class CvFileManagerTests
         await Should.ThrowAsync<ForbiddenException>(() => CreateSut().DownloadAsync(FileId, OtherSeekerId));
     }
 
-    /// <summary>
-    /// Holding the employer role is not enough — the seeker must actually have applied to them.
-    /// </summary>
     [Fact]
     public async Task DownloadAsync_Should_Forbid_When_EmployerHasNoApplicationFromTheSeeker()
     {
@@ -247,18 +213,9 @@ public class CvFileManagerTests
         _storage.OpenReadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((Stream?)null);
 
-        // A database row without its object is a 404, not a 500.
         await Should.ThrowAsync<NotFoundException>(() => CreateSut().DownloadAsync(FileId, OwnerId));
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Delete
-    // ---------------------------------------------------------------------------------------------
-
-    /// <remarks>
-    /// Deletion is stricter than reading: an employer who may download a CV must not be able to
-    /// destroy it.
-    /// </remarks>
     [Fact]
     public async Task DeleteAsync_Should_Forbid_When_CallerIsAnEmployerWithAnApplication()
     {

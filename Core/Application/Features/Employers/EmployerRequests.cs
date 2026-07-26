@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -15,7 +15,7 @@ namespace Application.Features.Employers.Commands
         public int? NumberOfEmployees { get; set; }
         public string? Description { get; set; }
         public string[] Sectors { get; set; } = [];
-        public List<DepartmentInput> Departments { get; set; } = [];
+        public List<DepartmentRequest> Departments { get; set; } = [];
 
         public sealed class Response
         {
@@ -61,12 +61,11 @@ namespace Application.Features.Employers.Queries
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = PageRequest.DefaultPageSize;
 
-        /// <remarks>Replaces the separate GetAllEmployerOrderByNumberOfEmployeesQuery.</remarks>
         public bool OrderByNumberOfEmployees { get; set; }
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<EmployerDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<EmployerResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllEmployerQuery, Response>
@@ -92,7 +91,7 @@ namespace Application.Features.Employers.Queries
 
         public sealed class Response
         {
-            public IDataResult<EmployerDetailDto> Result { get; init; } = null!;
+            public IDataResult<EmployerDetailResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByIdEmployerQuery, Response>
@@ -112,7 +111,7 @@ namespace Application.Features.Employers.Queries
 
         public sealed class Response
         {
-            public IDataResult<EmployerDto> Result { get; init; } = null!;
+            public IDataResult<EmployerResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByEmailEmployerQuery, Response>

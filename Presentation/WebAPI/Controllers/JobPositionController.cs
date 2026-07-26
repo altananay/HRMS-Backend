@@ -9,7 +9,6 @@ namespace WebAPI.Controllers
     [Authorize]
     public class JobPositionController : ApiControllerBase
     {
-        /// <summary>Public: the job board needs the position list to render its filters.</summary>
         [AllowAnonymous]
         [HttpGet("getall")]
         public async Task<IActionResult> GetAll([FromQuery] GetJobPositionQuery query)
@@ -20,10 +19,6 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetById(Guid id)
             => Ok((await Mediator.Send(new GetJobPositionByIdQuery { Id = id })).Result);
 
-        /// <remarks>
-        /// Resolve-or-create, so re-adding an existing name is idempotent and answers 201 carrying
-        /// the id of the position that was already there.
-        /// </remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpPost("addjobposition")]
         public async Task<IActionResult> Add(CreateJobPositionCommand command)
@@ -38,7 +33,6 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Update(UpdateJobPositionCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
-        /// <remarks>Returns 409 when advertisements still reference this position.</remarks>
         [Authorize(Roles = Roles.Admin)]
         [HttpDelete("deletebyid/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)

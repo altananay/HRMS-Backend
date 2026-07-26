@@ -3,14 +3,6 @@ using Domain.Enums;
 
 namespace Domain.Entities
 {
-    /// <summary>
-    /// An uploaded CV document.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="CvId"/> is the foreign key this entity never had. Previously CvFile held only
-    /// FileName, Path and Storage, and <c>UploadCvFileCommand</c> bulk-inserted rows with no link to
-    /// any seeker or CV — so uploaded files were unattributable the moment they were written.
-    /// </remarks>
     public class CvFile : BaseEntity
     {
         public Guid CvId { get; set; }

@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -10,10 +10,6 @@ namespace Application.Features.JobSeekers.Commands
     {
         public Guid Id { get; set; }
 
-        /// <remarks>
-        /// All of these are actually applied. The old manager took the full command and then wrote
-        /// only <c>Email</c>, silently discarding every other field the caller sent.
-        /// </remarks>
         public string FirstName { get; set; } = null!;
 
         public string LastName { get; set; } = null!;
@@ -66,7 +62,7 @@ namespace Application.Features.JobSeekers.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<JobSeekerDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<JobSeekerResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllJobSeekerQuery, Response>
@@ -88,12 +84,11 @@ namespace Application.Features.JobSeekers.Queries
     {
         public Guid Id { get; set; }
 
-        /// <summary>Set by the controller from the token, never bound from the request.</summary>
         public Guid RequestedBy { get; set; }
 
         public sealed class Response
         {
-            public IDataResult<JobSeekerDto> Result { get; init; } = null!;
+            public IDataResult<JobSeekerResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByIdJobSeekerQuery, Response>
@@ -113,7 +108,7 @@ namespace Application.Features.JobSeekers.Queries
 
         public sealed class Response
         {
-            public IDataResult<JobSeekerDto> Result { get; init; } = null!;
+            public IDataResult<JobSeekerResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByEmailJobSeekerQuery, Response>

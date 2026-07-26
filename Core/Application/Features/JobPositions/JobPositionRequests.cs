@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -12,7 +12,7 @@ namespace Application.Features.JobPositions.Commands
 
         public sealed class Response
         {
-            public IDataResult<CreatedDto> Result { get; init; } = null!;
+            public IDataResult<CreatedResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<CreateJobPositionCommand, Response>
@@ -77,7 +77,7 @@ namespace Application.Features.JobPositions.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<JobPositionDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<JobPositionResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetJobPositionQuery, Response>
@@ -95,18 +95,13 @@ namespace Application.Features.JobPositions.Queries
         }
     }
 
-    /// <remarks>
-    /// This request used to carry <c>[BsonId]</c> and <c>[BsonRepresentation(BsonType.ObjectId)]</c>
-    /// on its Id — MongoDB persistence attributes decorating a MediatR message in the Application
-    /// layer, which is about as direct a layering violation as it gets.
-    /// </remarks>
     public partial class GetJobPositionByIdQuery : IRequest<GetJobPositionByIdQuery.Response>
     {
         public Guid Id { get; set; }
 
         public sealed class Response
         {
-            public IDataResult<JobPositionDto> Result { get; init; } = null!;
+            public IDataResult<JobPositionResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetJobPositionByIdQuery, Response>

@@ -29,8 +29,6 @@ namespace Persistence
                     npgsql.EnableRetryOnFailure(3);
                 });
 
-                // Maps PascalCase properties to snake_case columns, so psql and pgAdmin are usable
-                // without quoting every identifier.
                 options.UseSnakeCaseNamingConvention();
 
                 options.AddInterceptors(serviceProvider.GetRequiredService<AuditingSaveChangesInterceptor>());
@@ -43,8 +41,6 @@ namespace Persistence
 
         private static void AddRepositories(this IServiceCollection services)
         {
-            // Scoped, matching the DbContext they wrap. The Autofac module this replaces registered
-            // every repository — and MongoContext itself — as .SingleInstance().
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             services.AddScoped<IUserRepository, UserRepository>();

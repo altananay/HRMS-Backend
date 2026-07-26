@@ -12,8 +12,6 @@ namespace Persistence.Configurations
 
             builder.HasKey(cv => cv.Id);
 
-            // One CV per seeker. CvBusinessRules used to enforce this with an extra round trip and
-            // a thrown BusinessException; the database can simply guarantee it.
             builder.HasIndex(cv => cv.JobSeekerId).IsUnique();
 
             builder.Property(cv => cv.Information).HasMaxLength(4000);
@@ -23,7 +21,6 @@ namespace Persistence.Configurations
             builder.Property(cv => cv.Skills).HasColumnType("text[]");
             builder.HasIndex(cv => cv.Skills).HasMethod("gin");
 
-            // Owned type -> three inline nullable columns on cvs, not a separate table.
             builder.OwnsOne(cv => cv.SocialMedia, socialMedia =>
             {
                 socialMedia.Property(media => media.Github).HasMaxLength(256).HasColumnName("social_github");
@@ -31,17 +28,10 @@ namespace Persistence.Configurations
                 socialMedia.Property(media => media.WebSite).HasMaxLength(256).HasColumnName("social_website");
             });
 
-            // Required navigation, so the instance is always materialized. As an optional dependent
-            // it shared this table without a single required column, leaving EF no way to decide
-            // whether the owned object exists when all three links are null — it warned about
-            // exactly that. The columns stay nullable; only the presence of the object is fixed.
             builder.Navigation(cv => cv.SocialMedia).IsRequired();
 
-            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
+            builder.Property<uint>("xmin").IsRowVersion();
 
-            // Matches the soft-delete filter on JobSeeker. Without it EF warns that a filtered
-            // principal has an unfiltered required dependent — concretely, a CV belonging to a
-            // soft-deleted seeker would still surface in queries while its owner does not.
             builder.HasQueryFilter(cv => cv.JobSeeker.DeletedAt == null);
 
             builder.HasMany(cv => cv.Educations).WithOne(education => education.Cv)
@@ -61,9 +51,6 @@ namespace Persistence.Configurations
         }
     }
 
-    // Each CV child repeats the parent's soft-delete filter. EF warns otherwise, and the warning is
-    // right: a filtered principal with unfiltered required dependents means an education row would
-    // still surface in queries after the CV — and the seeker — were soft-deleted.
     public class EducationConfiguration : IEntityTypeConfiguration<Education>
     {
         public void Configure(EntityTypeBuilder<Education> builder)
@@ -130,7 +117,6 @@ namespace Persistence.Configurations
             builder.Property(file => file.StorageProvider).HasConversion<string>().HasMaxLength(32).IsRequired();
             builder.Property(file => file.ContentType).HasMaxLength(128);
 
-            // Not unique: a CV may carry several attachments.
             builder.HasIndex(file => file.CvId);
             builder.HasQueryFilter(file => file.Cv.JobSeeker.DeletedAt == null);
         }
@@ -145,7 +131,6 @@ namespace Persistence.Configurations
             builder.Property(department => department.Name).HasMaxLength(200).IsRequired();
             builder.HasIndex(department => department.EmployerId);
 
-            // Mirrors the Employer soft-delete filter, as above.
             builder.HasQueryFilter(department => department.Employer.DeletedAt == null);
         }
     }

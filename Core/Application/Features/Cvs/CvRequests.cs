@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -8,22 +8,21 @@ namespace Application.Features.Cvs.Commands
 {
     public partial class CreateCvCommand : IRequest<CreateCvCommand.Response>
     {
-        /// <summary>Taken from the authenticated seeker's token, not the request body.</summary>
         public Guid JobSeekerId { get; set; }
 
         public string? Information { get; set; }
         public string? ImageUrl { get; set; }
         public string? Hobbies { get; set; }
         public string[] Skills { get; set; } = [];
-        public SocialMediaInput? SocialMedia { get; set; }
-        public List<EducationInput> Educations { get; set; } = [];
-        public List<JobExperienceInput> JobExperiences { get; set; } = [];
-        public List<CvLanguageInput> Languages { get; set; } = [];
-        public List<CvProjectInput> Projects { get; set; } = [];
+        public SocialMediaRequest? SocialMedia { get; set; }
+        public List<EducationRequest> Educations { get; set; } = [];
+        public List<JobExperienceRequest> JobExperiences { get; set; } = [];
+        public List<CvLanguageRequest> Languages { get; set; } = [];
+        public List<CvProjectRequest> Projects { get; set; } = [];
 
         public sealed class Response
         {
-            public IDataResult<CreatedDto> Result { get; init; } = null!;
+            public IDataResult<CreatedResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<CreateCvCommand, Response>
@@ -37,11 +36,6 @@ namespace Application.Features.Cvs.Commands
         }
     }
 
-    /// <remarks>
-    /// This endpoint could never succeed before. <c>CvManager.Update</c> called
-    /// <c>CheckIfCvExistsByJobSeekerId</c>, a guard that throws when a CV <i>is</i> found — so
-    /// updating an existing CV threw <c>BusinessException</c> every time and surfaced as HTTP 500.
-    /// </remarks>
     public partial class UpdateCvCommand : IRequest<UpdateCvCommand.Response>
     {
         public Guid Id { get; set; }
@@ -51,11 +45,11 @@ namespace Application.Features.Cvs.Commands
         public string? ImageUrl { get; set; }
         public string? Hobbies { get; set; }
         public string[] Skills { get; set; } = [];
-        public SocialMediaInput? SocialMedia { get; set; }
-        public List<EducationInput> Educations { get; set; } = [];
-        public List<JobExperienceInput> JobExperiences { get; set; } = [];
-        public List<CvLanguageInput> Languages { get; set; } = [];
-        public List<CvProjectInput> Projects { get; set; } = [];
+        public SocialMediaRequest? SocialMedia { get; set; }
+        public List<EducationRequest> Educations { get; set; } = [];
+        public List<JobExperienceRequest> JobExperiences { get; set; } = [];
+        public List<CvLanguageRequest> Languages { get; set; } = [];
+        public List<CvProjectRequest> Projects { get; set; } = [];
 
         public sealed class Response
         {
@@ -77,7 +71,6 @@ namespace Application.Features.Cvs.Commands
     {
         public Guid Id { get; set; }
 
-        /// <summary>Set by the controller from the token, never bound from the request body.</summary>
         public Guid RequestedBy { get; set; }
 
         public sealed class Response
@@ -106,7 +99,7 @@ namespace Application.Features.Cvs.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<CvDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<CvResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllCvQuery, Response>
@@ -128,12 +121,11 @@ namespace Application.Features.Cvs.Queries
     {
         public Guid JobSeekerId { get; set; }
 
-        /// <summary>Set by the controller from the token, never bound from the request.</summary>
         public Guid RequestedBy { get; set; }
 
         public sealed class Response
         {
-            public IDataResult<CvDto> Result { get; init; } = null!;
+            public IDataResult<CvResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByJobSeekerIdCvQuery, Response>

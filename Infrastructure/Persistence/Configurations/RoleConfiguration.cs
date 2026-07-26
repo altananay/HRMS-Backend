@@ -48,11 +48,8 @@ namespace Persistence.Configurations
 
             builder.Property(token => token.TokenHash).HasMaxLength(64).IsRequired();
 
-            // Lookup on refresh is by hash, so it must be indexed; unique because two live tokens
-            // can never legitimately hash to the same value.
             builder.HasIndex(token => token.TokenHash).IsUnique();
 
-            // Covers "revoke everything for this user" and the expiry sweep.
             builder.HasIndex(token => new { token.UserId, token.ExpiresAt });
 
             builder.Property(token => token.CreatedByIp).HasMaxLength(45);
@@ -60,8 +57,6 @@ namespace Persistence.Configurations
 
             builder.Ignore(token => token.IsRevoked);
 
-            // A soft-deleted user's tokens must stop resolving, or a deleted account could keep
-            // refreshing its session indefinitely.
             builder.HasQueryFilter(token => token.User.DeletedAt == null);
         }
     }

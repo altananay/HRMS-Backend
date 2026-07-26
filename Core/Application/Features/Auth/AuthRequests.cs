@@ -1,25 +1,16 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Results;
 using MediatR;
 
 namespace Application.Features.Auth.Commands
 {
-    /// <summary>
-    /// The single response shape for every authentication outcome.
-    /// </summary>
-    /// <remarks>
-    /// Replaces three different envelopes. The old <c>AuthController.Login</c> signalled success by
-    /// leaving a field <i>null</i> (<c>if (response.Result == null) return Ok(response.DataResult)</c>),
-    /// while the Employer and SystemStaff controllers each used a different shape again — so a client
-    /// needed three code paths to log three kinds of user in.
-    /// </remarks>
     public sealed record AuthResponse(
         string AccessToken,
         DateTime AccessTokenExpiresAt,
         string RefreshToken,
         DateTime RefreshTokenExpiresAt,
-        AuthenticatedUserDto User);
+        AuthenticatedUserResponse User);
 
     public partial class LoginCommand : IRequest<LoginCommand.Response>
     {
@@ -94,11 +85,6 @@ namespace Application.Features.Auth.Commands
         }
     }
 
-    /// <remarks>
-    /// Admin-only. There is deliberately no <c>Roles</c>/<c>Claims</c> property: the old
-    /// <c>CreateSystemStaffCommand</c> exposed one and AutoMapper copied it onto the entity, so
-    /// anyone reaching the endpoint could grant themselves "admin".
-    /// </remarks>
     public partial class RegisterSystemStaffCommand : IRequest<RegisterSystemStaffCommand.Response>
     {
         public string Email { get; set; } = null!;
@@ -108,7 +94,7 @@ namespace Application.Features.Auth.Commands
 
         public sealed class Response
         {
-            public IDataResult<CreatedDto> Result { get; init; } = null!;
+            public IDataResult<CreatedResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<RegisterSystemStaffCommand, Response>
@@ -162,7 +148,6 @@ namespace Application.Features.Auth.Commands
         }
     }
 
-    /// <summary>Ends every session for the caller by rotating their security stamp.</summary>
     public partial class LogoutAllCommand : IRequest<LogoutAllCommand.Response>
     {
         public Guid UserId { get; set; }
@@ -214,7 +199,7 @@ namespace Application.Features.Auth.Queries
 
         public sealed class Response
         {
-            public IDataResult<AuthenticatedUserDto> Result { get; init; } = null!;
+            public IDataResult<AuthenticatedUserResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetCurrentUserQuery, Response>

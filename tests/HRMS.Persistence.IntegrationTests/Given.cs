@@ -3,14 +3,6 @@ using Domain.Enums;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// Entity builders, so a test that is about one constraint does not open with twenty lines of
-/// unrelated required fields.
-/// </summary>
-/// <remarks>
-/// Every factory produces a valid, saveable graph; a test that wants an invalid one breaks exactly
-/// the field it is testing, which keeps the intent of each case visible.
-/// </remarks>
 internal static class Given
 {
     public static JobSeeker JobSeeker(string email = "seeker@test.local", string? nationalId = null)
@@ -43,7 +35,6 @@ internal static class Given
     public static JobPosition JobPosition(string name = "Backend Developer")
         => new() { Name = name };
 
-    /// <summary>A CV with one row in each child collection, so cascades have something to remove.</summary>
     public static Cv Cv(Guid jobSeekerId)
         => new()
         {

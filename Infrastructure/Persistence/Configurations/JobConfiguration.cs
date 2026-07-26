@@ -17,7 +17,6 @@ namespace Persistence.Configurations
                 .HasMaxLength(200)
                 .IsRequired();
 
-            // The constraint that turns this from a per-advertisement field into a real lookup.
             builder.HasIndex(position => position.Name).IsUnique();
         }
     }
@@ -39,7 +38,6 @@ namespace Persistence.Configurations
             builder.Property(advertisement => advertisement.JobType)
                 .HasConversion<string>().HasMaxLength(32).IsRequired();
 
-            // numeric(18,2), not double: salaries are money and must not carry binary rounding error.
             builder.Property(advertisement => advertisement.MinSalary).HasPrecision(18, 2);
             builder.Property(advertisement => advertisement.MaxSalary).HasPrecision(18, 2);
 
@@ -58,12 +56,10 @@ namespace Persistence.Configurations
                     "open_positions > 0");
             });
 
-            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
+            builder.Property<uint>("xmin").IsRowVersion();
 
             builder.HasQueryFilter(advertisement => advertisement.DeletedAt == null);
 
-            // RESTRICT, not CASCADE: removing a shared lookup row must never quietly delete every
-            // advertisement referencing it. The admin delete endpoint surfaces this as a 409.
             builder.HasOne(advertisement => advertisement.JobPosition)
                 .WithMany(position => position.JobAdvertisements)
                 .HasForeignKey(advertisement => advertisement.JobPositionId)
@@ -90,18 +86,15 @@ namespace Persistence.Configurations
             builder.Property(application => application.Status)
                 .HasConversion<string>().HasMaxLength(32).IsRequired();
 
-            // Nothing stopped a seeker applying to the same advertisement repeatedly before.
             builder.HasIndex(application => new { application.JobSeekerId, application.JobAdvertisementId })
                 .IsUnique();
 
             builder.HasIndex(application => application.JobAdvertisementId);
 
-            // Both principals are soft-deletable, so the filter has to cover both — otherwise an
-            // application would outlive the advertisement or the seeker it belongs to in queries.
             builder.HasQueryFilter(application =>
                 application.JobAdvertisement.DeletedAt == null && application.JobSeeker.DeletedAt == null);
 
-            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
+            builder.Property<uint>("xmin").IsRowVersion();
         }
     }
 

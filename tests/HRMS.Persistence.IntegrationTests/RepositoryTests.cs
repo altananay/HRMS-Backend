@@ -6,16 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// The repository methods, against a real database.
-/// </summary>
-/// <remarks>
-/// The unit tests substitute these interfaces, which is exactly why they need covering somewhere:
-/// a substituted repository returns whatever the test says it returns, so a query that forgets an
-/// Include or gets a join backwards passes every manager test and fails in production.
-///
-/// That is not hypothetical here — see <see cref="GetByJobSeekerIdAsync_Should_IncludeTheOwner"/>.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -23,16 +13,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    // ---------------------------------------------------------------------------------------------
-    // CVs
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Regression guard for a defect that reached the running application: the query omitted the
-    /// JobSeeker navigation while the DTO projection read the owner's name, email and date of birth
-    /// off it, so every CV read — the owner's own included — answered 500 with a
-    /// NullReferenceException. No test touched a CV read, at any level, so nothing caught it.
-    /// </summary>
     [Fact]
     public async Task GetByJobSeekerIdAsync_Should_IncludeTheOwner()
     {
@@ -50,7 +30,7 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         var cv = await fixture.GetService<ICvRepository>().GetByJobSeekerIdAsync(seekerId);
 
         cv.ShouldNotBeNull();
-        cv.JobSeeker.ShouldNotBeNull("the DTO projection dereferences this");
+        cv.JobSeeker.ShouldNotBeNull("the Response projection dereferences this");
         cv.JobSeeker.Email.ShouldBe("owner@test.local");
     }
 
@@ -78,7 +58,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         cv.Files.Count.ShouldBe(1);
     }
 
-    /// <summary>The admin list projects the same DTO, so it needs the same navigations loaded.</summary>
     [Fact]
     public async Task GetPagedAsync_Should_IncludeTheOwnerOnEveryRow()
     {
@@ -120,15 +99,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         (await repository.ExistsForJobSeekerAsync(withoutCv)).ShouldBeFalse();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Applications
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// The authorization predicate behind CV access: an employer earns the right to read a candidate
-    /// by having received an application from them. It walks applications → advertisement → employer,
-    /// so a join in the wrong direction would grant or deny access to the wrong people entirely.
-    /// </summary>
     [Fact]
     public async Task ExistsForEmployerAndSeekerAsync_Should_FollowTheAdvertisementToItsOwner()
     {
@@ -157,7 +127,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
 
         (await repository.ExistsForEmployerAndSeekerAsync(employerId, applicantId)).ShouldBeTrue();
 
-        // A different employer, a different seeker: neither pairing exists.
         (await repository.ExistsForEmployerAndSeekerAsync(rivalId, applicantId)).ShouldBeFalse();
         (await repository.ExistsForEmployerAndSeekerAsync(employerId, strangerId)).ShouldBeFalse();
     }
@@ -190,11 +159,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         (await repository.ExistsForSeekerAndAdvertisementAsync(otherId, advertisementId)).ShouldBeFalse();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Users
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>Sign-in needs the role names in the same round trip that finds the user.</summary>
     [Fact]
     public async Task GetForAuthenticationAsync_Should_ReturnTheUserWithTheirRoles()
     {
@@ -214,7 +178,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         found.Value.Roles.ShouldContain("jobseeker");
     }
 
-    /// <summary>citext again — sign-in must not depend on how the address was typed.</summary>
     [Fact]
     public async Task GetForAuthenticationAsync_Should_MatchRegardlessOfCase()
     {
@@ -246,7 +209,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
             .ShouldBeNull();
     }
 
-    /// <summary>Read on every authenticated request, so it stays a two-column projection.</summary>
     [Fact]
     public async Task GetSecurityStateAsync_Should_ReturnTheStampAndActiveFlag()
     {
@@ -271,20 +233,9 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         state.IsActive.ShouldBeFalse();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Job positions
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Resolve-or-create is what keeps positions a shared lookup. The old Add created one per
-    /// advertisement and deleted it along with the advertisement.
-    /// </summary>
     [Fact]
     public async Task ResolveOrCreateAsync_Should_ReuseAnExistingPositionRatherThanInsertAgain()
     {
-        // One scope per call, and the save goes through the same scope's unit of work — resolving the
-        // repository and the context separately would give each its own DbContext, and the insert
-        // would never be committed.
         var first = await fixture.InScopeAsync(async services =>
         {
             var created = await services.GetRequiredService<IJobPositionRepository>()
@@ -311,7 +262,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         (await assert.JobPositions.CountAsync(position => position.Name == "Backend Developer")).ShouldBe(1);
     }
 
-    /// <summary>A different name is a different position, not a reuse.</summary>
     [Fact]
     public async Task ResolveOrCreateAsync_Should_CreateASeparatePositionForADifferentName()
     {

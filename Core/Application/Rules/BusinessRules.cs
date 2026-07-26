@@ -5,23 +5,6 @@ using Domain.Entities;
 
 namespace Application.Rules
 {
-    /// <summary>
-    /// Guard clauses shared by the managers.
-    /// </summary>
-    /// <remarks>
-    /// Moved here from <c>Persistence/Rules</c>. Two things changed besides the location.
-    ///
-    /// <b>Naming now matches behaviour.</b> The old set mixed two opposite conventions under
-    /// similar names: <c>JobAdvertisementExists(id)</c> threw when the record was <i>missing</i>,
-    /// while <c>CheckIfCvExistsByJobSeekerId(id)</c> threw when it was <i>present</i>. That
-    /// inversion is what broke <c>CvManager.Update</c> — it called the second one on a CV that by
-    /// definition already existed, so updating a CV threw every single time. Methods here say
-    /// <c>EnsureX</c> when they require presence and <c>EnsureXDoesNotExist</c> when they require
-    /// absence.
-    ///
-    /// <b>Exceptions are typed.</b> They throw NotFoundException/ConflictException rather than a
-    /// blanket BusinessException, so the handler maps them to 404 and 409 instead of 500.
-    /// </remarks>
     public sealed class BusinessRules
     {
         private readonly IJobSeekerRepository _jobSeekers;
@@ -65,7 +48,6 @@ namespace Application.Rules
             => await _cvs.GetByJobSeekerIdAsync(jobSeekerId, cancellationToken)
                ?? throw new NotFoundException(Messages.Cv.NotFound);
 
-        /// <summary>Used before creating a CV — a seeker may only have one.</summary>
         public async Task EnsureCvDoesNotExistForJobSeekerAsync(Guid jobSeekerId, CancellationToken cancellationToken = default)
         {
             if (await _cvs.ExistsForJobSeekerAsync(jobSeekerId, cancellationToken))
@@ -82,7 +64,6 @@ namespace Application.Rules
             => await _applications.GetByIdAsync(id, cancellationToken)
                ?? throw new NotFoundException(Messages.JobApplication.NotFound);
 
-        /// <summary>Backs the unique (seeker, advertisement) index with a friendly 409.</summary>
         public async Task EnsureNotAlreadyAppliedAsync(
             Guid jobSeekerId,
             Guid jobAdvertisementId,
@@ -98,7 +79,6 @@ namespace Application.Rules
             => await _positions.GetByIdAsync(id, cancellationToken)
                ?? throw new NotFoundException(Messages.JobPosition.NotFound);
 
-        /// <summary>The foreign key is RESTRICT; this turns the violation into a 409 instead of a 500.</summary>
         public async Task EnsureJobPositionNotReferencedAsync(Guid id, CancellationToken cancellationToken = default)
         {
             if (await _positions.IsReferencedAsync(id, cancellationToken))

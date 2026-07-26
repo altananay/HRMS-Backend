@@ -1,6 +1,5 @@
 namespace Domain.Entities
 {
-    /// <summary>Join entity between <see cref="User"/> and <see cref="Role"/>, keyed on both ids.</summary>
     public class UserRole
     {
         public Guid UserId { get; set; }

@@ -17,8 +17,7 @@ namespace Persistence.Configurations
                 .HasMaxLength(256)
                 .IsRequired();
 
-            // Partial unique index: a soft-deleted account releases its email for reuse. A plain
-            // unique index would permanently burn the address of every deleted user.
+            // Partial, so a soft-deleted account releases its address instead of burning it.
             builder.HasIndex(user => user.Email)
                 .IsUnique()
                 .HasFilter("deleted_at IS NULL");
@@ -32,10 +31,7 @@ namespace Persistence.Configurations
 
             builder.Property(user => user.IsActive).HasDefaultValue(true);
 
-            // xmin is a PostgreSQL system column, so optimistic concurrency costs no extra storage.
-            // A stale update now raises DbUpdateConcurrencyException (mapped to 409) instead of
-            // silently winning, which is what the old read-then-replace-whole-document flow did.
-            builder.Property<uint>("xmin").IsRowVersion();   // optimistic concurrency via Npgsql's system column
+            builder.Property<uint>("xmin").IsRowVersion();
 
             builder.HasQueryFilter(user => user.DeletedAt == null);
 
@@ -55,9 +51,6 @@ namespace Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<JobSeeker> builder)
         {
-            // Table-per-type: job_seekers shares its primary key with users. TPH was rejected
-            // because the three subtypes are almost column-disjoint, so it would force
-            // employers.company_name and friends to become nullable, losing real NOT NULL guarantees.
             builder.ToTable("job_seekers");
 
             builder.Property(seeker => seeker.FirstName).HasMaxLength(100).IsRequired();
@@ -91,8 +84,6 @@ namespace Persistence.Configurations
             builder.Property(employer => employer.WebSite).HasMaxLength(256);
             builder.Property(employer => employer.Description).HasMaxLength(4000);
 
-            // Npgsql maps string[] to text[] natively. A lookup table would be over-engineering for
-            // free-text tags with no admin UI curating them.
             builder.Property(employer => employer.Sectors).HasColumnType("text[]");
 
             builder.HasMany(employer => employer.Departments)

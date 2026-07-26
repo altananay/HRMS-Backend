@@ -3,15 +3,6 @@ using Npgsql;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// What happens to dependent rows when a principal goes away.
-/// </summary>
-/// <remarks>
-/// Nothing did, before. Every reference was a loose string id with no foreign key behind it, so
-/// deleting a seeker left their CV, educations and applications behind as rows pointing at an id
-/// that no longer resolved — invisible to the application and impossible to clean up without a
-/// script. These assertions are the reason the relational move was worth making.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -37,7 +28,6 @@ public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
 
         await using (var act = fixture.CreateContext())
         {
-            // cvs has no deleted_at column, so this is a hard delete and the cascade is the database's.
             act.Remove(await act.Cvs.SingleAsync(cv => cv.Id == cvId));
             await act.SaveChangesAsync();
         }
@@ -52,10 +42,6 @@ public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
         (await assert.CvFiles.CountAsync(row => row.CvId == cvId)).ShouldBe(0);
     }
 
-    /// <summary>
-    /// RESTRICT, not cascade: positions are shared, so removing one that advertisements still point
-    /// at must fail loudly rather than quietly take the advertisements with it.
-    /// </summary>
     [Fact]
     public async Task DeletingAJobPositionInUse_Should_BeRefusedByTheDatabase()
     {
@@ -99,10 +85,6 @@ public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
         await Should.NotThrowAsync(() => context.SaveChangesAsync());
     }
 
-    /// <summary>
-    /// A refresh token has no meaning without its user, so the rows go when the row they authenticate
-    /// does. This is a hard delete of the token, triggered by a hard delete of the user.
-    /// </summary>
     [Fact]
     public async Task HardDeletingAUser_Should_TakeTheirTokensAndRoleAssignments()
     {
@@ -124,8 +106,6 @@ public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
             userId = seeker.Id;
         }
 
-        // Around the soft-delete interceptor deliberately: this asserts the FK rule, not the
-        // application's normal delete path, which is covered in SoftDeleteTests.
         await using (var act = fixture.CreateContext())
         {
             await act.Database.ExecuteSqlRawAsync("delete from users where id = {0}", userId);
@@ -138,7 +118,6 @@ public class DeleteBehaviourTests(PostgresFixture fixture) : IAsyncLifetime
         (await assert.JobSeekers.IgnoreQueryFilters().CountAsync(seeker => seeker.Id == userId)).ShouldBe(0);
     }
 
-    /// <summary>The TPT subtype row is keyed to the base row, so it cannot outlive it.</summary>
     [Fact]
     public async Task JobSeekerRow_Should_ShareTheIdentityOfItsUserRow()
     {

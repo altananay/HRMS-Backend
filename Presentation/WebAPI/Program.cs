@@ -23,9 +23,6 @@ using WebAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------------------------------------------------------------------------
-// Configuration â€” fail fast rather than NullReferenceException at first use.
-// ---------------------------------------------------------------------------------------------
 builder.Services
     .AddOptions<TokenOptions>()
     .Bind(builder.Configuration.GetSection("TokenOptions"))
@@ -41,10 +38,6 @@ var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOpt
         "TokenOptions section is missing. See appsettings.json for the expected shape; supply the " +
         "signing key via user-secrets in Development or TokenOptions__SecurityKey in Production.");
 
-// ---------------------------------------------------------------------------------------------
-// Logging â€” Console always, Seq when configured. The MongoDB sink is gone: it wrote domain data
-// and logs into the same database, and the capped `logs` collection is replaced by Seq.
-// ---------------------------------------------------------------------------------------------
 var seqUrl = builder.Configuration["Serilog:Seq:ServerUrl"];
 
 var loggerConfiguration = new LoggerConfiguration()
@@ -61,10 +54,6 @@ if (!string.IsNullOrWhiteSpace(seqUrl))
 
 builder.Host.UseSerilog(loggerConfiguration.CreateLogger());
 
-// ---------------------------------------------------------------------------------------------
-// Services â€” built-in DI only. Autofac, Castle DynamicProxy and the ServiceTool locator are gone;
-// cross-cutting concerns are MediatR pipeline behaviors registered in AddApplicationServices.
-// ---------------------------------------------------------------------------------------------
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Abstractions.ICurrentUserService, CurrentUserService>();
 
@@ -74,10 +63,6 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddMemoryCache();
 
-// ---------------------------------------------------------------------------------------------
-// CORS â€” the previous policy chained .WithOrigins(...) and then .AllowAnyOrigin(), and the
-// wildcard won, so the named origin list was decorative and the policy was effectively open.
-// ---------------------------------------------------------------------------------------------
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
 builder.Services.AddCors(options =>
@@ -88,28 +73,16 @@ builder.Services.AddCors(options =>
         .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 });
 
-// ---------------------------------------------------------------------------------------------
-// Controllers. The global ValidationFilter and FluentValidation auto-validation are both gone â€”
-// ValidationBehavior in the MediatR pipeline is now the single validation stack, so the default
-// model-state 400 is wanted again and SuppressModelStateInvalidFilter is no longer set.
-// ---------------------------------------------------------------------------------------------
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        // Serialize enums as their names, not their ordinals. JobApplicationStatus, JobType,
-        // UserType and StorageProvider all cross the wire; as numbers they are unreadable to a
-        // client and, worse, silently change meaning if a member is ever inserted mid-enum — the
-        // same reason they are stored as text in PostgreSQL.
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-// ---------------------------------------------------------------------------------------------
-// Authentication / authorization.
-// ---------------------------------------------------------------------------------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -125,24 +98,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = ClaimTypes.Name,
             RoleClaimType = ClaimTypes.Role,
 
-            // Tokens are minted and validated by this same service, so there is no reason to
-            // tolerate clock drift â€” and zero skew makes expiry assertions deterministic in tests.
             ClockSkew = TimeSpan.Zero
         };
 
-        // Signature and lifetime are not enough. A JWT is self-validating, so without this hook an
-        // access token stays valid until it expires no matter what happens server-side â€” meaning
-        // "log out everywhere", a password change, an account deactivation, a role revocation and
-        // even refresh-token theft detection all silently do nothing for up to fifteen minutes.
-        //
-        // The security_stamp claim was already being written by JwtTokenService; nothing read it.
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = async context =>
             {
                 var principal = context.Principal;
 
-                // Reject any token minted against a previous claim layout.
                 if (principal?.FindFirstValue(JwtTokenService.TokenSchemaVersionClaim)
                     != JwtTokenService.CurrentTokenSchemaVersion)
                 {
@@ -166,8 +130,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 if (state is null || !state.IsActive || state.SecurityStamp != stamp)
                 {
-                    // Same failure for a deleted user, a disabled account and a rotated stamp â€” the
-                    // client only needs to know the session is over.
                     context.Fail("The session is no longer valid.");
                 }
             }
@@ -176,22 +138,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    // THE structural fix. There is not a single [Authorize] attribute in the pre-migration
-    // codebase; authorization lived only in [SecuredOperation] aspects on manager methods, and
-    // those were commented out on most write paths. A fallback policy inverts the default from
-    // "open unless someone remembered an aspect" to "closed unless someone opted out", so a new
-    // endpoint is protected by default rather than by diligence.
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
 });
 
-// ---------------------------------------------------------------------------------------------
-// Rate limiting â€” the only real defence against credential stuffing on the auth endpoints.
-// ---------------------------------------------------------------------------------------------
-// Configurable so the functional suite can raise it: every test in that suite shares one host and
-// therefore one partition key, so the production limit would reject most of the run. The limit is
-// real in every other environment.
 var authPermitLimit = builder.Configuration.GetValue("RateLimiting:Auth:PermitLimit", 10);
 var authWindowMinutes = builder.Configuration.GetValue("RateLimiting:Auth:WindowMinutes", 5);
 
@@ -209,10 +160,6 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-// ---------------------------------------------------------------------------------------------
-// Swagger â€” with a Bearer definition, which the previous setup lacked entirely, making it
-// impossible to exercise an authenticated endpoint from the Swagger UI.
-// ---------------------------------------------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -230,8 +177,6 @@ builder.Services.AddSwaggerGen(options =>
 
     options.AddSecurityDefinition("Bearer", scheme);
 
-    // Swashbuckle 10 / Microsoft.OpenApi 2.x takes a factory so the requirement can resolve its
-    // scheme reference against the document being generated.
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = []
@@ -240,9 +185,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Development/Testing only. In Production migrations are applied deliberately â€” by a migration
-// bundle or an init container â€” not as a side effect of a web process starting up, where two
-// instances booting at once would race each other.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
@@ -250,9 +192,6 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
     await DatabaseSeeder.SeedAsync(app.Services);
 }
 
-// ---------------------------------------------------------------------------------------------
-// Pipeline.
-// ---------------------------------------------------------------------------------------------
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -262,23 +201,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// No UseSerilogRequestLogging. It sat here and emitted nothing: its middleware logs through the
-// static Log.Logger, and this app never assigns it — UseSerilog(ILogger) registers the instance for
-// dependency injection only. So it was a no-op, verified across several runs by the complete
-// absence of RequestLoggingMiddleware events in Seq while every other sink worked.
-//
-// It is removed rather than repaired on purpose. Wiring it up would add an HTTP-completion line to
-// every request on top of the two lines below, which is the duplication this pipeline was just
-// cleaned of. One line per outcome: LoggingBehavior on success, GlobalExceptionHandler on failure.
 app.UseHttpsRedirection();
 
-// No UseStaticFiles, deliberately. This API serves no files from disk: CV uploads are written
-// outside the web root and read back through an authorized proxy endpoint, and Swagger serves its
-// assets from its own embedded provider. There is no wwwroot, which is why the static-file
-// middleware logged "The WebRootPath was not found" on every boot. Re-adding it would create an
-// unauthenticated read path for anything that later lands in the web root — the exact hole that
-// moving uploads to App_Data closed.
-
+// No UseStaticFiles: nothing is served from disk, and adding it would expose the web root.
+// No UseSerilogRequestLogging: it logs through the static Log.Logger, which this app never sets.
 app.UseRouting();
 app.UseCors("ApiCorsPolicy");
 
@@ -286,10 +212,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// Enrich logs with the caller's identity. The previous version of this middleware guarded with
-// `context.User?.Identity?.IsAuthenticated != null || true`, which is unconditionally true, and
-// discarded the IDisposable returned by PushProperty so the properties were never popped off the
-// ambient AsyncLocal stack. Both are fixed here.
 app.Use(async (context, next) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
@@ -310,6 +232,4 @@ app.MapControllers();
 
 app.Run();
 
-// Required for WebApplicationFactory<Program> in the functional test project: top-level statements
-// generate an internal Program class, which the factory's generic constraint cannot bind to.
 public partial class Program { }

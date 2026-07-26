@@ -25,7 +25,6 @@ namespace Persistence.Repositories
         public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.Users.FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
 
-        // Email is a citext column, so this comparison is case-insensitive in the database.
         public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
             => _context.Users.FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
 
@@ -38,14 +37,8 @@ namespace Persistence.Repositories
                 .OrderByDescending(user => user.CreatedAt)
                 .ToPagedResultAsync(page, cancellationToken);
 
-        // Rewritten to a soft delete by AuditingSaveChangesInterceptor.
         public void Remove(User user) => _context.Users.Remove(user);
 
-        /// <remarks>
-        /// Two scalar columns, deliberately. Materializing a <c>User</c> here would make EF LEFT JOIN
-        /// all three TPT derived tables to resolve the concrete type — on the hottest query in the
-        /// application, since it runs for every authenticated request.
-        /// </remarks>
         public Task<UserSecurityState?> GetSecurityStateAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
@@ -55,11 +48,6 @@ namespace Persistence.Repositories
                 .Select(user => new UserSecurityState(user.SecurityStamp, user.IsActive))
                 .FirstOrDefaultAsync(cancellationToken);
 
-        /// <remarks>
-        /// Role names come from the join table in the same round trip, so the token can be minted
-        /// without a second query. Returns the tracked entity because login may need to write to it
-        /// (password rehash, security stamp bump on reuse detection).
-        /// </remarks>
         public Task<(User User, IReadOnlyList<string> Roles)?> GetForAuthenticationAsync(
             string email,
             CancellationToken cancellationToken = default)
@@ -130,8 +118,6 @@ namespace Persistence.Repositories
         {
             var query = _context.Employers.AsNoTracking();
 
-            // NumberOfEmployees is an int now, so this is a numeric sort. As a string it ordered
-            // lexicographically, putting "9" after "100".
             query = orderByHeadcount
                 ? query.OrderByDescending(employer => employer.NumberOfEmployees)
                 : query.OrderByDescending(employer => employer.CreatedAt);
@@ -209,7 +195,6 @@ namespace Persistence.Repositories
 
         public void Add(RefreshToken token) => _context.RefreshTokens.Add(token);
 
-        /// <summary>Bulk revoke — used by logout-all, password change and reuse detection.</summary>
         public Task RevokeAllForUserAsync(
             Guid userId,
             DateTime utcNow,
@@ -223,7 +208,6 @@ namespace Persistence.Repositories
                         .SetProperty(token => token.RevokedByIp, ip),
                     cancellationToken);
 
-        /// <summary>Opportunistic cleanup on login, instead of a background service.</summary>
         public Task DeleteExpiredForUserAsync(
             Guid userId,
             DateTime utcNow,

@@ -2,21 +2,6 @@ using System.Net;
 
 namespace HRMS.WebAPI.FunctionalTests;
 
-/// <summary>
-/// Access to a single record by its id, for callers who have no claim to it.
-/// </summary>
-/// <remarks>
-/// An audit found five holes of exactly one shape. The migration swept the write paths (the owning
-/// id comes from the token) and the list paths (results are narrowed by role and token), but not the
-/// by-id paths — and holding a role is not the same as owning a row. Two of the five were
-/// destructive and were demonstrated against a running instance: an employer deleted a rival's
-/// advertisement, and a job seeker permanently deleted a stranger's CV, cascading to their
-/// education, experience, language, project and file rows.
-///
-/// The pattern to keep in mind when adding an endpoint: <c>GetAll</c> being scoped says nothing
-/// about <c>GetById</c>, and a guard on <c>Update</c> says nothing about <c>Delete</c>. Both of
-/// those asymmetries shipped here.
-/// </remarks>
 [Collection(ApiCollection.Name)]
 public class ResourceOwnershipTests : IAsyncLifetime
 {
@@ -45,20 +30,14 @@ public class ResourceOwnershipTests : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    // -------------------------------------------------------------------------------------------
-    // Fixtures
-    // -------------------------------------------------------------------------------------------
-
     private async Task<string> CurrentUserIdAsync()
         => (await _client.GetAsync("/api/auth/me")).DataString("id");
 
-    /// <summary>Signs in as the owner, gives them a CV, and returns their id and the CV's id.</summary>
     private async Task<(string SeekerId, string CvId)> GivenOwnerHasACvAsync()
     {
         await _client.LoginAsAsync(Owner, Password);
         var seekerId = await CurrentUserIdAsync();
 
-        // The create hands back the id it just assigned, so there is nothing to look up.
         var created = await _client.PostAsync("/api/Cvs/add", new
         {
             information = "Gizli özgeçmiş.",
@@ -69,7 +48,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
         return (seekerId, created.DataString("id"));
     }
 
-    /// <summary>Signs in as the employer, publishes an advertisement, and returns its id.</summary>
     private async Task<string> GivenEmployerHasAnAdvertisementAsync()
     {
         await _client.LoginAsAsync(Employer, Password);
@@ -80,16 +58,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
         return created.DataString("id");
     }
 
-    // -------------------------------------------------------------------------------------------
-    // Reading a CV — the owner, an employer who received an application, or an admin
-    // -------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Regression guard for a NullReferenceException, not an authorization rule: every CV read
-    /// answered 500, for the owner too, because the repository never included the JobSeeker
-    /// navigation that the DTO projection reads the name and email from. No test read a CV back, so
-    /// nothing caught it — this one asserts the payload, not just the status.
-    /// </summary>
     [Fact]
     public async Task ReadingOwnCv_Should_ReturnTheOwnersDetails()
     {
@@ -114,10 +82,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
             .Status.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    /// <summary>
-    /// The employer clause is a data question, not a role check: the same employer is refused before
-    /// the application exists and admitted after it, with no change of role in between.
-    /// </summary>
     [Fact]
     public async Task ReadingACandidatesCv_Should_BeEarnedByReceivingTheirApplication()
     {
@@ -139,20 +103,11 @@ public class ResourceOwnershipTests : IAsyncLifetime
         (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
             .Status.ShouldBe(HttpStatusCode.OK);
 
-        // A different employer, holding the identical role, still gets nothing.
         await _client.LoginAsAsync(Rival, Password);
         (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
             .Status.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    // -------------------------------------------------------------------------------------------
-    // Destructive paths
-    // -------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Demonstrated against a running instance before the fix: this returned 200 and the CV was gone
-    /// from the table. There is no deleted_at column on cvs, so the loss is permanent and cascades.
-    /// </summary>
     [Fact]
     public async Task DeletingAnotherSeekersCv_Should_Return403_AndLeaveItIntact()
     {
@@ -178,11 +133,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
             .Status.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    /// <summary>
-    /// The asymmetry that made this reachable: Update called the ownership guard and Delete did not,
-    /// even though the guard's own comment described deletion as part of what it was written for.
-    /// The update half was covered by a test; this half was not.
-    /// </summary>
     [Fact]
     public async Task DeletingAnotherEmployersAdvertisement_Should_Return403_AndLeaveItPublished()
     {
@@ -207,14 +157,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
             .IsSuccess.ShouldBeTrue();
     }
 
-    // -------------------------------------------------------------------------------------------
-    // Reading a single application, and a single profile
-    // -------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// An application carries the applicant's name, their note and the employer's private note, so
-    /// only the two parties to it may read it. GetAll was scoped from the token; this was not.
-    /// </summary>
     [Fact]
     public async Task ReadingAnApplication_Should_BeLimitedToItsTwoParties()
     {
@@ -230,16 +172,13 @@ public class ResourceOwnershipTests : IAsyncLifetime
 
         var applicationId = created.DataString("id");
 
-        // The applicant reads their own.
         (await _client.GetAsync($"/api/JobApplications/getbyid/{applicationId}"))
             .Status.ShouldBe(HttpStatusCode.OK);
 
-        // So does the employer whose advertisement it is.
         await _client.LoginAsAsync(Employer, Password);
         (await _client.GetAsync($"/api/JobApplications/getbyid/{applicationId}"))
             .Status.ShouldBe(HttpStatusCode.OK);
 
-        // Nobody else, whichever role they hold.
         await _client.LoginAsAsync(Rival, Password);
         (await _client.GetAsync($"/api/JobApplications/getbyid/{applicationId}"))
             .Status.ShouldBe(HttpStatusCode.Forbidden);
@@ -249,10 +188,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
             .Status.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    /// <summary>
-    /// Without this the id space is a directory: every candidate's email and date of birth, readable
-    /// by anyone with an account.
-    /// </summary>
     [Fact]
     public async Task ReadingAnotherCandidatesProfile_Should_Return403()
     {

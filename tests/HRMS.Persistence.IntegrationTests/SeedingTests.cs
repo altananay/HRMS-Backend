@@ -7,14 +7,6 @@ using Persistence.Seeding;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// The bootstrap seed: role rows, and the first administrator.
-/// </summary>
-/// <remarks>
-/// Without this the system has no reachable administrator at all. In the pre-migration codebase the
-/// only way to get one was to insert a document straight into MongoDB by hand: creating staff
-/// required an admin token, and so did signing in as staff — a closed loop with no entry point.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class SeedingTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -47,7 +39,6 @@ public class SeedingTests(PostgresFixture fixture) : IAsyncLifetime
         admin.ShouldNotBeNull();
         admin.UserType.ShouldBe(UserType.SystemStaff);
 
-        // The password is hashed, never stored as given.
         admin.PasswordHash.ShouldNotBe(PostgresFixture.AdminPassword);
         admin.PasswordHash.ShouldNotBeNullOrWhiteSpace();
     }
@@ -67,10 +58,6 @@ public class SeedingTests(PostgresFixture fixture) : IAsyncLifetime
         roles.ShouldContain(Roles.Admin);
     }
 
-    /// <summary>
-    /// It runs on every startup, so running it twice must be a no-op rather than a unique violation
-    /// or a second administrator.
-    /// </summary>
     [Fact]
     public async Task Seeding_Should_BeIdempotent()
     {
@@ -83,10 +70,6 @@ public class SeedingTests(PostgresFixture fixture) : IAsyncLifetime
         (await context.SystemStaff.CountAsync(staff => staff.Email == PostgresFixture.AdminEmail)).ShouldBe(1);
     }
 
-    /// <summary>
-    /// Fails safe rather than inventing a default password. An unattended deployment ends up with no
-    /// administrator, which is recoverable; a well-known default one is not.
-    /// </summary>
     [Fact]
     public async Task Seeding_Should_CreateNoAdministrator_When_TheCredentialsAreNotConfigured()
     {
@@ -96,15 +79,10 @@ public class SeedingTests(PostgresFixture fixture) : IAsyncLifetime
 
         await using var context = fixture.CreateContext();
 
-        // Roles are still seeded — only the admin is skipped.
         (await context.Roles.CountAsync()).ShouldBe(3);
         (await context.SystemStaff.CountAsync()).ShouldBe(0);
     }
 
-    /// <summary>
-    /// The same registrations as the fixture, minus <c>Seed:AdminEmail</c> and
-    /// <c>Seed:AdminPassword</c>, pointed at the same container.
-    /// </summary>
     private ServiceProvider BuildProviderWithoutAdminCredentials()
     {
         var connectionString = fixture.CreateContext().Database.GetConnectionString()!;

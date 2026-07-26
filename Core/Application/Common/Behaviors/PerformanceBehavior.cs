@@ -5,13 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Common.Behaviors
 {
-    /// <summary>
-    /// Warns when a request exceeds <see cref="SlowRequestThresholdMilliseconds"/>.
-    /// </summary>
-    /// <remarks>
-    /// Cheap early-warning for the N+1 queries and missing indexes that the move to a relational
-    /// store makes possible. Unlike LoggingBehavior this stays quiet on the happy path.
-    /// </remarks>
     public sealed class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {

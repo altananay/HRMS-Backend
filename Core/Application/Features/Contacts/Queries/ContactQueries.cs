@@ -1,5 +1,5 @@
 using Application.Abstractions.Services;
-using Application.Common.Dtos;
+using Application.Common.Contracts;
 using Application.Common.Models;
 using Application.Results;
 using MediatR;
@@ -13,7 +13,7 @@ namespace Application.Features.Contacts.Queries
 
         public sealed class Response
         {
-            public IDataResult<PagedResult<ContactDto>> Result { get; init; } = null!;
+            public IDataResult<PagedResult<ContactResponse>> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetAllContactsQuery, Response>
@@ -33,15 +33,11 @@ namespace Application.Features.Contacts.Queries
 
     public partial class GetByIdContactQuery : IRequest<GetByIdContactQuery.Response>
     {
-        /// <remarks>
-        /// The controller previously built <c>new GetByIdContactQuery { }</c> and never bound the
-        /// route value at all, so this endpoint could not have worked.
-        /// </remarks>
         public Guid Id { get; set; }
 
         public sealed class Response
         {
-            public IDataResult<ContactDto> Result { get; init; } = null!;
+            public IDataResult<ContactResponse> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByIdContactQuery, Response>

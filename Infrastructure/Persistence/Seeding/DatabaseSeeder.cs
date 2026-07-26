@@ -8,17 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Persistence.Seeding
 {
-    /// <summary>
-    /// Creates the role rows and, if no administrator exists, a bootstrap admin account.
-    /// </summary>
-    /// <remarks>
-    /// Without this the system has no reachable administrator at all. Previously the only way to get
-    /// one was to insert a document straight into MongoDB: creating staff required
-    /// <c>[SecuredOperation("admin")]</c>, and signing in as staff called a method carrying the same
-    /// attribute — so an admin was needed to create the first admin, and to log in as one.
-    ///
-    /// Idempotent: safe to run on every startup and in every test.
-    /// </remarks>
     public static class DatabaseSeeder
     {
         private static readonly string[] RoleNames = [Roles.JobSeeker, Roles.Employer, Roles.Admin];
@@ -77,8 +66,6 @@ namespace Persistence.Seeding
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                // Not fatal: a deployment may intend to create its administrator another way. But it
-                // must be loud, because the alternative is an application nobody can administer.
                 logger.LogWarning(
                     "No administrator exists and Seed:AdminEmail / Seed:AdminPassword are not configured. " +
                     "No admin account was created, so admin-only endpoints are unreachable.");
@@ -98,7 +85,6 @@ namespace Persistence.Seeding
 
             await context.SaveChangesAsync(cancellationToken);
 
-            // The address is safe to log; the password obviously is not.
             logger.LogInformation("Seeded bootstrap administrator {Email}", email);
         }
     }

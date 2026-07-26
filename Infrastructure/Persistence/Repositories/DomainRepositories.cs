@@ -12,20 +12,8 @@ namespace Persistence.Repositories
 
         public CvRepository(HrmsDbContext context) => _context = context;
 
-        /// <remarks>
-        /// AsSplitQuery: five collection includes on one root would otherwise produce a cartesian
-        /// explosion — 3 educations x 4 experiences x 2 languages is 24 duplicated rows before the
-        /// projection even starts.
-        /// </remarks>
-        /// <summary>
-        /// Every read of a CV carries its owner and its child collections.
-        /// </summary>
-        /// <remarks>
-        /// <c>JobSeeker</c> is not optional here. <c>DomainMapper.ToDto(Cv)</c> reads the owner's
-        /// name, email and date of birth off this navigation, so a query that omits it does not
-        /// return a CV with a missing name — it throws NullReferenceException and the endpoint
-        /// answers 500. Every CV read path did exactly that, including for the CV's own owner.
-        /// </remarks>
+        // JobSeeker is not optional: the response projection reads the owner off it, so omitting the
+        // include throws NullReferenceException rather than returning a CV with a missing name.
         private static IQueryable<Cv> WithDetails(IQueryable<Cv> query)
             => query
                 .Include(cv => cv.JobSeeker)
@@ -47,17 +35,10 @@ namespace Persistence.Repositories
         public Task<bool> ExistsForJobSeekerAsync(Guid jobSeekerId, CancellationToken cancellationToken = default)
             => _context.Cvs.AnyAsync(cv => cv.JobSeekerId == jobSeekerId, cancellationToken);
 
-        /// <remarks>
-        /// The <c>ThenBy</c> is not decoration, and it is why this differs from the other paged
-        /// queries. This is the only one that pairs a split query with Skip/Take, and a split query
-        /// issues a separate SQL statement per collection: if two CVs share a CreatedAt the order is
-        /// not total, the statements can disagree about which page a row belongs to, and a record
-        /// surfaces twice or not at all. Guid v7 is time-ordered, so the id agrees with CreatedAt
-        /// and simply makes the ordering unique.
-        /// </remarks>
         public Task<PagedResult<Cv>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default)
             => WithDetails(_context.Cvs.AsNoTracking())
                 .OrderByDescending(cv => cv.CreatedAt)
+                // Split query + Skip/Take needs a total order, or rows can repeat across pages.
                 .ThenByDescending(cv => cv.Id)
                 .ToPagedResultAsync(page, cancellationToken);
 
@@ -97,11 +78,6 @@ namespace Persistence.Repositories
         public Task<JobPosition?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
             => _context.JobPositions.FirstOrDefaultAsync(position => position.Name == name, cancellationToken);
 
-        /// <remarks>
-        /// Also checks the change tracker, so two advertisements added in the same unit of work that
-        /// name the same position reuse one instance instead of racing to insert duplicates and
-        /// tripping the unique index.
-        /// </remarks>
         public async Task<JobPosition> ResolveOrCreateAsync(string name, CancellationToken cancellationToken = default)
         {
             var trimmed = name.Trim();
@@ -133,7 +109,6 @@ namespace Persistence.Repositories
                 .OrderBy(position => position.Name)
                 .ToPagedResultAsync(page, cancellationToken);
 
-        /// <summary>Lets the caller return 409 rather than let the RESTRICT foreign key throw.</summary>
         public Task<bool> IsReferencedAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.JobAdvertisements.AnyAsync(advertisement => advertisement.JobPositionId == id, cancellationToken);
 
@@ -149,11 +124,6 @@ namespace Persistence.Repositories
         public Task<JobAdvertisement?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.JobAdvertisements.FirstOrDefaultAsync(advertisement => advertisement.Id == id, cancellationToken);
 
-        /// <remarks>
-        /// Employer and JobPosition are included because the response DTO projects CompanyName,
-        /// CompanyPhone, WebSite, Email and the position name from them — the five columns that used
-        /// to be denormalized onto every advertisement row.
-        /// </remarks>
         public Task<JobAdvertisement?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.JobAdvertisements
                 .Include(advertisement => advertisement.Employer)
@@ -244,8 +214,6 @@ namespace Persistence.Repositories
                 .Include(application => application.JobSeeker)
                 .AsQueryable();
 
-            // Reached through the advertisement rather than a denormalized EmployerId column,
-            // which is why that column could be dropped.
             if (employerId is not null)
             {
                 query = query.Where(application => application.JobAdvertisement.EmployerId == employerId);

@@ -5,13 +5,6 @@ using System.Text.Json;
 
 namespace HRMS.WebAPI.FunctionalTests;
 
-/// <summary>
-/// A thin, typed wrapper over <see cref="HttpClient"/> so scenarios read as prose.
-/// </summary>
-/// <remarks>
-/// Deliberately returns status codes rather than throwing, because most of what these tests assert
-/// <i>is</i> the status code — 401 vs 403 vs 409 is the behaviour under test, not an error.
-/// </remarks>
 public sealed class HrmsClient(HttpClient http)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -20,7 +13,6 @@ public sealed class HrmsClient(HttpClient http)
     {
         public bool IsSuccess => (int)Status is >= 200 and < 300;
 
-        /// <summary>Reads a value out of the <c>data</c> envelope every success response uses.</summary>
         public JsonElement Data => JsonDocument.Parse(Body).RootElement.GetProperty("data");
 
         public string DataString(string property) => Data.GetProperty(property).GetString()!;
@@ -42,14 +34,12 @@ public sealed class HrmsClient(HttpClient http)
     public async Task<Response> DeleteAsync(string path)
         => await ReadAsync(await http.DeleteAsync(path, TestContext.Current.CancellationToken));
 
-    /// <summary>Multipart upload, since CV attachments cannot go through JSON.</summary>
     public async Task<Response> UploadAsync(string path, string fileName, string contentType, byte[] content)
     {
         using var form = new MultipartFormDataContent();
         var part = new ByteArrayContent(content);
         part.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
-        // Field name must be "files" to bind to the IFormFileCollection parameter.
         form.Add(part, "files", fileName);
 
         return await ReadAsync(await http.PostAsync(path, form, TestContext.Current.CancellationToken));
@@ -57,10 +47,6 @@ public sealed class HrmsClient(HttpClient http)
 
     private static async Task<Response> ReadAsync(HttpResponseMessage message)
         => new(message.StatusCode, await message.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-
-    // ---------------------------------------------------------------------------------------------
-    // Scenario helpers
-    // ---------------------------------------------------------------------------------------------
 
     public Task<Response> RegisterJobSeekerAsync(string email, string password = "Passw0rd!23")
         => PostAsync("/api/auth/register/jobseeker", new
@@ -77,7 +63,6 @@ public sealed class HrmsClient(HttpClient http)
     public Task<Response> LoginAsync(string email, string password)
         => PostAsync("/api/auth/login", new { email, password });
 
-    /// <summary>Logs in and attaches the resulting access token to subsequent requests.</summary>
     public async Task<(string AccessToken, string RefreshToken)> LoginAsAsync(string email, string password)
     {
         var response = await LoginAsync(email, password);
