@@ -90,6 +90,24 @@ public class AuthScenarioTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// Registration enforces a minimum password length; sign-in never does. A password accepted at
+    /// registration must therefore always be accepted at sign-in, which is what this walks.
+    /// </summary>
+    [Fact]
+    public async Task Register_Should_RejectAShortPassword_ButAcceptOneAtTheMinimum()
+    {
+        (await _client.RegisterJobSeekerAsync("short@test.local", "abcd"))
+            .Status.ShouldBe(HttpStatusCode.BadRequest);
+
+        // Five characters, no digit and no symbol: the policy is length only, on purpose.
+        (await _client.RegisterJobSeekerAsync("plain@test.local", "abcde"))
+            .Status.ShouldBe(HttpStatusCode.OK);
+
+        _client.Authenticate(null);
+        (await _client.LoginAsync("plain@test.local", "abcde")).Status.ShouldBe(HttpStatusCode.OK);
+    }
+
+    /// <summary>
     /// The 400/401 split must follow the shape of the request, never the existence of the account —
     /// otherwise the new status code becomes the enumeration oracle that the uniform 401 closed.
     /// </summary>

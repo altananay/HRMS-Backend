@@ -238,7 +238,106 @@ namespace Application.Validation
         public LoginCommandValidator()
         {
             RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+
+            // Not NewPassword(): see the remarks there. Sign-in checks presence only.
             RuleFor(command => command.Password).NotEmpty();
+        }
+    }
+
+    /// <summary>
+    /// The password policy, in one place because it is expected to tighten later.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately permissive for now: length only, no character-class requirement. Composition
+    /// rules push people towards predictable substitutions and are not what makes a password strong.
+    ///
+    /// This applies only where a password is being <b>set</b> — registration and the new password on
+    /// a change. It is never applied to a password being <b>checked</b> (sign-in, and the current
+    /// password on a change): a credential that already exists has to remain usable, so raising the
+    /// minimum must never lock anyone out, and rejecting a short one before verifying it would
+    /// disclose the policy to an anonymous caller.
+    /// </remarks>
+    internal static class PasswordPolicy
+    {
+        public const int MinimumLength = 5;
+
+        public static IRuleBuilderOptions<T, string> NewPassword<T>(this IRuleBuilder<T, string> rule)
+            => rule.NotEmpty().MinimumLength(MinimumLength);
+    }
+
+    public sealed class RegisterJobSeekerCommandValidator : AbstractValidator<RegisterJobSeekerCommand>
+    {
+        public RegisterJobSeekerCommandValidator()
+        {
+            RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+            RuleFor(command => command.Password).NewPassword();
+            RuleFor(command => command.FirstName).NotEmpty().MinimumLength(2).MaximumLength(100);
+            RuleFor(command => command.LastName).NotEmpty().MinimumLength(2).MaximumLength(100);
+
+            // Optional, but if supplied it has to be the shape the column and Mernis both expect —
+            // eleven digits. The identity check itself happens in the manager.
+            RuleFor(command => command.NationalId!)
+                .Matches("^[0-9]{11}$")
+                .When(command => !string.IsNullOrWhiteSpace(command.NationalId));
+        }
+    }
+
+    public sealed class RegisterEmployerCommandValidator : AbstractValidator<RegisterEmployerCommand>
+    {
+        public RegisterEmployerCommandValidator()
+        {
+            RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+            RuleFor(command => command.Password).NewPassword();
+            RuleFor(command => command.CompanyName).NotEmpty().MinimumLength(2).MaximumLength(200);
+            RuleFor(command => command.CompanyPhone).MaximumLength(32);
+            RuleFor(command => command.WebSite).MaximumLength(256);
+            RuleFor(command => command.Description).MaximumLength(4000);
+
+            RuleFor(command => command.NumberOfEmployees).GreaterThan(0)
+                .When(command => command.NumberOfEmployees.HasValue);
+
+            RuleForEach(command => command.Sectors).NotEmpty().MaximumLength(100);
+        }
+    }
+
+    public sealed class RegisterSystemStaffCommandValidator : AbstractValidator<RegisterSystemStaffCommand>
+    {
+        public RegisterSystemStaffCommandValidator()
+        {
+            RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+            RuleFor(command => command.Password).NewPassword();
+            RuleFor(command => command.FirstName).NotEmpty().MinimumLength(2).MaximumLength(100);
+            RuleFor(command => command.LastName).NotEmpty().MinimumLength(2).MaximumLength(100);
+        }
+    }
+
+    public sealed class RefreshTokenCommandValidator : AbstractValidator<RefreshTokenCommand>
+    {
+        // Presence only. The token is opaque to this layer — whether it is known, rotated or expired
+        // is decided by the manager against the stored hash, and every one of those failures has to
+        // look identical from outside.
+        public RefreshTokenCommandValidator()
+            => RuleFor(command => command.RefreshToken).NotEmpty();
+    }
+
+    public sealed class LogoutCommandValidator : AbstractValidator<LogoutCommand>
+    {
+        public LogoutCommandValidator()
+            => RuleFor(command => command.RefreshToken).NotEmpty();
+    }
+
+    public sealed class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
+    {
+        public ChangePasswordCommandValidator()
+        {
+            // Set by the controller from the token, never bound from the body — an empty value here
+            // would mean the caller reached the handler unauthenticated.
+            RuleFor(command => command.UserId).NotEmpty();
+
+            // Presence only: this one is being verified, not set.
+            RuleFor(command => command.CurrentPassword).NotEmpty();
+
+            RuleFor(command => command.NewPassword).NewPassword();
         }
     }
 }
