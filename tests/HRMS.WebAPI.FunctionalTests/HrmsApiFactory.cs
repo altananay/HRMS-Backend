@@ -1,5 +1,10 @@
+using Application.Abstractions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -22,9 +27,20 @@ public sealed class HrmsApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
     public const string AdminPassword = "Adm!nTest12345";
 
+    /// <summary>Every mail the app tried to send during the current test.</summary>
+    public RecordingEmailSender Mail { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        // Replaces the SMTP sender so the reset flow can be asserted end to end — including the
+        // link in the body, which is what the frontend actually consumes — without a mail server.
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(Mail);
+        });
     }
 
     private void PublishTestConfiguration()
@@ -45,6 +61,12 @@ public sealed class HrmsApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             ["Storage__Local__RootPath"] = Path.Combine(Path.GetTempPath(), $"hrms-tests-{Guid.CreateVersion7():N}"),
 
             ["IdentityVerification__Provider"] = "Null",
+
+            // Empty so nothing tries to reach a real SMTP host; ConfigureTestServices swaps the
+            // sender for RecordingEmailSender regardless.
+            ["Email__Host"] = "",
+            ["PasswordReset__LinkBaseUrl"] = "http://localhost:3000/reset-password",
+            ["PasswordReset__TokenLifetimeMinutes"] = "60",
 
             ["Seed__AdminEmail"] = AdminEmail,
             ["Seed__AdminPassword"] = AdminPassword,

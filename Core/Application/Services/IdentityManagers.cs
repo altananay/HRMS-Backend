@@ -37,6 +37,16 @@ namespace Application.Services
                 result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
+        public async Task<IDataResult<PagedResult<EmployerSummaryResponse>>> GetPublicPagedAsync(
+            PageRequest page,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _employers.GetPublicPagedAsync(page, cancellationToken);
+
+            return new SuccessDataResult<PagedResult<EmployerSummaryResponse>>(new PagedResult<EmployerSummaryResponse>(
+                result.Items.Select(DomainMapper.ToSummaryResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
+        }
+
         public async Task<IDataResult<EmployerDetailResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var employer = await _rules.EnsureEmployerExistsAsync(id, cancellationToken);

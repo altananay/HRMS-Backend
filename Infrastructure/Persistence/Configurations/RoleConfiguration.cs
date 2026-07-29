@@ -60,4 +60,30 @@ namespace Persistence.Configurations
             builder.HasQueryFilter(token => token.User.DeletedAt == null);
         }
     }
+
+    public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<PasswordResetToken>
+    {
+        public void Configure(EntityTypeBuilder<PasswordResetToken> builder)
+        {
+            builder.ToTable("password_reset_tokens");
+
+            builder.HasKey(token => token.Id);
+
+            builder.Property(token => token.TokenHash).HasMaxLength(64).IsRequired();
+
+            builder.HasIndex(token => token.TokenHash).IsUnique();
+
+            // The lookup for "invalidate this user's outstanding links" on a successful reset.
+            builder.HasIndex(token => new { token.UserId, token.ExpiresAt });
+
+            builder.Ignore(token => token.IsUsed);
+
+            builder.HasOne(token => token.User)
+                .WithMany()
+                .HasForeignKey(token => token.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasQueryFilter(token => token.User.DeletedAt == null);
+        }
+    }
 }

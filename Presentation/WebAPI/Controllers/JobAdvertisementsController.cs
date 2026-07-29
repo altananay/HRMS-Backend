@@ -30,7 +30,7 @@ namespace WebAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
-        [Authorize(Roles = Roles.Employer)]
+        [Authorize(Roles = Roles.EmployerOrAdmin)]
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateJobAdvertisementCommand command)
         {
@@ -39,7 +39,7 @@ namespace WebAPI.Controllers
             return Ok((await Mediator.Send(command)).Result);
         }
 
-        [Authorize(Roles = Roles.Employer)]
+        [Authorize(Roles = Roles.EmployerOrAdmin)]
         [HttpDelete("deletebyid/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
             => Ok((await Mediator.Send(new DeleteJobAdvertisementCommand

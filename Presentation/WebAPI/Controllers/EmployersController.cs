@@ -14,6 +14,16 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAll([FromQuery] GetAllEmployerQuery query)
             => Ok((await Mediator.Send(query)).Result);
 
+        /// <remarks>
+        /// The public company directory. Separate from getall rather than a relaxation of it: that
+        /// response carries the employer's email and account status, neither of which belongs in an
+        /// anonymous, paged, scrapeable list.
+        /// </remarks>
+        [AllowAnonymous]
+        [HttpGet("public")]
+        public async Task<IActionResult> GetPublic([FromQuery] GetPublicEmployerQuery query)
+            => Ok((await Mediator.Send(query)).Result);
+
         [AllowAnonymous]
         [HttpGet("getbyemployerid/{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)

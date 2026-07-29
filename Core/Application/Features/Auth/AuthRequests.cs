@@ -189,6 +189,54 @@ namespace Application.Features.Auth.Commands
                 => new() { Result = await _authService.ChangePasswordAsync(request, cancellationToken) };
         }
     }
+
+    /// <remarks>
+    /// Answers identically whether or not the address is registered. Anything else — a different
+    /// message, a different status, a measurably different response time — turns this endpoint into
+    /// the user-enumeration oracle that the uniform 401 on sign-in exists to prevent.
+    /// </remarks>
+    public partial class ForgotPasswordCommand : IRequest<ForgotPasswordCommand.Response>
+    {
+        public string Email { get; set; } = null!;
+
+        public sealed class Response
+        {
+            public IResult Result { get; init; } = null!;
+        }
+
+        public sealed class Handler : IRequestHandler<ForgotPasswordCommand, Response>
+        {
+            private readonly IAuthService _authService;
+
+            public Handler(IAuthService authService) => _authService = authService;
+
+            public async Task<Response> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
+                => new() { Result = await _authService.ForgotPasswordAsync(request, cancellationToken) };
+        }
+    }
+
+    public partial class ResetPasswordCommand : IRequest<ResetPasswordCommand.Response>
+    {
+        /// <summary>The raw token from the emailed link; only its hash is stored.</summary>
+        public string Token { get; set; } = null!;
+
+        public string NewPassword { get; set; } = null!;
+
+        public sealed class Response
+        {
+            public IResult Result { get; init; } = null!;
+        }
+
+        public sealed class Handler : IRequestHandler<ResetPasswordCommand, Response>
+        {
+            private readonly IAuthService _authService;
+
+            public Handler(IAuthService authService) => _authService = authService;
+
+            public async Task<Response> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
+                => new() { Result = await _authService.ResetPasswordAsync(request, cancellationToken) };
+        }
+    }
 }
 
 namespace Application.Features.Auth.Queries

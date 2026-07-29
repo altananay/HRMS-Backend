@@ -56,6 +56,32 @@ namespace Application.Features.Employers.Commands
 
 namespace Application.Features.Employers.Queries
 {
+    /// <summary>The anonymous company directory.</summary>
+    public partial class GetPublicEmployerQuery : IRequest<GetPublicEmployerQuery.Response>
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = PageRequest.DefaultPageSize;
+
+        public sealed class Response
+        {
+            public IDataResult<PagedResult<EmployerSummaryResponse>> Result { get; init; } = null!;
+        }
+
+        public sealed class Handler : IRequestHandler<GetPublicEmployerQuery, Response>
+        {
+            private readonly IEmployerService _employerService;
+
+            public Handler(IEmployerService employerService) => _employerService = employerService;
+
+            public async Task<Response> Handle(GetPublicEmployerQuery request, CancellationToken cancellationToken)
+                => new()
+                {
+                    Result = await _employerService.GetPublicPagedAsync(
+                        new PageRequest(request.Page, request.PageSize), cancellationToken)
+                };
+        }
+    }
+
     public partial class GetAllEmployerQuery : IRequest<GetAllEmployerQuery.Response>
     {
         public int Page { get; set; } = 1;

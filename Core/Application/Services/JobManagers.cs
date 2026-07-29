@@ -23,28 +23,28 @@ namespace Application.Services
         private readonly IJobPositionRepository _positions;
         private readonly IUnitOfWork _unitOfWork;
         private readonly BusinessRules _rules;
+        private readonly ICurrentUserService _currentUser;
 
         public JobAdvertisementManager(
             IJobAdvertisementRepository advertisements,
             IJobPositionRepository positions,
             IUnitOfWork unitOfWork,
-            BusinessRules rules)
+            BusinessRules rules,
+            ICurrentUserService currentUser)
         {
             _advertisements = advertisements;
             _positions = positions;
             _unitOfWork = unitOfWork;
             _rules = rules;
+            _currentUser = currentUser;
         }
 
         public async Task<IDataResult<PagedResult<JobAdvertisementResponse>>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            bool? isActive = null,
-            bool orderByHighestSalary = false,
+            JobAdvertisementFilter filter,
             CancellationToken cancellationToken = default)
         {
-            var result = await _advertisements.GetPagedAsync(
-                page, employerId, isActive, orderByHighestSalary, cancellationToken);
+            var result = await _advertisements.GetPagedAsync(page, filter, cancellationToken);
 
             return new SuccessDataResult<PagedResult<JobAdvertisementResponse>>(new PagedResult<JobAdvertisementResponse>(
                 result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
@@ -130,9 +130,10 @@ namespace Application.Services
             return new SuccessResult(Messages.JobAdvertisement.Deleted);
         }
 
-        private static void EnsureOwnedBy(JobAdvertisement advertisement, Guid employerId)
+        // An admin moderates any listing; an employer only their own.
+        private void EnsureOwnedBy(JobAdvertisement advertisement, Guid employerId)
         {
-            if (advertisement.EmployerId != employerId)
+            if (advertisement.EmployerId != employerId && !_currentUser.IsInRole(Roles.Admin))
             {
                 throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
             }
@@ -163,12 +164,10 @@ namespace Application.Services
 
         public async Task<IDataResult<PagedResult<JobApplicationResponse>>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            Guid? jobSeekerId = null,
-            JobApplicationStatus? status = null,
+            JobApplicationFilter filter,
             CancellationToken cancellationToken = default)
         {
-            var result = await _applications.GetPagedAsync(page, employerId, jobSeekerId, status, cancellationToken);
+            var result = await _applications.GetPagedAsync(page, filter, cancellationToken);
 
             return new SuccessDataResult<PagedResult<JobApplicationResponse>>(new PagedResult<JobApplicationResponse>(
                 result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
@@ -223,7 +222,9 @@ namespace Application.Services
             var application = await _applications.GetByIdWithDetailsAsync(command.Id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobApplication.NotFound);
 
-            if (application.JobAdvertisement.EmployerId != command.EmployerId)
+            // An admin moderates any application; an employer only those on their own listings.
+            if (application.JobAdvertisement.EmployerId != command.EmployerId
+                && !_currentUser.IsInRole(Roles.Admin))
             {
                 throw new ForbiddenException(Messages.Authentication.AuthorizationDenied);
             }

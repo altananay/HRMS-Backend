@@ -49,6 +49,7 @@ namespace Persistence
             services.AddScoped<ISystemStaffRepository, SystemStaffRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 
             services.AddScoped<ICvRepository, CvRepository>();
             services.AddScoped<ICvFileRepository, CvFileRepository>();

@@ -85,6 +85,10 @@ namespace Application.Features.JobApplications.Queries
         public int PageSize { get; set; } = PageRequest.DefaultPageSize;
         public Guid? EmployerId { get; set; }
         public Guid? JobSeekerId { get; set; }
+
+        /// <summary>Narrows to one advertisement — the employer's per-listing applications view.</summary>
+        public Guid? JobAdvertisementId { get; set; }
+
         public JobApplicationStatus? Status { get; set; }
 
         public sealed class Response
@@ -103,9 +107,13 @@ namespace Application.Features.JobApplications.Queries
                 {
                     Result = await _service.GetPagedAsync(
                         new PageRequest(request.Page, request.PageSize),
-                        request.EmployerId,
-                        request.JobSeekerId,
-                        request.Status,
+                        new JobApplicationFilter
+                        {
+                            EmployerId = request.EmployerId,
+                            JobSeekerId = request.JobSeekerId,
+                            JobAdvertisementId = request.JobAdvertisementId,
+                            Status = request.Status
+                        },
                         cancellationToken)
                 };
         }

@@ -275,6 +275,23 @@ namespace Application.Validation
             => RuleFor(command => command.RefreshToken).NotEmpty();
     }
 
+    public sealed class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCommand>
+    {
+        // Structural only. Nothing here may depend on whether the address exists — the endpoint's
+        // whole point is that a caller cannot tell.
+        public ForgotPasswordCommandValidator()
+            => RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
+    }
+
+    public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
+    {
+        public ResetPasswordCommandValidator()
+        {
+            RuleFor(command => command.Token).NotEmpty();
+            RuleFor(command => command.NewPassword).NewPassword();
+        }
+    }
+
     public sealed class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
     {
         public ChangePasswordCommandValidator()

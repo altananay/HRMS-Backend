@@ -7,6 +7,7 @@ using Application.Features.Auth.Commands;
 using Application.Results;
 using Application.Rules;
 using Application.Utilities.Constants;
+using Application.Utilities.Exceptions;
 using Application.Utilities.JWT;
 using Domain.Entities;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,9 @@ namespace Application.Services
         private readonly ISystemStaffRepository _systemStaff;
         private readonly IRoleRepository _roles;
         private readonly IRefreshTokenRepository _refreshTokens;
+        private readonly IPasswordResetTokenRepository _passwordResetTokens;
+        private readonly IEmailSender _emailSender;
+        private readonly PasswordResetOptions _passwordResetOptions;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
@@ -40,15 +44,21 @@ namespace Application.Services
             ISystemStaffRepository systemStaff,
             IRoleRepository roles,
             IRefreshTokenRepository refreshTokens,
+            IPasswordResetTokenRepository passwordResetTokens,
             IUnitOfWork unitOfWork,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
             IUserSecurityStateProvider securityState,
             ICurrentUserService currentUser,
+            IEmailSender emailSender,
             BusinessRules rules,
             TimeProvider timeProvider,
-            IOptions<TokenOptions> tokenOptions)
+            IOptions<TokenOptions> tokenOptions,
+            IOptions<PasswordResetOptions> passwordResetOptions)
         {
+            _passwordResetTokens = passwordResetTokens;
+            _emailSender = emailSender;
+            _passwordResetOptions = passwordResetOptions.Value;
             _users = users;
             _jobSeekers = jobSeekers;
             _employers = employers;
@@ -181,7 +191,7 @@ namespace Application.Services
             RefreshTokenCommand command,
             CancellationToken cancellationToken = default)
         {
-            var hash = _tokenService.HashRefreshToken(command.RefreshToken);
+            var hash = _tokenService.HashToken(command.RefreshToken);
             var stored = await _refreshTokens.GetByHashAsync(hash, cancellationToken);
 
             if (stored is null)
@@ -222,7 +232,7 @@ namespace Application.Services
         public async Task<IResult> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
         {
             var stored = await _refreshTokens.GetByHashAsync(
-                _tokenService.HashRefreshToken(refreshToken), cancellationToken);
+                _tokenService.HashToken(refreshToken), cancellationToken);
 
             if (stored is not null && !stored.IsRevoked)
             {
@@ -262,6 +272,95 @@ namespace Application.Services
             return new SuccessResult(Messages.Authentication.PasswordChanged);
         }
 
+        public async Task<IResult> ForgotPasswordAsync(
+            ForgotPasswordCommand command,
+            CancellationToken cancellationToken = default)
+        {
+            var found = await _users.GetForAuthenticationAsync(command.Email, cancellationToken);
+
+            // Unknown address, closed account: same answer, same shape. The caller cannot tell which
+            // addresses are registered — the whole point of the uniform response.
+            if (found is not null && found.Value.User.IsActive)
+            {
+                var user = found.Value.User;
+
+                // Only the newest link stays live. Otherwise a user who requests a second link
+                // because they suspect the first was intercepted leaves the first one working.
+                await _passwordResetTokens.InvalidateAllForUserAsync(user.Id, UtcNow, cancellationToken);
+
+                var (token, tokenHash) = _tokenService.CreateSecureToken();
+
+                _passwordResetTokens.Add(new PasswordResetToken
+                {
+                    UserId = user.Id,
+                    TokenHash = tokenHash,
+                    ExpiresAt = UtcNow.AddMinutes(_passwordResetOptions.TokenLifetimeMinutes)
+                });
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await SendPasswordResetMailAsync(user.Email, token, cancellationToken);
+            }
+
+            return new SuccessResult(Messages.Authentication.PasswordResetRequested);
+        }
+
+        public async Task<IResult> ResetPasswordAsync(
+            ResetPasswordCommand command,
+            CancellationToken cancellationToken = default)
+        {
+            var stored = await _passwordResetTokens.GetByHashAsync(
+                _tokenService.HashToken(command.Token), cancellationToken);
+
+            // Unknown, already used, or expired all answer the same way — a caller probing tokens
+            // learns nothing about which of the three it hit.
+            if (stored is null || !stored.IsActive(UtcNow))
+            {
+                throw new BusinessException(Messages.Authentication.InvalidPasswordResetToken);
+            }
+
+            var user = await _users.GetByIdAsync(stored.UserId, cancellationToken)
+                ?? throw new BusinessException(Messages.Authentication.InvalidPasswordResetToken);
+
+            user.PasswordHash = _passwordHasher.Hash(command.NewPassword);
+
+            // Marked on the tracked entity so single-use and the password change commit together.
+            stored.UsedAt = UtcNow;
+
+            // Same as a password change: rotate the stamp and revoke every refresh token, so a
+            // session the attacker already holds dies the moment the real owner resets.
+            await RevokeEverythingAsync(user.Id, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Any other outstanding link for this user, after the reset itself is safely committed.
+            await _passwordResetTokens.InvalidateAllForUserAsync(user.Id, UtcNow, cancellationToken);
+
+            return new SuccessResult(Messages.Authentication.PasswordResetCompleted);
+        }
+
+        private Task SendPasswordResetMailAsync(string email, string token, CancellationToken cancellationToken)
+        {
+            var link = $"{_passwordResetOptions.LinkBaseUrl.TrimEnd('/')}?token={Uri.EscapeDataString(token)}";
+            var minutes = _passwordResetOptions.TokenLifetimeMinutes;
+
+            return _emailSender.SendAsync(
+                new EmailMessage(
+                    email,
+                    "HRMS — Parola sıfırlama",
+                    $"""
+                     <p>Parolanızı sıfırlamak için aşağıdaki bağlantıya tıklayın.</p>
+                     <p><a href="{link}">Parolamı sıfırla</a></p>
+                     <p>Bağlantı {minutes} dakika geçerlidir ve yalnızca bir kez kullanılabilir.</p>
+                     <p>Bu talebi siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.</p>
+                     """,
+                    $"""
+                     Parolanızı sıfırlamak için: {link}
+
+                     Bağlantı {minutes} dakika geçerlidir ve yalnızca bir kez kullanılabilir.
+                     Bu talebi siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.
+                     """),
+                cancellationToken);
+        }
+
         public async Task<IDataResult<AuthenticatedUserResponse>> GetCurrentUserAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
@@ -283,7 +382,7 @@ namespace Application.Services
             RefreshToken? previous = null)
         {
             var accessToken = _tokenService.CreateAccessToken(user, roles);
-            var (refreshToken, refreshTokenHash) = _tokenService.CreateRefreshToken();
+            var (refreshToken, refreshTokenHash) = _tokenService.CreateSecureToken();
 
             var entity = new RefreshToken
             {

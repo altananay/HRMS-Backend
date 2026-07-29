@@ -1,6 +1,7 @@
 using Application.Abstractions;
 using Application.Abstractions.Storage;
 using Domain.Enums;
+using Infrastructure.Services.Email;
 using Infrastructure.Services.Identity;
 using Infrastructure.Services.JWT;
 using Infrastructure.Services.Security;
@@ -19,6 +20,8 @@ namespace Infrastructure
             services.AddStorage(configuration);
 
             services.AddIdentityVerification(configuration);
+
+            services.AddEmail(configuration);
 
             services.AddSingleton<ITokenService, JwtTokenService>();
             services.AddSingleton<IPasswordHasher, IdentityPasswordHasher>();
@@ -40,6 +43,27 @@ namespace Infrastructure
             else
             {
                 services.AddSingleton<IIdentityVerificationService, NullIdentityVerificationService>();
+            }
+        }
+
+        // A missing mail server degrades the reset flow; it must not stop the app from starting, so
+        // the fallback is chosen here rather than by throwing during validation.
+        private static void AddEmail(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddOptions<EmailOptions>()
+                .Bind(configuration.GetSection(EmailOptions.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            var host = configuration[$"{EmailOptions.SectionName}:Host"];
+
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                services.AddSingleton<IEmailSender, LoggingEmailSender>();
+            }
+            else
+            {
+                services.AddSingleton<IEmailSender, SmtpEmailSender>();
             }
         }
 

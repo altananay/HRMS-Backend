@@ -61,6 +61,11 @@
          see R2Storage. -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.101.4" />
 
+    <!-- SMTP for password-reset mail. MIT, like everything else here. Chosen over
+         System.Net.Mail.SmtpClient, which Microsoft marks obsolete and recommends against for new
+         code. In development it points at the Mailpit container; there is no cloud mail provider. -->
+    <PackageVersion Include="MailKit" Version="4.17.0" />
+
     <!-- Mernis (KPS) SOAP client. The family must move in lockstep; 6.0.0 is the highest version
          published for every member (Duplex and Security cap there). Legacy on .NET 10 but still
          supported, and the only way to reach the government identity service. -->

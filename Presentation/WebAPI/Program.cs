@@ -33,6 +33,12 @@ builder.Services
         "TokenOptions:SecurityKey must be at least 32 characters.")
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<PasswordResetOptions>()
+    .Bind(builder.Configuration.GetSection(PasswordResetOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOptions>()
     ?? throw new InvalidOperationException(
         "TokenOptions section is missing. See appsettings.json for the expected shape; supply the " +

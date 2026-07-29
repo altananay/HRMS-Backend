@@ -125,6 +125,18 @@ namespace Persistence.Repositories
             return query.ToPagedResultAsync(page, cancellationToken);
         }
 
+        // Soft-deleted employers are already excluded by the query filter on User; the IsActive
+        // predicate is what additionally keeps a suspended account out of the public directory.
+        public Task<PagedResult<Employer>> GetPublicPagedAsync(
+            PageRequest page,
+            CancellationToken cancellationToken = default)
+            => _context.Employers
+                .AsNoTracking()
+                .Where(employer => employer.IsActive)
+                .OrderBy(employer => employer.CompanyName)
+                .ThenBy(employer => employer.Id)
+                .ToPagedResultAsync(page, cancellationToken);
+
         public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.Employers.AnyAsync(employer => employer.Id == id, cancellationToken);
 
@@ -215,5 +227,30 @@ namespace Persistence.Repositories
             => _context.RefreshTokens
                 .Where(token => token.UserId == userId && token.ExpiresAt < utcNow)
                 .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public sealed class PasswordResetTokenRepository : IPasswordResetTokenRepository
+    {
+        private readonly HrmsDbContext _context;
+
+        public PasswordResetTokenRepository(HrmsDbContext context) => _context = context;
+
+        public Task<PasswordResetToken?> GetByHashAsync(
+            string tokenHash,
+            CancellationToken cancellationToken = default)
+            => _context.PasswordResetTokens
+                .FirstOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+
+        public void Add(PasswordResetToken token) => _context.PasswordResetTokens.Add(token);
+
+        public Task InvalidateAllForUserAsync(
+            Guid userId,
+            DateTime utcNow,
+            CancellationToken cancellationToken = default)
+            => _context.PasswordResetTokens
+                .Where(token => token.UserId == userId && token.UsedAt == null)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(token => token.UsedAt, utcNow),
+                    cancellationToken);
     }
 }

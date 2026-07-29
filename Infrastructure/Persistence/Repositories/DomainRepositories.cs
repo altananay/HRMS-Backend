@@ -135,9 +135,7 @@ namespace Persistence.Repositories
 
         public Task<PagedResult<JobAdvertisement>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            bool? isActive = null,
-            bool orderByHighestSalary = false,
+            JobAdvertisementFilter filter,
             CancellationToken cancellationToken = default)
         {
             var query = _context.JobAdvertisements
@@ -146,22 +144,50 @@ namespace Persistence.Repositories
                 .Include(advertisement => advertisement.JobPosition)
                 .AsQueryable();
 
-            if (employerId is not null)
+            if (filter.EmployerId is not null)
             {
-                query = query.Where(advertisement => advertisement.EmployerId == employerId);
+                query = query.Where(advertisement => advertisement.EmployerId == filter.EmployerId);
             }
 
-            if (isActive is not null)
+            if (filter.IsActive is not null)
             {
-                query = query.Where(advertisement => advertisement.IsActive == isActive);
+                query = query.Where(advertisement => advertisement.IsActive == filter.IsActive);
             }
 
-            query = orderByHighestSalary
+            if (!string.IsNullOrWhiteSpace(filter.Skill))
+            {
+                // Array containment, so PostgreSQL can use the GIN index on skills rather than
+                // unnesting every row.
+                var skill = filter.Skill.Trim();
+                query = query.Where(advertisement => advertisement.Skills.Contains(skill));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.City))
+            {
+                var city = filter.City.Trim();
+                query = query.Where(advertisement => EF.Functions.ILike(advertisement.City!, city));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                // Escape the LIKE wildcards, or a search for "100%" matches everything.
+                var term = $"%{Escape(filter.Search.Trim())}%";
+                query = query.Where(advertisement =>
+                    EF.Functions.ILike(advertisement.Title, term, LikeEscape)
+                    || EF.Functions.ILike(advertisement.Description, term, LikeEscape));
+            }
+
+            query = filter.OrderByHighestSalary
                 ? query.OrderByDescending(advertisement => advertisement.MaxSalary)
                 : query.OrderByDescending(advertisement => advertisement.CreatedAt);
 
             return query.ToPagedResultAsync(page, cancellationToken);
         }
+
+        private const string LikeEscape = "\\";
+
+        private static string Escape(string term)
+            => term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
         public void Add(JobAdvertisement advertisement) => _context.JobAdvertisements.Add(advertisement);
 
@@ -203,9 +229,7 @@ namespace Persistence.Repositories
 
         public Task<PagedResult<JobApplication>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            Guid? jobSeekerId = null,
-            JobApplicationStatus? status = null,
+            JobApplicationFilter filter,
             CancellationToken cancellationToken = default)
         {
             var query = _context.JobApplications
@@ -214,19 +238,24 @@ namespace Persistence.Repositories
                 .Include(application => application.JobSeeker)
                 .AsQueryable();
 
-            if (employerId is not null)
+            if (filter.EmployerId is not null)
             {
-                query = query.Where(application => application.JobAdvertisement.EmployerId == employerId);
+                query = query.Where(application => application.JobAdvertisement.EmployerId == filter.EmployerId);
             }
 
-            if (jobSeekerId is not null)
+            if (filter.JobSeekerId is not null)
             {
-                query = query.Where(application => application.JobSeekerId == jobSeekerId);
+                query = query.Where(application => application.JobSeekerId == filter.JobSeekerId);
             }
 
-            if (status is not null)
+            if (filter.JobAdvertisementId is not null)
             {
-                query = query.Where(application => application.Status == status);
+                query = query.Where(application => application.JobAdvertisementId == filter.JobAdvertisementId);
+            }
+
+            if (filter.Status is not null)
+            {
+                query = query.Where(application => application.Status == filter.Status);
             }
 
             return query

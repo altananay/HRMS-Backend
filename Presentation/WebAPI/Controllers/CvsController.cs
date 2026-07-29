@@ -36,16 +36,20 @@ namespace WebAPI.Controllers
                 nameof(GetByJobSeekerId), new { jobSeekerId = command.JobSeekerId }, result);
         }
 
-        [Authorize(Roles = Roles.JobSeeker)]
+        [Authorize(Roles = Roles.JobSeekerOrAdmin)]
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateCvCommand command)
         {
-            command.JobSeekerId = CurrentUserId;
+            // A seeker may only edit their own; an admin names the target in the body.
+            if (!User.IsInRole(Roles.Admin))
+            {
+                command.JobSeekerId = CurrentUserId;
+            }
 
             return Ok((await Mediator.Send(command)).Result);
         }
 
-        [Authorize(Roles = Roles.JobSeeker)]
+        [Authorize(Roles = Roles.JobSeekerOrAdmin)]
         [HttpDelete("deletecv/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
             => Ok((await Mediator.Send(new DeleteCvCommand { Id = id, RequestedBy = CurrentUserId })).Result);

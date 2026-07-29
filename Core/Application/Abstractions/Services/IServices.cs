@@ -30,6 +30,18 @@ namespace Application.Abstractions.Services
         Task<IDataResult<AuthResponse>> RefreshAsync(
             RefreshTokenCommand command, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Issues a reset link. Succeeds regardless of whether the address is registered.
+        /// </summary>
+        Task<IResult> ForgotPasswordAsync(
+            ForgotPasswordCommand command, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Consumes a reset token, sets the new password, and ends every existing session.
+        /// </summary>
+        Task<IResult> ResetPasswordAsync(
+            ResetPasswordCommand command, CancellationToken cancellationToken = default);
+
         Task<IResult> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
 
         Task<IResult> LogoutAllAsync(Guid userId, CancellationToken cancellationToken = default);
@@ -62,6 +74,10 @@ namespace Application.Abstractions.Services
     public interface IEmployerService
     {
         Task<IDataResult<PagedResult<EmployerResponse>>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
+
+        /// <summary>The anonymous company directory — active employers, no email, no status.</summary>
+        Task<IDataResult<PagedResult<EmployerSummaryResponse>>> GetPublicPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
+
         Task<IDataResult<EmployerDetailResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IDataResult<EmployerResponse>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateEmployerCommand command, CancellationToken cancellationToken = default);
@@ -107,8 +123,7 @@ namespace Application.Abstractions.Services
     public interface IJobAdvertisementService
     {
         Task<IDataResult<PagedResult<JobAdvertisementResponse>>> GetPagedAsync(
-            PageRequest page, Guid? employerId = null, bool? isActive = null,
-            bool orderByHighestSalary = false, CancellationToken cancellationToken = default);
+            PageRequest page, JobAdvertisementFilter filter, CancellationToken cancellationToken = default);
 
         Task<IDataResult<JobAdvertisementResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IDataResult<CreatedResponse>> AddAsync(CreateJobAdvertisementCommand command, CancellationToken cancellationToken = default);
@@ -133,8 +148,7 @@ namespace Application.Abstractions.Services
     public interface IJobApplicationService
     {
         Task<IDataResult<PagedResult<JobApplicationResponse>>> GetPagedAsync(
-            PageRequest page, Guid? employerId = null, Guid? jobSeekerId = null,
-            JobApplicationStatus? status = null, CancellationToken cancellationToken = default);
+            PageRequest page, JobApplicationFilter filter, CancellationToken cancellationToken = default);
 
         Task<IDataResult<JobApplicationResponse>> GetByIdAsync(Guid id, Guid requestedBy, CancellationToken cancellationToken = default);
 

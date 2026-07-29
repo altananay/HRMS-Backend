@@ -58,6 +58,172 @@ public class ResourceOwnershipTests : IAsyncLifetime
         return created.DataString("id");
     }
 
+    // -------------------------------------------------------------------------------------------
+    // The public company directory
+    // -------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The directory is anonymous, so what it omits is the point. An employer's address is still
+    /// reachable on their own detail page — it is the paged, scrapeable list it must stay out of.
+    /// </summary>
+    [Fact]
+    public async Task PublicEmployerDirectory_Should_BeAnonymous_AndOmitEmailAndStatus()
+    {
+        _client.Authenticate(null);
+
+        var directory = await _client.GetAsync("/api/Employers/public");
+        directory.Status.ShouldBe(HttpStatusCode.OK, directory.Body);
+
+        var items = directory.Data.GetProperty("items");
+        items.GetArrayLength().ShouldBe(2);
+
+        var first = items[0];
+        first.GetProperty("companyName").GetString().ShouldNotBeNullOrWhiteSpace();
+        first.TryGetProperty("email", out _).ShouldBeFalse("an anonymous directory must not list addresses");
+        first.TryGetProperty("isActive", out _).ShouldBeFalse("account status is the admin's business");
+
+        // Alphabetical: "Acme" before "Rival Co".
+        items[0].GetProperty("companyName").GetString().ShouldBe("Acme");
+    }
+
+    /// <summary>The address the directory withholds is still on the company's own page.</summary>
+    [Fact]
+    public async Task CompanyDetailPage_Should_StillCarryTheEmail()
+    {
+        await _client.LoginAsAsync(Employer, Password);
+        var employerId = await CurrentUserIdAsync();
+        _client.Authenticate(null);
+
+        var detail = await _client.GetAsync($"/api/Employers/getbyemployerid/{employerId}");
+
+        detail.Status.ShouldBe(HttpStatusCode.OK, detail.Body);
+        detail.Data.GetProperty("email").GetString().ShouldBe(Employer);
+    }
+
+    [Fact]
+    public async Task PublicEmployerDirectory_Should_NotListTheAdminOrJobSeekers()
+    {
+        _client.Authenticate(null);
+
+        var names = (await _client.GetAsync("/api/Employers/public"))
+            .Data.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("companyName").GetString())
+            .ToList();
+
+        names.ShouldBe(["Acme", "Rival Co"]);
+    }
+
+    // -------------------------------------------------------------------------------------------
+    // Moderation: an admin reaches the owning role's endpoints, a peer still does not
+    // -------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The role attribute and the ownership guard are two different gates. These pin both: the admin
+    /// passes the attribute AND is exempted from the guard, while a rival holding the identical role
+    /// passes the attribute and is still stopped by the guard.
+    /// </summary>
+    [Fact]
+    public async Task Admin_Should_ModerateAnotherEmployersAdvertisement()
+    {
+        var advertisementId = await GivenEmployerHasAnAdvertisementAsync();
+
+        await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
+
+        var edited = await _client.PutAsync("/api/JobAdvertisements/update", new
+        {
+            id = advertisementId,
+            title = "Moderated by admin",
+            jobPositionName = "Backend Developer",
+            description = "Bu ilan açıklaması doğrulamadan geçecek kadar uzun olmalıdır.",
+            openPositions = 1,
+            jobType = "FullTime",
+            deadline = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(3)),
+            skills = new[] { "csharp" },
+            isActive = true
+        });
+        edited.IsSuccess.ShouldBeTrue(edited.Body);
+
+        _client.Authenticate(null);
+        (await _client.GetAsync($"/api/JobAdvertisements/getbyid/{advertisementId}"))
+            .Data.GetProperty("title").GetString().ShouldBe("Moderated by admin");
+    }
+
+    [Fact]
+    public async Task Admin_Should_DeleteAnotherEmployersAdvertisement()
+    {
+        var advertisementId = await GivenEmployerHasAnAdvertisementAsync();
+
+        await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
+        (await _client.DeleteAsync($"/api/JobAdvertisements/deletebyid/{advertisementId}"))
+            .IsSuccess.ShouldBeTrue();
+
+        _client.Authenticate(null);
+        (await _client.GetAsync($"/api/JobAdvertisements/getbyid/{advertisementId}"))
+            .Status.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Admin_Should_DeleteAnotherSeekersCv()
+    {
+        var (seekerId, cvId) = await GivenOwnerHasACvAsync();
+
+        await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
+        (await _client.DeleteAsync($"/api/Cvs/deletecv/{cvId}")).IsSuccess.ShouldBeTrue();
+
+        (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
+            .Status.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>
+    /// A seeker's own id is forced from the token; an admin names the target in the body. Without
+    /// that split an admin's edit would land on the admin's own (non-existent) CV.
+    /// </summary>
+    [Fact]
+    public async Task Admin_Should_EditAnotherSeekersCv()
+    {
+        var (seekerId, cvId) = await GivenOwnerHasACvAsync();
+
+        await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
+
+        var edited = await _client.PutAsync("/api/Cvs/update", new
+        {
+            id = cvId,
+            jobSeekerId = seekerId,
+            information = "Admin tarafından düzenlendi.",
+            skills = new[] { "csharp", "postgresql" }
+        });
+        edited.IsSuccess.ShouldBeTrue(edited.Body);
+
+        (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
+            .Data.GetProperty("information").GetString().ShouldBe("Admin tarafından düzenlendi.");
+    }
+
+    [Fact]
+    public async Task Admin_Should_ChangeAnApplicationStatusOnAnotherEmployersListing()
+    {
+        var advertisementId = await GivenEmployerHasAnAdvertisementAsync();
+
+        await _client.LoginAsAsync(Owner, Password);
+        var applicationId = (await _client.PostAsync("/api/JobApplications/add", new
+        {
+            jobAdvertisementId = advertisementId,
+            jobSeekerNote = "İlgileniyorum."
+        })).DataString("id");
+
+        await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
+
+        var moderated = await _client.PutAsync("/api/JobApplications/update", new
+        {
+            id = applicationId,
+            status = "Rejected",
+            employerNote = "Admin kararı."
+        });
+        moderated.IsSuccess.ShouldBeTrue(moderated.Body);
+
+        (await _client.GetAsync($"/api/JobApplications/getbyid/{applicationId}"))
+            .Data.GetProperty("status").GetString().ShouldBe("Rejected");
+    }
+
     [Fact]
     public async Task ReadingOwnCv_Should_ReturnTheOwnersDetails()
     {

@@ -8,8 +8,12 @@ namespace Application.Abstractions
     {
         AccessToken CreateAccessToken(User user, IReadOnlyCollection<string> roles);
 
-        (string Token, string TokenHash) CreateRefreshToken();
+        /// <summary>
+        /// 256 bits of cryptographic randomness plus its hash. Backs both refresh tokens and
+        /// password-reset tokens — same primitive, and neither is ever stored in the clear.
+        /// </summary>
+        (string Token, string TokenHash) CreateSecureToken();
 
-        string HashRefreshToken(string token);
+        string HashToken(string token);
     }
 }

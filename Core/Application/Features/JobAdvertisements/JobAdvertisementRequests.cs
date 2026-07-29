@@ -108,6 +108,15 @@ namespace Application.Features.JobAdvertisements.Queries
         public int PageSize { get; set; } = PageRequest.DefaultPageSize;
         public Guid? EmployerId { get; set; }
         public bool? IsActive { get; set; }
+
+        /// <summary>Exact skill, as it appears on the advertisement. Backs the skill-cloud deep link.</summary>
+        public string? Skill { get; set; }
+
+        public string? City { get; set; }
+
+        /// <summary>Free text over the title and description.</summary>
+        public string? Search { get; set; }
+
         public bool OrderByHighestSalary { get; set; }
 
         public sealed class Response
@@ -126,9 +135,15 @@ namespace Application.Features.JobAdvertisements.Queries
                 {
                     Result = await _service.GetPagedAsync(
                         new PageRequest(request.Page, request.PageSize),
-                        request.EmployerId,
-                        request.IsActive,
-                        request.OrderByHighestSalary,
+                        new JobAdvertisementFilter
+                        {
+                            EmployerId = request.EmployerId,
+                            IsActive = request.IsActive,
+                            Skill = request.Skill,
+                            City = request.City,
+                            Search = request.Search,
+                            OrderByHighestSalary = request.OrderByHighestSalary
+                        },
                         cancellationToken)
                 };
         }

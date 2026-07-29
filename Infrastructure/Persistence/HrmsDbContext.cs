@@ -15,6 +15,7 @@ namespace Persistence
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
         public DbSet<Department> Departments => Set<Department>();
         public DbSet<Cv> Cvs => Set<Cv>();

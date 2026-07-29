@@ -59,15 +59,15 @@ namespace Infrastructure.Services.JWT
             return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
         }
 
-        public (string Token, string TokenHash) CreateRefreshToken()
+        public (string Token, string TokenHash) CreateSecureToken()
         {
             var bytes = RandomNumberGenerator.GetBytes(32);
             var token = Base64UrlEncoder.Encode(bytes);
 
-            return (token, HashRefreshToken(token));
+            return (token, HashToken(token));
         }
 
-        public string HashRefreshToken(string token)
+        public string HashToken(string token)
             => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
 }

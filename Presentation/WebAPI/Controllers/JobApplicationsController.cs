@@ -45,7 +45,7 @@ namespace WebAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
-        [Authorize(Roles = Roles.Employer)]
+        [Authorize(Roles = Roles.EmployerOrAdmin)]
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateJobApplicationCommand command)
         {

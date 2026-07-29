@@ -42,6 +42,9 @@ namespace Application.Abstractions.Repositories
         Task<Employer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<Employer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<PagedResult<Employer>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
+
+        /// <summary>Active employers only, alphabetical — the anonymous company directory.</summary>
+        Task<PagedResult<Employer>> GetPublicPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
         void Add(Employer employer);
         void Remove(Employer employer);
@@ -70,6 +73,23 @@ namespace Application.Abstractions.Repositories
         void Add(RefreshToken token);
         Task RevokeAllForUserAsync(Guid userId, DateTime utcNow, string? ip, CancellationToken cancellationToken = default);
         Task DeleteExpiredForUserAsync(Guid userId, DateTime utcNow, CancellationToken cancellationToken = default);
+    }
+
+    public interface IPasswordResetTokenRepository
+    {
+        Task<PasswordResetToken?> GetByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+        void Add(PasswordResetToken token);
+
+        /// <summary>
+        /// Marks every outstanding link for this user as used.
+        /// </summary>
+        /// <remarks>
+        /// Called on a successful reset and when a new link is requested, so only the newest link is
+        /// ever live. Without it, requesting a second link would leave the first one usable — and a
+        /// user who requests a reset because they suspect compromise would still have a live token
+        /// sitting in whichever mailbox the attacker can read.
+        /// </remarks>
+        Task InvalidateAllForUserAsync(Guid userId, DateTime utcNow, CancellationToken cancellationToken = default);
     }
 
     public interface ICvRepository
@@ -112,9 +132,7 @@ namespace Application.Abstractions.Repositories
 
         Task<PagedResult<JobAdvertisement>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            bool? isActive = null,
-            bool orderByHighestSalary = false,
+            JobAdvertisementFilter filter,
             CancellationToken cancellationToken = default);
 
         void Add(JobAdvertisement advertisement);
@@ -132,9 +150,7 @@ namespace Application.Abstractions.Repositories
 
         Task<PagedResult<JobApplication>> GetPagedAsync(
             PageRequest page,
-            Guid? employerId = null,
-            Guid? jobSeekerId = null,
-            JobApplicationStatus? status = null,
+            JobApplicationFilter filter,
             CancellationToken cancellationToken = default);
 
         void Add(JobApplication application);
