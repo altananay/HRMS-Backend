@@ -105,8 +105,17 @@ namespace Persistence.Repositories
 
         public EmployerRepository(HrmsDbContext context) => _context = context;
 
+        /// <remarks>
+        /// Departments are included because every caller needs them: the detail response projects them,
+        /// and <c>EmployerManager.UpdateAsync</c> clears and rebuilds the collection. Without the
+        /// Include the navigation is empty, so the clear did nothing, the rebuilt rows were never
+        /// persisted and the update still answered 200 — and the public company page listed no
+        /// departments for anyone. Covered by EmployerUpdateTests.
+        /// </remarks>
         public Task<Employer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-            => _context.Employers.FirstOrDefaultAsync(employer => employer.Id == id, cancellationToken);
+            => _context.Employers
+                .Include(employer => employer.Departments)
+                .FirstOrDefaultAsync(employer => employer.Id == id, cancellationToken);
 
         public Task<Employer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
             => _context.Employers.FirstOrDefaultAsync(employer => employer.Email == email, cancellationToken);
