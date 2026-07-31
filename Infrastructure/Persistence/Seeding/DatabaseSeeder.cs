@@ -81,7 +81,9 @@ namespace Persistence.Seeding
             };
 
             context.SystemStaff.Add(admin);
-            context.UserRoles.Add(new UserRole { UserId = admin.Id, RoleId = adminRole.Id });
+            // `User = admin`, not `UserId = admin.Id`: the key is generated during SaveChanges, so it is
+            // still empty here. EF fills the foreign key in from the navigation.
+            context.UserRoles.Add(new UserRole { User = admin, RoleId = adminRole.Id });
 
             await context.SaveChangesAsync(cancellationToken);
 

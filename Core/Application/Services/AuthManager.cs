@@ -386,6 +386,11 @@ namespace Application.Services
 
             var entity = new RefreshToken
             {
+                // Assigned here rather than left to the value generator: the rotated token records the
+                // id of its replacement, and that has to be known before this SaveChanges. Safe to
+                // pre-set because the entity is added explicitly — EF only infers new-versus-existing
+                // from the key for entities it discovers inside a tracked graph.
+                Id = Guid.CreateVersion7(),
                 UserId = user.Id,
                 TokenHash = refreshTokenHash,
                 ExpiresAt = UtcNow.AddDays(_tokenOptions.RefreshTokenExpirationDays),
@@ -428,7 +433,10 @@ namespace Application.Services
                 ?? throw new InvalidOperationException(
                     $"Role '{roleName}' is missing. Roles are seeded at startup — see RoleSeeder.");
 
-            _roles.AddUserRole(new UserRole { UserId = user.Id, RoleId = role.Id });
+            // `User = user`, not `UserId = user.Id`: registration assigns the role before the user has
+            // been saved, so its key is not populated yet. EF fills the foreign key in from the
+            // navigation during SaveChanges.
+            _roles.AddUserRole(new UserRole { User = user, RoleId = role.Id });
         }
 
         private static AuthenticatedUserResponse ToResponse(User user, IReadOnlyList<string> roles)
