@@ -69,8 +69,16 @@ namespace Persistence.Repositories
     public sealed class JobPositionRepository : IJobPositionRepository
     {
         private readonly HrmsDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public JobPositionRepository(HrmsDbContext context) => _context = context;
+        public JobPositionRepository(HrmsDbContext context, TimeProvider timeProvider)
+        {
+            _context = context;
+            // The insert below bypasses SaveChanges, so it also bypasses AuditingSaveChangesInterceptor
+            // and has to stamp created_at itself — from the same clock, so tests that fake time still
+            // see one consistent timeline.
+            _timeProvider = timeProvider;
+        }
 
         public Task<JobPosition?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.JobPositions.FirstOrDefaultAsync(position => position.Id == id, cancellationToken);
@@ -78,6 +86,24 @@ namespace Persistence.Repositories
         public Task<JobPosition?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
             => _context.JobPositions.FirstOrDefaultAsync(position => position.Name == name, cancellationToken);
 
+        /// <summary>
+        /// Returns the position with this name, creating it if no one has yet.
+        /// </summary>
+        /// <remarks>
+        /// The creating insert is executed **here**, not deferred to <c>SaveChanges</c>, and it is an
+        /// upsert. Check-then-insert loses a race that the product actively invites: two employers
+        /// publishing a posting with the same brand-new position name at the same moment both read
+        /// "no such row", both queue an insert, and the second one hits
+        /// <c>ix_job_positions_name</c> — a 23505 that surfaces as a 500 on an ordinary publish.
+        /// <c>ON CONFLICT DO NOTHING</c> makes the create atomic, so the loser simply reads the
+        /// winner's row back.
+        /// <para>
+        /// The trade-off is that the row is committed before the caller's own save. A job position is
+        /// a lookup value with no owner, so an unreferenced one left behind by a later failure is
+        /// inert — and the admin screen can delete it. Nothing else may follow this pattern: an
+        /// entity that carries data must be written inside the caller's unit of work.
+        /// </para>
+        /// </remarks>
         public async Task<JobPosition> ResolveOrCreateAsync(string name, CancellationToken cancellationToken = default)
         {
             var trimmed = name.Trim();
@@ -98,9 +124,21 @@ namespace Persistence.Repositories
                 return existing;
             }
 
-            var created = new JobPosition { Name = trimmed };
-            _context.JobPositions.Add(created);
-            return created;
+            // `name` is citext, so the conflict target matches case-insensitively — exactly what
+            // GetByNameAsync above compares with.
+            await _context.Database.ExecuteSqlAsync(
+                $"""
+                 INSERT INTO job_positions (id, name, created_at)
+                 VALUES ({Guid.CreateVersion7()}, {trimmed}, {_timeProvider.GetUtcNow().UtcDateTime})
+                 ON CONFLICT (name) DO NOTHING
+                 """,
+                cancellationToken);
+
+            // Read back rather than returning what was built: on a conflict the row that survived is
+            // the other request's, and the caller needs *that* id for its foreign key.
+            return await GetByNameAsync(trimmed, cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"Job position '{trimmed}' was neither inserted nor found immediately afterwards.");
         }
 
         public Task<PagedResult<JobPosition>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default)
