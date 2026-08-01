@@ -125,7 +125,7 @@ namespace Application.Features.Cvs.Queries
 
         public sealed class Response
         {
-            public IDataResult<CvResponse> Result { get; init; } = null!;
+            public IDataResult<CvResponse?> Result { get; init; } = null!;
         }
 
         public sealed class Handler : IRequestHandler<GetByJobSeekerIdCvQuery, Response>

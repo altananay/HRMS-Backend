@@ -280,13 +280,18 @@ namespace Application.Services
                 result.Items.Select(DomainMapper.ToResponse).ToList(), result.Page, result.PageSize, result.TotalCount));
         }
 
-        public async Task<IDataResult<CvResponse>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<CvResponse?>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default)
         {
             await _access.EnsureCanReadAsync(jobSeekerId, requestedBy, cancellationToken);
 
-            var cv = await _rules.EnsureCvExistsForJobSeekerAsync(jobSeekerId, cancellationToken);
+            // Not having created a CV yet is a normal state, not an error: applying to a job never
+            // requires one. The job seeker's own "my CV" screen and an employer's view of a candidate
+            // both need to represent "none yet" as data, not as a 404 — so this reads directly rather
+            // than going through EnsureCvExistsForJobSeekerAsync, which stays reserved for update/file
+            // upload, where a missing CV really is invalid input.
+            var cv = await _cvs.GetByJobSeekerIdAsync(jobSeekerId, cancellationToken);
 
-            return new SuccessDataResult<CvResponse>(DomainMapper.ToResponse(cv));
+            return new SuccessDataResult<CvResponse?>(cv is null ? null : DomainMapper.ToResponse(cv));
         }
 
         public async Task<IDataResult<CreatedResponse>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default)

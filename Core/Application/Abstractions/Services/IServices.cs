@@ -105,7 +105,7 @@ namespace Application.Abstractions.Services
     {
         Task<IDataResult<PagedResult<CvResponse>>> GetPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
 
-        Task<IDataResult<CvResponse>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
+        Task<IDataResult<CvResponse?>> GetByJobSeekerIdAsync(Guid jobSeekerId, Guid requestedBy, CancellationToken cancellationToken = default);
 
         Task<IDataResult<CreatedResponse>> AddAsync(CreateCvCommand command, CancellationToken cancellationToken = default);
         Task<IResult> UpdateAsync(UpdateCvCommand command, CancellationToken cancellationToken = default);

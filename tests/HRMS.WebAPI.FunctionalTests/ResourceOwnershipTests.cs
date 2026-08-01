@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 
 namespace HRMS.WebAPI.FunctionalTests;
 
@@ -153,8 +154,11 @@ public class ResourceOwnershipTests : IAsyncLifetime
         await _client.LoginAsAsync(HrmsApiFactory.AdminEmail, HrmsApiFactory.AdminPassword);
         (await _client.DeleteAsync($"/api/Cvs/deletecv/{cvId}")).IsSuccess.ShouldBeTrue();
 
-        (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
-            .Status.ShouldBe(HttpStatusCode.NotFound);
+        // No CV is a normal state, not an error — the read endpoint answers 200 with a null `data`
+        // rather than 404, since it also serves an employer viewing a candidate who never made one.
+        var afterDelete = await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}");
+        afterDelete.Status.ShouldBe(HttpStatusCode.OK);
+        afterDelete.Data.ValueKind.ShouldBe(JsonValueKind.Null);
     }
 
     [Fact]
@@ -274,8 +278,9 @@ public class ResourceOwnershipTests : IAsyncLifetime
 
         (await _client.DeleteAsync($"/api/Cvs/deletecv/{cvId}")).IsSuccess.ShouldBeTrue();
 
-        (await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}"))
-            .Status.ShouldBe(HttpStatusCode.NotFound);
+        var afterDelete = await _client.GetAsync($"/api/Cvs/getbyjobseekerid/{seekerId}");
+        afterDelete.Status.ShouldBe(HttpStatusCode.OK);
+        afterDelete.Data.ValueKind.ShouldBe(JsonValueKind.Null);
     }
 
     [Fact]
