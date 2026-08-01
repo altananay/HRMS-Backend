@@ -58,14 +58,7 @@ public class ResourceOwnershipTests : IAsyncLifetime
         return created.DataString("id");
     }
 
-    // -------------------------------------------------------------------------------------------
-    // The public company directory
-    // -------------------------------------------------------------------------------------------
 
-    /// <summary>
-    /// The directory is anonymous, so what it omits is the point. An employer's address is still
-    /// reachable on their own detail page — it is the paged, scrapeable list it must stay out of.
-    /// </summary>
     [Fact]
     public async Task PublicEmployerDirectory_Should_BeAnonymous_AndOmitEmailAndStatus()
     {
@@ -82,11 +75,9 @@ public class ResourceOwnershipTests : IAsyncLifetime
         first.TryGetProperty("email", out _).ShouldBeFalse("an anonymous directory must not list addresses");
         first.TryGetProperty("isActive", out _).ShouldBeFalse("account status is the admin's business");
 
-        // Alphabetical: "Acme" before "Rival Co".
         items[0].GetProperty("companyName").GetString().ShouldBe("Acme");
     }
 
-    /// <summary>The address the directory withholds is still on the company's own page.</summary>
     [Fact]
     public async Task CompanyDetailPage_Should_StillCarryTheEmail()
     {
@@ -113,15 +104,7 @@ public class ResourceOwnershipTests : IAsyncLifetime
         names.ShouldBe(["Acme", "Rival Co"]);
     }
 
-    // -------------------------------------------------------------------------------------------
-    // Moderation: an admin reaches the owning role's endpoints, a peer still does not
-    // -------------------------------------------------------------------------------------------
 
-    /// <summary>
-    /// The role attribute and the ownership guard are two different gates. These pin both: the admin
-    /// passes the attribute AND is exempted from the guard, while a rival holding the identical role
-    /// passes the attribute and is still stopped by the guard.
-    /// </summary>
     [Fact]
     public async Task Admin_Should_ModerateAnotherEmployersAdvertisement()
     {
@@ -174,10 +157,6 @@ public class ResourceOwnershipTests : IAsyncLifetime
             .Status.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    /// <summary>
-    /// A seeker's own id is forced from the token; an admin names the target in the body. Without
-    /// that split an admin's edit would land on the admin's own (non-existent) CV.
-    /// </summary>
     [Fact]
     public async Task Admin_Should_EditAnotherSeekersCv()
     {

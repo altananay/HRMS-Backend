@@ -17,7 +17,6 @@ namespace Persistence.Configurations
                 .HasMaxLength(256)
                 .IsRequired();
 
-            // Partial, so a soft-deleted account releases its address instead of burning it.
             builder.HasIndex(user => user.Email)
                 .IsUnique()
                 .HasFilter("deleted_at IS NULL");

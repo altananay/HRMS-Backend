@@ -47,7 +47,6 @@ namespace Persistence.Interceptors
 
                     case EntityState.Modified:
                         entry.Entity.UpdatedAt = utcNow;
-                        // Without this an update rewrites CreatedAt to the time it was last touched.
                         entry.Property(entity => entity.CreatedAt).IsModified = false;
                         break;
                 }

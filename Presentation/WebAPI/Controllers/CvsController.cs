@@ -40,7 +40,6 @@ namespace WebAPI.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> Update(UpdateCvCommand command)
         {
-            // A seeker may only edit their own; an admin names the target in the body.
             if (!User.IsInRole(Roles.Admin))
             {
                 command.JobSeekerId = CurrentUserId;

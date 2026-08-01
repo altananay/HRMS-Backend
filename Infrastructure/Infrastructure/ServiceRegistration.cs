@@ -46,8 +46,6 @@ namespace Infrastructure
             }
         }
 
-        // A missing mail server degrades the reset flow; it must not stop the app from starting, so
-        // the fallback is chosen here rather than by throwing during validation.
         private static void AddEmail(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddOptions<EmailOptions>()

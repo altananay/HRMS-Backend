@@ -45,7 +45,6 @@ namespace Infrastructure.Services.Storage
                     InputStream = file.Content,
                     ContentType = file.ContentType,
 
-                    // Both required: R2 does not implement the Streaming SigV4 the SDK defaults to.
                     DisablePayloadSigning = true,
                     DisableDefaultChecksumValidation = true
                 };

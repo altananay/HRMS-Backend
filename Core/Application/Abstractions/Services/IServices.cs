@@ -30,15 +30,9 @@ namespace Application.Abstractions.Services
         Task<IDataResult<AuthResponse>> RefreshAsync(
             RefreshTokenCommand command, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Issues a reset link. Succeeds regardless of whether the address is registered.
-        /// </summary>
         Task<IResult> ForgotPasswordAsync(
             ForgotPasswordCommand command, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Consumes a reset token, sets the new password, and ends every existing session.
-        /// </summary>
         Task<IResult> ResetPasswordAsync(
             ResetPasswordCommand command, CancellationToken cancellationToken = default);
 
@@ -75,7 +69,6 @@ namespace Application.Abstractions.Services
     {
         Task<IDataResult<PagedResult<EmployerResponse>>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
 
-        /// <summary>The anonymous company directory — active employers, no email, no status.</summary>
         Task<IDataResult<PagedResult<EmployerSummaryResponse>>> GetPublicPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
 
         Task<IDataResult<EmployerDetailResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

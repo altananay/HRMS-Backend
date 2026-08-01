@@ -56,7 +56,6 @@ namespace Application.Features.Employers.Commands
 
 namespace Application.Features.Employers.Queries
 {
-    /// <summary>The anonymous company directory.</summary>
     public partial class GetPublicEmployerQuery : IRequest<GetPublicEmployerQuery.Response>
     {
         public int Page { get; set; } = 1;

@@ -18,8 +18,6 @@ namespace Infrastructure.Services.Email
             _options = options.Value;
             _logger = logger;
 
-            // Registration already picks LoggingEmailSender when the host is empty, so reaching here
-            // without one is a wiring mistake — fail at startup rather than on the first reset.
             _host = _options.IsConfigured
                 ? _options.Host!
                 : throw new InvalidOperationException(
@@ -51,8 +49,6 @@ namespace Infrastructure.Services.Email
             await client.SendAsync(mail, cancellationToken);
             await client.DisconnectAsync(quit: true, cancellationToken);
 
-            // The subject only. The body carries a reset link, which is a bearer credential for the
-            // next hour — logging it would put account takeover in the log file.
             _logger.LogInformation("Sent mail {Subject} to {Recipient}", message.Subject, message.To);
         }
     }

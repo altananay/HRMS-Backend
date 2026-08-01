@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebAPI.Controllers
 {
-    // Never put [AllowAnonymous] on the class: it overrides [Authorize] on individual actions and
-    // would silently open /me, /logout-all, /change-password and /register/system-staff.
     [EnableRateLimiting("auth")]
     [Route("api/auth")]
     public class AuthController : ApiControllerBase
@@ -57,17 +55,11 @@ namespace WebAPI.Controllers
             return Ok((await Mediator.Send(command)).Result);
         }
 
-        /// <remarks>
-        /// Anonymous by necessity, and rate-limited like the rest of this controller. Always answers
-        /// 200 with the same message whether or not the address is registered — a distinguishable
-        /// response here would be a user-enumeration oracle.
-        /// </remarks>
         [AllowAnonymous]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
-        /// <remarks>Consumes the emailed token, then ends every existing session for that user.</remarks>
         [AllowAnonymous]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)

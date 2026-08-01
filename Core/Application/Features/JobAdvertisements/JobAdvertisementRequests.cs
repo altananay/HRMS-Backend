@@ -109,12 +109,10 @@ namespace Application.Features.JobAdvertisements.Queries
         public Guid? EmployerId { get; set; }
         public bool? IsActive { get; set; }
 
-        /// <summary>Exact skill, as it appears on the advertisement. Backs the skill-cloud deep link.</summary>
         public string? Skill { get; set; }
 
         public string? City { get; set; }
 
-        /// <summary>Free text over the title and description.</summary>
         public string? Search { get; set; }
 
         public bool OrderByHighestSalary { get; set; }

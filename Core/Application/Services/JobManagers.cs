@@ -130,7 +130,6 @@ namespace Application.Services
             return new SuccessResult(Messages.JobAdvertisement.Deleted);
         }
 
-        // An admin moderates any listing; an employer only their own.
         private void EnsureOwnedBy(JobAdvertisement advertisement, Guid employerId)
         {
             if (advertisement.EmployerId != employerId && !_currentUser.IsInRole(Roles.Admin))
@@ -222,7 +221,6 @@ namespace Application.Services
             var application = await _applications.GetByIdWithDetailsAsync(command.Id, cancellationToken)
                 ?? throw new NotFoundException(Messages.JobApplication.NotFound);
 
-            // An admin moderates any application; an employer only those on their own listings.
             if (application.JobAdvertisement.EmployerId != command.EmployerId
                 && !_currentUser.IsInRole(Roles.Admin))
             {
@@ -324,7 +322,6 @@ namespace Application.Services
             var cv = await _cvs.GetByIdWithDetailsAsync(id, cancellationToken)
                 ?? throw new NotFoundException(Messages.Cv.NotFound);
 
-            // cvs has no deleted_at: this is permanent and cascades to every child row.
             _access.EnsureCanModify(cv.JobSeekerId, requestedBy);
 
             _cvs.Remove(cv);

@@ -38,15 +38,6 @@ namespace Application.Common.Contracts
         DateTime CreatedAt,
         IReadOnlyList<DepartmentResponse> Departments);
 
-    /// <summary>
-    /// An employer as the public company directory sees them.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately narrower than <see cref="EmployerResponse"/>: no <c>Email</c> and no
-    /// <c>IsActive</c>. An anonymous, paged list of employer email addresses is a scraping target,
-    /// and the account's status is nobody's business but the admin's. The address is still shown on
-    /// the company's own detail page, which is what <see cref="EmployerDetailResponse"/> serves.
-    /// </remarks>
     public sealed record EmployerSummaryResponse(
         Guid Id,
         string CompanyName,

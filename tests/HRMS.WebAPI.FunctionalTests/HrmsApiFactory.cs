@@ -27,15 +27,12 @@ public sealed class HrmsApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
     public const string AdminPassword = "Adm!nTest12345";
 
-    /// <summary>Every mail the app tried to send during the current test.</summary>
     public RecordingEmailSender Mail { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
 
-        // Replaces the SMTP sender so the reset flow can be asserted end to end — including the
-        // link in the body, which is what the frontend actually consumes — without a mail server.
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IEmailSender>();
@@ -62,8 +59,6 @@ public sealed class HrmsApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
             ["IdentityVerification__Provider"] = "Null",
 
-            // Empty so nothing tries to reach a real SMTP host; ConfigureTestServices swaps the
-            // sender for RecordingEmailSender regardless.
             ["Email__Host"] = "",
             ["PasswordReset__LinkBaseUrl"] = "http://localhost:3000/reset-password",
             ["PasswordReset__TokenLifetimeMinutes"] = "60",

@@ -6,16 +6,6 @@ using Shouldly;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// Employer departments, read and written.
-/// </summary>
-/// <remarks>
-/// <c>GetByIdAsync</c> used to omit <c>Include(Departments)</c>, which broke both directions at once
-/// and silently: the collection came back empty on every read, so the public company page listed no
-/// departments; and <c>EmployerManager.UpdateAsync</c> cleared an unloaded collection and rebuilt it
-/// into nothing, while the endpoint still answered 200. Nothing covered it — the existing suite reads
-/// employers through the paged and by-email queries, neither of which touches departments.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class EmployerUpdateTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -56,7 +46,6 @@ public class EmployerUpdateTests(PostgresFixture fixture) : IAsyncLifetime
     [Fact]
     public async Task Update_Should_AddADepartment_ToAnEmployerThatHadNone()
     {
-        // The shape the company profile form produces on a fresh account.
         var employerId = await GivenAnEmployerAsync("adds@test.local");
 
         await fixture.InScopeAsync(async services =>

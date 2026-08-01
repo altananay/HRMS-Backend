@@ -2,16 +2,6 @@ using System.Net;
 
 namespace HRMS.WebAPI.FunctionalTests;
 
-/// <summary>
-/// Requesting a reset link, and consuming it.
-/// </summary>
-/// <remarks>
-/// Two properties carry most of the weight here. First, <c>forgot-password</c> must answer the same
-/// way for a registered and an unregistered address — otherwise the endpoint becomes the
-/// user-enumeration oracle the uniform 401 on sign-in exists to prevent. Second, a completed reset
-/// must end every existing session: a reset is what someone does when they think an account is
-/// compromised, so leaving the attacker's live access token working would defeat the point.
-/// </remarks>
 [Collection(ApiCollection.Name)]
 public class PasswordResetTests : IAsyncLifetime
 {
@@ -43,14 +33,6 @@ public class PasswordResetTests : IAsyncLifetime
     private static string StripTraceId(string body)
         => System.Text.RegularExpressions.Regex.Replace(body, "\"traceId\":\"[^\"]*\"", string.Empty);
 
-    // ---------------------------------------------------------------------------------------------
-    // Requesting a link
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// The response for a registered and an unregistered address must be indistinguishable — same
-    /// status, same body. Any difference tells an attacker which addresses have accounts.
-    /// </summary>
     [Fact]
     public async Task ForgotPassword_Should_AnswerIdenticallyForKnownAndUnknownAddresses()
     {
@@ -72,10 +54,6 @@ public class PasswordResetTests : IAsyncLifetime
         _factory.Mail.LastTo("nobody@test.local").ShouldBeNull();
     }
 
-    /// <summary>
-    /// The link is the contract with the frontend, so assert its shape rather than just that some
-    /// mail was sent.
-    /// </summary>
     [Fact]
     public async Task ForgotPassword_Should_SendALinkToTheConfiguredResetScreen()
     {
@@ -94,10 +72,6 @@ public class PasswordResetTests : IAsyncLifetime
     public async Task ForgotPassword_Should_Return400_When_TheAddressIsUnusable(string email)
         => (await RequestResetAsync(email)).Status.ShouldBe(HttpStatusCode.BadRequest);
 
-    /// <summary>
-    /// Requesting a second link retires the first. Otherwise a user who requests a new link because
-    /// they suspect the first was intercepted leaves the intercepted one working.
-    /// </summary>
     [Fact]
     public async Task RequestingASecondLink_Should_RetireTheFirst()
     {
@@ -116,10 +90,6 @@ public class PasswordResetTests : IAsyncLifetime
             .IsSuccess.ShouldBeTrue();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Consuming a link
-    // ---------------------------------------------------------------------------------------------
-
     [Fact]
     public async Task ResetPassword_Should_ReplaceThePassword()
     {
@@ -133,10 +103,6 @@ public class PasswordResetTests : IAsyncLifetime
         (await _client.LoginAsync(Email, Password)).Status.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    /// <summary>
-    /// The reason this flow exists: whoever held a session before the reset must lose it. The
-    /// security stamp is rotated, and it is validated on every request.
-    /// </summary>
     [Fact]
     public async Task ResetPassword_Should_EndEveryExistingSession()
     {

@@ -15,8 +15,6 @@ namespace Application.Features.Contacts.Commands
 
         public sealed class Response
         {
-            // Declared type, not IResult: System.Text.Json serializes by it, so IResult here would
-            // drop the data payload and the created id would never reach the client.
             public IDataResult<CreatedResponse> Result { get; init; } = null!;
         }
 

@@ -209,8 +209,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// No UseStaticFiles: nothing is served from disk, and adding it would expose the web root.
-// No UseSerilogRequestLogging: it logs through the static Log.Logger, which this app never sets.
 app.UseRouting();
 app.UseCors("ApiCorsPolicy");
 

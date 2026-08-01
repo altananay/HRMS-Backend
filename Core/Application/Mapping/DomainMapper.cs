@@ -38,7 +38,6 @@ namespace Application.Mapping
         public static UserSummaryResponse ToSummaryResponse(User user)
             => new(user.Id, user.Email, user.UserType, user.IsActive, user.CreatedAt);
 
-        /// <summary>Hand-written: drops Email and IsActive for the anonymous directory.</summary>
         public static EmployerSummaryResponse ToSummaryResponse(Employer employer)
             => new(
                 employer.Id,

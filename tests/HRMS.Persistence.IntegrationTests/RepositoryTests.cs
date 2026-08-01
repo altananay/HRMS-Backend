@@ -262,24 +262,13 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
         (await assert.JobPositions.CountAsync(position => position.Name == "Backend Developer")).ShouldBe(1);
     }
 
-    /// <summary>
-    /// The race the check-then-insert version lost: two requests naming the same brand-new position at
-    /// the same moment. Both read "no such row"; without the upsert the second insert violates
-    /// <c>ix_job_positions_name</c> and the publish answers 500.
-    /// </summary>
     [Fact]
     public async Task ResolveOrCreateAsync_Should_SurviveTwoRequestsCreatingTheSameNameAtOnce()
     {
         const int callers = 4;
 
-        // The barrier is what makes this deterministic rather than a coin toss. Every caller must have
-        // resolved — and, in the old check-then-insert version, decided to insert — before any of them
-        // saves. Firing four tasks and hoping they overlap passes even against the broken code, which
-        // is exactly how this defect survived being "tested".
         using var everyoneHasResolved = new Barrier(callers);
 
-        // Separate scopes, so separate DbContexts and separate connections: the shape of concurrent
-        // requests. One context would serialize them and prove nothing.
         var resolve = () => Task.Run(() => fixture.InScopeAsync(async services =>
         {
             var position = await services.GetRequiredService<IJobPositionRepository>()
@@ -294,7 +283,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
 
         var ids = await Task.WhenAll(Enumerable.Range(0, callers).Select(_ => resolve()));
 
-        // Every caller must come back with the row that actually won, not with an id it invented.
         ids.Distinct().Count().ShouldBe(1);
 
         await using var assert = fixture.CreateContext();
@@ -305,8 +293,6 @@ public class RepositoryTests(PostgresFixture fixture) : IAsyncLifetime
     [Fact]
     public async Task ResolveOrCreateAsync_Should_MatchAnExistingNameRegardlessOfCase()
     {
-        // `name` is citext and the upsert's conflict target is that column, so "backend developer"
-        // must find "Backend Developer" rather than trying to insert a second row.
         var first = await fixture.InScopeAsync(async services =>
         {
             var created = await services.GetRequiredService<IJobPositionRepository>()

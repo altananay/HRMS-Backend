@@ -105,13 +105,6 @@ namespace Persistence.Repositories
 
         public EmployerRepository(HrmsDbContext context) => _context = context;
 
-        /// <remarks>
-        /// Departments are included because every caller needs them: the detail response projects them,
-        /// and <c>EmployerManager.UpdateAsync</c> clears and rebuilds the collection. Without the
-        /// Include the navigation is empty, so the clear did nothing, the rebuilt rows were never
-        /// persisted and the update still answered 200 — and the public company page listed no
-        /// departments for anyone. Covered by EmployerUpdateTests.
-        /// </remarks>
         public Task<Employer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => _context.Employers
                 .Include(employer => employer.Departments)
@@ -134,8 +127,6 @@ namespace Persistence.Repositories
             return query.ToPagedResultAsync(page, cancellationToken);
         }
 
-        // Soft-deleted employers are already excluded by the query filter on User; the IsActive
-        // predicate is what additionally keeps a suspended account out of the public directory.
         public Task<PagedResult<Employer>> GetPublicPagedAsync(
             PageRequest page,
             CancellationToken cancellationToken = default)

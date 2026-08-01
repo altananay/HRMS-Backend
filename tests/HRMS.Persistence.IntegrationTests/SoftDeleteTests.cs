@@ -102,9 +102,6 @@ public class SoftDeleteTests(PostgresFixture fixture) : IAsyncLifetime
         (await assert.Educations.IgnoreQueryFilters().CountAsync(row => row.CvId == cvId)).ShouldBe(1);
     }
 
-    // Sharp edge: the interceptor only rewrites the ISoftDeletable entry. Dependents EF already
-    // marked Deleted by cascading through the tracker stay deleted, so an Include on a manager's
-    // load path would silently turn a hide into a destroy.
     [Fact]
     public async Task SoftDelete_Should_StillCascadeToDependentsLoadedIntoTheSameContext()
     {

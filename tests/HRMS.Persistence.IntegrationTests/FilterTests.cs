@@ -46,10 +46,6 @@ public class FilterTests(PostgresFixture fixture) : IAsyncLifetime
     private Task<PagedResult<JobAdvertisement>> QueryAsync(JobAdvertisementFilter filter)
         => fixture.GetService<IJobAdvertisementRepository>().GetPagedAsync(new PageRequest(), filter);
 
-    // ---------------------------------------------------------------------------------------------
-    // Job advertisements
-    // ---------------------------------------------------------------------------------------------
-
     [Fact]
     public async Task Skill_Should_MatchAnElementOfTheArray()
     {
@@ -61,10 +57,6 @@ public class FilterTests(PostgresFixture fixture) : IAsyncLifetime
         page.Items.ShouldAllBe(advertisement => advertisement.Skills.Contains("React"));
     }
 
-    /// <summary>
-    /// Array containment is exact, not a substring: "React" must not drag in "React Native" as a
-    /// skill, and a partial word must match nothing.
-    /// </summary>
     [Fact]
     public async Task Skill_Should_NotMatchPartially()
     {
@@ -84,31 +76,20 @@ public class FilterTests(PostgresFixture fixture) : IAsyncLifetime
         (await QueryAsync(new JobAdvertisementFilter { City = "İzmir" })).TotalCount.ShouldBe(1);
     }
 
-    /// <summary>
-    /// Each term below appears in exactly one place, so the counts prove the OR really spans both
-    /// columns rather than one of them happening to carry every match.
-    /// </summary>
     [Fact]
     public async Task Search_Should_CoverBothTitleAndDescription()
     {
         await GivenABoardAsync();
 
-        // Title only.
         (await QueryAsync(new JobAdvertisementFilter { Search = "Native" })).TotalCount.ShouldBe(1);
 
-        // Description only.
         (await QueryAsync(new JobAdvertisementFilter { Search = "dağıtık" })).TotalCount.ShouldBe(1);
 
-        // Every title, no description.
         (await QueryAsync(new JobAdvertisementFilter { Search = "developer" })).TotalCount.ShouldBe(3);
 
         (await QueryAsync(new JobAdvertisementFilter { Search = "bulunmayan" })).TotalCount.ShouldBe(0);
     }
 
-    /// <summary>
-    /// LIKE wildcards in user input must be escaped. Unescaped, a search for "%" matches every row —
-    /// a search box that silently returns the whole table.
-    /// </summary>
     [Fact]
     public async Task Search_Should_TreatWildcardsAsLiteralText()
     {
@@ -142,14 +123,6 @@ public class FilterTests(PostgresFixture fixture) : IAsyncLifetime
         (await QueryAsync(JobAdvertisementFilter.None)).TotalCount.ShouldBe(3);
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Job applications
-    // ---------------------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Backs the employer's per-listing view. Without it that screen has to pull the employer's whole
-    /// application page and filter client-side, which is wrong past the first hundred rows.
-    /// </summary>
     [Fact]
     public async Task JobAdvertisementId_Should_NarrowToOneListing()
     {

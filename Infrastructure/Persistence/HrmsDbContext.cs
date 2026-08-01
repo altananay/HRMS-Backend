@@ -39,14 +39,6 @@ namespace Persistence
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-            // Every BaseEntity key is generated on insert, by us, as a version 7 GUID. Applied here
-            // in one place rather than repeated in twelve configurations — and applied *after* the
-            // configurations so it cannot be forgotten when an entity is added.
-            //
-            // The key must stay unset until save. EF decides whether an entity it finds inside a
-            // tracked parent's collection is new or already persisted by asking whether its key is
-            // set, so pre-filling it in the entity's constructor made every new child look like an
-            // existing row. See GuidV7ValueGenerator.
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (!typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))

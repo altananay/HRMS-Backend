@@ -14,8 +14,6 @@ public class SecuritySmokeTests
 
     public SecuritySmokeTests(HrmsApiFactory factory) => _factory = factory;
 
-    // Every anonymous endpoint must be listed here. A new one that is not fails the suite on purpose,
-    // which is what turns "this is deliberately public" into a decision somebody signed off on.
     private static readonly string[] PublicEndpoints =
     [
         "api/Contacts",
@@ -26,8 +24,6 @@ public class SecuritySmokeTests
         "api/JobPosition/getall",
         "api/JobPosition/getbyid/{id:guid}",
 
-        // The company directory. Reviewed: EmployerSummaryResponse carries no email and no
-        // account status, and the query returns active employers only.
         "api/Employers/public",
         "api/Employers/getbyemployerid/{id:guid}",
 
@@ -36,8 +32,6 @@ public class SecuritySmokeTests
         "api/auth/register/employer",
         "api/auth/refresh",
 
-        // Password reset. Reviewed: forgot-password answers identically for unknown addresses, and
-        // reset-password is gated by a single-use, one-hour, hashed-at-rest token.
         "api/auth/forgot-password",
         "api/auth/reset-password",
 

@@ -28,8 +28,6 @@ namespace Application.Common.Behaviors
             var userId = _currentUser.UserId;
             var stopwatch = Stopwatch.StartNew();
 
-            // No try/catch: failures are logged once, by GlobalExceptionHandler. Catching here too
-            // produced two entries per rejected request.
             var response = await next();
 
             stopwatch.Stop();

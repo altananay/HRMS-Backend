@@ -5,8 +5,6 @@ using Application.Utilities.Constants;
 
 namespace Application.Rules
 {
-    // Who may read a candidate's profile, CV and files: the candidate, an employer holding an
-    // application from them, or an admin. Shared by three managers — do not inline a copy.
     public sealed class CandidateAccessPolicy
     {
         private readonly IJobApplicationRepository _applications;

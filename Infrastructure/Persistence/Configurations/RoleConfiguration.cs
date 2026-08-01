@@ -73,7 +73,6 @@ namespace Persistence.Configurations
 
             builder.HasIndex(token => token.TokenHash).IsUnique();
 
-            // The lookup for "invalidate this user's outstanding links" on a successful reset.
             builder.HasIndex(token => new { token.UserId, token.ExpiresAt });
 
             builder.Ignore(token => token.IsUsed);

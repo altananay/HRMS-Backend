@@ -43,7 +43,6 @@ namespace Application.Abstractions.Repositories
         Task<Employer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<PagedResult<Employer>> GetPagedAsync(PageRequest page, bool orderByHeadcount = false, CancellationToken cancellationToken = default);
 
-        /// <summary>Active employers only, alphabetical — the anonymous company directory.</summary>
         Task<PagedResult<Employer>> GetPublicPagedAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
         void Add(Employer employer);
@@ -80,15 +79,6 @@ namespace Application.Abstractions.Repositories
         Task<PasswordResetToken?> GetByHashAsync(string tokenHash, CancellationToken cancellationToken = default);
         void Add(PasswordResetToken token);
 
-        /// <summary>
-        /// Marks every outstanding link for this user as used.
-        /// </summary>
-        /// <remarks>
-        /// Called on a successful reset and when a new link is requested, so only the newest link is
-        /// ever live. Without it, requesting a second link would leave the first one usable — and a
-        /// user who requests a reset because they suspect compromise would still have a live token
-        /// sitting in whichever mailbox the attacker can read.
-        /// </remarks>
         Task InvalidateAllForUserAsync(Guid userId, DateTime utcNow, CancellationToken cancellationToken = default);
     }
 

@@ -278,14 +278,10 @@ namespace Application.Services
         {
             var found = await _users.GetForAuthenticationAsync(command.Email, cancellationToken);
 
-            // Unknown address, closed account: same answer, same shape. The caller cannot tell which
-            // addresses are registered — the whole point of the uniform response.
             if (found is not null && found.Value.User.IsActive)
             {
                 var user = found.Value.User;
 
-                // Only the newest link stays live. Otherwise a user who requests a second link
-                // because they suspect the first was intercepted leaves the first one working.
                 await _passwordResetTokens.InvalidateAllForUserAsync(user.Id, UtcNow, cancellationToken);
 
                 var (token, tokenHash) = _tokenService.CreateSecureToken();
@@ -311,8 +307,6 @@ namespace Application.Services
             var stored = await _passwordResetTokens.GetByHashAsync(
                 _tokenService.HashToken(command.Token), cancellationToken);
 
-            // Unknown, already used, or expired all answer the same way — a caller probing tokens
-            // learns nothing about which of the three it hit.
             if (stored is null || !stored.IsActive(UtcNow))
             {
                 throw new BusinessException(Messages.Authentication.InvalidPasswordResetToken);
@@ -323,15 +317,11 @@ namespace Application.Services
 
             user.PasswordHash = _passwordHasher.Hash(command.NewPassword);
 
-            // Marked on the tracked entity so single-use and the password change commit together.
             stored.UsedAt = UtcNow;
 
-            // Same as a password change: rotate the stamp and revoke every refresh token, so a
-            // session the attacker already holds dies the moment the real owner resets.
             await RevokeEverythingAsync(user.Id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Any other outstanding link for this user, after the reset itself is safely committed.
             await _passwordResetTokens.InvalidateAllForUserAsync(user.Id, UtcNow, cancellationToken);
 
             return new SuccessResult(Messages.Authentication.PasswordResetCompleted);
@@ -386,10 +376,6 @@ namespace Application.Services
 
             var entity = new RefreshToken
             {
-                // Assigned here rather than left to the value generator: the rotated token records the
-                // id of its replacement, and that has to be known before this SaveChanges. Safe to
-                // pre-set because the entity is added explicitly — EF only infers new-versus-existing
-                // from the key for entities it discovers inside a tracked graph.
                 Id = Guid.CreateVersion7(),
                 UserId = user.Id,
                 TokenHash = refreshTokenHash,
@@ -433,9 +419,6 @@ namespace Application.Services
                 ?? throw new InvalidOperationException(
                     $"Role '{roleName}' is missing. Roles are seeded at startup — see RoleSeeder.");
 
-            // `User = user`, not `UserId = user.Id`: registration assigns the role before the user has
-            // been saved, so its key is not populated yet. EF fills the foreign key in from the
-            // navigation during SaveChanges.
             _roles.AddUserRole(new UserRole { User = user, RoleId = role.Id });
         }
 

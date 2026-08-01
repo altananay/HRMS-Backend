@@ -86,7 +86,6 @@ namespace Application.Features.JobApplications.Queries
         public Guid? EmployerId { get; set; }
         public Guid? JobSeekerId { get; set; }
 
-        /// <summary>Narrows to one advertisement — the employer's per-listing applications view.</summary>
         public Guid? JobAdvertisementId { get; set; }
 
         public JobApplicationStatus? Status { get; set; }

@@ -79,10 +79,6 @@ namespace Application.Utilities.Constants
             public const string PasswordChanged = "Parolanız güncellendi.";
             public const string AuthorizationDenied = "Bu işlem için yetkiniz yok.";
 
-            /// <summary>
-            /// Returned whether or not the address is registered — the response must not reveal
-            /// which, for the same reason sign-in answers a uniform 401.
-            /// </summary>
             public const string PasswordResetRequested =
                 "Adres kayıtlıysa parola sıfırlama bağlantısı gönderildi.";
 

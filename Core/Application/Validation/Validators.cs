@@ -203,14 +203,10 @@ namespace Application.Validation
         {
             RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
 
-            // Presence only, never NewPassword(): a length rule here would disclose the policy to an
-            // anonymous caller and lock out passwords that predate it.
             RuleFor(command => command.Password).NotEmpty();
         }
     }
 
-    // Applies only where a password is set (registration, new password on change), never where one
-    // is checked.
     internal static class PasswordPolicy
     {
         public const int MinimumLength = 5;
@@ -277,8 +273,6 @@ namespace Application.Validation
 
     public sealed class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCommand>
     {
-        // Structural only. Nothing here may depend on whether the address exists — the endpoint's
-        // whole point is that a caller cannot tell.
         public ForgotPasswordCommandValidator()
             => RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(256);
     }

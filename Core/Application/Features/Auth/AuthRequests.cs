@@ -190,11 +190,6 @@ namespace Application.Features.Auth.Commands
         }
     }
 
-    /// <remarks>
-    /// Answers identically whether or not the address is registered. Anything else — a different
-    /// message, a different status, a measurably different response time — turns this endpoint into
-    /// the user-enumeration oracle that the uniform 401 on sign-in exists to prevent.
-    /// </remarks>
     public partial class ForgotPasswordCommand : IRequest<ForgotPasswordCommand.Response>
     {
         public string Email { get; set; } = null!;
@@ -217,7 +212,6 @@ namespace Application.Features.Auth.Commands
 
     public partial class ResetPasswordCommand : IRequest<ResetPasswordCommand.Response>
     {
-        /// <summary>The raw token from the emailed link; only its hash is stored.</summary>
         public string Token { get; set; } = null!;
 
         public string NewPassword { get; set; } = null!;

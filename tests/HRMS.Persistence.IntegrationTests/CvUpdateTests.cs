@@ -7,16 +7,6 @@ using Shouldly;
 
 namespace HRMS.Persistence.IntegrationTests;
 
-/// <summary>
-/// Saving a CV that already exists and gaining a child row in the same change set.
-/// </summary>
-/// <remarks>
-/// This is the exact shape <see cref="Application.Services.CvManager.UpdateAsync"/> produces, and it
-/// used to fail: every attempt threw <see cref="DbUpdateConcurrencyException"/> ("expected to affect
-/// 1 row(s), but actually affected 0"), so no job seeker could add an education, a job, a language or
-/// a project to a saved CV. Nothing covered it — the existing suite exercises create and delete, and
-/// an update with no children happens to work.
-/// </remarks>
 [Collection(PersistenceCollection.Name)]
 public class CvUpdateTests(PostgresFixture fixture) : IAsyncLifetime
 {
@@ -68,8 +58,6 @@ public class CvUpdateTests(PostgresFixture fixture) : IAsyncLifetime
 
         saved.Information.ShouldBe("Updated.");
 
-        // `Given.Cv` already carries an education, so the new one lands *beside* it — which is the
-        // case that matters: adding to a collection that is already populated is exactly what failed.
         saved.Educations.Count.ShouldBe(2);
         saved.Educations.Select(education => education.School).ShouldContain("ODTÜ");
         saved.Educations.ShouldAllBe(education => education.Id != Guid.Empty);
@@ -78,9 +66,6 @@ public class CvUpdateTests(PostgresFixture fixture) : IAsyncLifetime
     [Fact]
     public async Task Update_Should_ReplaceEveryCollection_InOneSaveChanges()
     {
-        // The full shape of `ApplyTo`: clear each collection, re-add, and mutate the principal — all
-        // against a CV that already has rows. Four child tables and the parent in a single batch is
-        // what made the ordering matter.
         var seekerId = await GivenACvAsync("replaces-all@test.local");
 
         await fixture.InScopeAsync(async services =>
