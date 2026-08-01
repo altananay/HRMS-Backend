@@ -44,6 +44,36 @@ public class RateLimiterTests
         }
     }
 
+    [Fact]
+    public async Task MeEndpoint_Should_NeverReturn429_RegardlessOfHowManyTimesItIsCalled()
+    {
+        // /auth/me is called on every protected page load — far more often than login, register or
+        // refresh — and needs a valid Bearer token just to be reached, so it carries none of the
+        // credential-guessing risk the "auth" policy exists to guard against. Sharing that policy's
+        // tight bucket used to mean a few minutes of normal navigation could exhaust it and read as a
+        // session that expired, when nothing about the token had actually changed.
+        Environment.SetEnvironmentVariable(PermitLimitVariable, TestPermitLimit.ToString());
+
+        try
+        {
+            await using var factory = new ThrottledApiFactory();
+            using var httpClient = factory.CreateClient();
+            var client = new HrmsClient(httpClient);
+
+            var registered = await client.RegisterJobSeekerAsync($"me-throttle-{Guid.NewGuid():N}@test.local");
+            client.Authenticate(registered.DataString("accessToken"));
+
+            for (var attempt = 0; attempt < TestPermitLimit + 5; attempt++)
+            {
+                (await client.GetAsync("/api/auth/me")).Status.ShouldBe(HttpStatusCode.OK);
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(PermitLimitVariable, SuitePermitLimit);
+        }
+    }
+
     private sealed class ThrottledApiFactory : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.UseEnvironment("Testing");

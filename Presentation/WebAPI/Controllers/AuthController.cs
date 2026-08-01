@@ -65,6 +65,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
             => Ok((await Mediator.Send(command)).Result);
 
+        // Every protected page load calls this to verify the session — far higher frequency than any
+        // other action here, and unlike them it needs a valid Bearer token just to be reached, so it
+        // carries no credential-guessing surface for the "auth" policy to guard. Sharing that bucket
+        // meant a few minutes of normal navigation could exhaust it and read as a logout.
+        [DisableRateLimiting]
         [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> Me()
